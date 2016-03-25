@@ -22,3 +22,11 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# Eclipse, IntelliJ project files
+*.iml
+.idea
+*.project
+
+# Config files
+config/auth.cfg
