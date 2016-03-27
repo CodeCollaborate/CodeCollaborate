@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"github.com/gorilla/websocket"
 	"fmt"
-	"github.com/CodeCollaborate/CodeCollaborate/modules/datahandling"
+	"github.com/CodeCollaborate/Server/modules/datahandling"
 	"sync/atomic"
-	"github.com/CodeCollaborate/CodeCollaborate/modules/rabbitmq"
-	"github.com/CodeCollaborate/CodeCollaborate/utils"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var atomicIdCounter uint64 = 0

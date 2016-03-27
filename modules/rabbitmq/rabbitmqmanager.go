@@ -2,8 +2,8 @@ package rabbitmq
 
 import (
 	"github.com/streadway/amqp"
-	"github.com/CodeCollaborate/CodeCollaborate/modules/datahandling"
-	"github.com/CodeCollaborate/CodeCollaborate/utils"
+	"github.com/CodeCollaborate/Server/modules/datahandling"
+	"github.com/CodeCollaborate/Server/utils"
 	"fmt"
 	"os"
 )

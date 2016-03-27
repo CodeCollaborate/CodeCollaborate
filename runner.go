@@ -6,8 +6,8 @@ import (
 	"os"
 	"net/http"
 	"fmt"
-	"github.com/CodeCollaborate/CodeCollaborate/modules/handlers"
-	"github.com/CodeCollaborate/CodeCollaborate/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/modules/handlers"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
 var addr = flag.String("addr", "0.0.0.0:80", "http service address")
