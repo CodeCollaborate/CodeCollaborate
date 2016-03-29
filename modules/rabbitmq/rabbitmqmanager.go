@@ -8,9 +8,19 @@ import (
 	"os"
 )
 
+/**
+ * RabbitMq manager for CodeCollaborate Server.
+ * @author: Austin Fahsl and Benedict Wong
+ */
+
+// Make a queue of go channels
 var ChannelQueue = make(chan *amqp.Channel)
+// get the hostname of this machine
 var hostname, _ = os.Hostname()
 
+/**
+ * Sets up the RabbitMq exchange for managing individual WebSocket queues.
+ */
 func SetupRabbitExchange() *amqp.Connection{
 	conn, err := amqp.Dial(datahandling.ConnectionString)
 	utils.FailOnError(err, "Failed to connect to RabbitMQ")
@@ -42,6 +52,9 @@ func SetupRabbitExchange() *amqp.Connection{
 
 }
 
+/**
+ * Creates the subscriber that listens to RabbitMq and returns the RabbitMq channel and the message channel.
+ */
 func RunSubscriber(wsId uint64) (*amqp.Channel, <-chan amqp.Delivery, error) {
 	ch := <-ChannelQueue
 

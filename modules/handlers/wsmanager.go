@@ -17,7 +17,14 @@ var upgrader = websocket.Upgrader{
 	},
 } // use default options
 
+/**
+ * RabbitMq manager for CodeCollaborate Server.
+ * @author: Austin Fahsl and Benedict Wong
+ */
 
+/**
+ * Create a new WebSocket connection given a http request.
+ */
 func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	if request.URL.Path != "/ws/" {
 		http.Error(responseWriter, "Not found", 404)
@@ -50,6 +57,9 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 }
 
+/**
+ * Receives messages from the RabbitMq subscriber and passes them to the WebSocket.
+ */
 func WSSendingRoutine(wsId uint64, wsConn *websocket.Conn) {
 
 	ch, messages, err := rabbitmq.RunSubscriber(wsId)
