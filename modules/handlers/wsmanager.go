@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"net/http"
-	"github.com/gorilla/websocket"
 	"fmt"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
-	"sync/atomic"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
+	"github.com/gorilla/websocket"
+	"net/http"
+	"sync/atomic"
 )
 
 var atomicIdCounter uint64 = 0
@@ -26,6 +26,7 @@ var upgrader = websocket.Upgrader{
  * Create a new WebSocket connection given a http request.
  */
 func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
+	// Receive and upgrade request
 	if request.URL.Path != "/ws/" {
 		http.Error(responseWriter, "Not found", 404)
 		return
@@ -39,21 +40,23 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		fmt.Println("Failed to upgrade connection: %s\n", err)
 		return
 	}
-	var wsId uint64 = atomic.AddUint64(&atomicIdCounter, 1)
-	go WSSendingRoutine(wsId, wsConn)
-
 	defer wsConn.Close()
-	// defer managers.WebSocketDisconnected(wsConn)
+
+	// Generate unique ID for this websocket
+	var wsId uint64 = atomic.AddUint64(&atomicIdCounter, 1)
+
+	// Run WSSendingHandler in a separate GoRoutine
+	go WSSendingRoutine(wsId, wsConn)
 
 	for {
 		// messageType, message, err := wsConn.ReadMessage()
-		_, message, err := wsConn.ReadMessage()
+		messageType, message, err := wsConn.ReadMessage()
 		if err != nil {
 			fmt.Println("WebSocket failed to read message, exiting handler\n")
 			break
 		}
 		dh := datahandling.DataHandler{}
-		dh.Handle(wsId, message)
+		dh.Handle(wsId, messageType, message)
 	}
 }
 
@@ -62,7 +65,14 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
  */
 func WSSendingRoutine(wsId uint64, wsConn *websocket.Conn) {
 
-	ch, messages, err := rabbitmq.RunSubscriber(wsId)
+	ch, messages, err := rabbitmq.RunSubscriber(
+		rabbitmq.QueueConfig{
+			ExchangeName: "CodeCollaborate",
+			QueueId:      wsId,
+			Keys:         []string{},
+			IsWorkQueue:  false,
+		},
+	)
 	if err != nil {
 		utils.LogOnError(err, "Failed to subscribe")
 		return

@@ -7,14 +7,13 @@ import "fmt"
  * @author: Austin Fahsl and Benedict Wong
  */
 
-type DataHandler struct{
-
+type DataHandler struct {
 }
 
 /**
  * Handle the data received by the WebSocket connection.
  */
-func (dh DataHandler) Handle(wsId uint64, json []byte) error {
-	fmt.Printf("Handling JSON: %s\n", json)
+func (dh DataHandler) Handle(wsId uint64, messageType int, message []byte) error {
+	fmt.Printf("Handling Message: %s\n", message)
 	return nil
 }

@@ -23,7 +23,7 @@ func Read(r io.Reader) <-chan string {
 
 // write is this application's subscriber of application messages, printing to
 // stdout.
-func Write(w io.Writer) chan <- string {
+func Write(w io.Writer) chan<- string {
 	lines := make(chan string)
 	go func() {
 		for line := range lines {

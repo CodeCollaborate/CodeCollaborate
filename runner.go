@@ -2,18 +2,18 @@ package main
 
 import (
 	"flag"
-	"log"
-	"os"
-	"net/http"
 	"fmt"
 	"github.com/CodeCollaborate/Server/modules/handlers"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
+	"log"
+	"net/http"
+	"os"
 )
 
 var addr = flag.String("addr", "0.0.0.0:80", "http service address")
 
-
-func main(){
+func main() {
 
 	flag.Parse()
 	log.SetFlags(0)
@@ -30,13 +30,21 @@ func main(){
 	}
 	fmt.Println("Running in directory: " + dir)
 
-	conn := rabbitmq.SetupRabbitExchange()
-	defer conn.Close()
+	rabbitmq.SetupRabbitExchange(
+		rabbitmq.ConnectionConfig{
+			Host: "localhost",
+			Port: 5672,
+			User: "guest",
+			Pass: "guest",
+			ExchangeNames: []string{
+				"CodeCollaborate",
+			},
+		},
+	)
 
 	http.HandleFunc("/ws/", handlers.NewWSConn)
+
+	fmt.Println("Binding to address: " + *addr)
 	err = http.ListenAndServe(*addr, nil)
-	if err != nil {
-		fmt.Printf("Fatal error: Could not get bind port: %s\n", err)
-		log.Fatal(err)
-	}
+	utils.FailOnError(err, "Could not bind to port")
 }
