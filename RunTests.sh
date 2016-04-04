@@ -6,11 +6,12 @@ show_failed(){
     while read data; do
         OUTPUT=$(echo $data | cut -c 5-)
 
-        if [[ "$OUTPUT" =~ PASS.* ]]; then
-            printf -- "  %s\n" "$OUTPUT"
-        else
+
+        if [[ "$OUTPUT" =~ FAIL.* ]]; then
             printf -- "->%s\n" "$OUTPUT"
             STATUS=1
+        else
+            printf -- "  %s\n" "$OUTPUT"
         fi
     done
 

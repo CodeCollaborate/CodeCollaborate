@@ -1,21 +1,9 @@
 package utils
 
 import (
-	"testing"
 	"errors"
+	"testing"
 )
-
-//
-//func TestRead(t *testing.T) {
-//	rdr, err := ioutil.ReadFile("test.txt")
-//	if err != nil {
-//		t.Fatal("Failed to read file")
-//	}
-//	s := string(rdr)
-//	fmt.Println(s)
-//	fr := FakeReader{}
-//	utils.Read(fr)
-//}
 
 func TestFailOnError(t *testing.T) {
 	err := errors.New("I'm an error")

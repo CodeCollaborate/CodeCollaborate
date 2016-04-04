@@ -31,13 +31,16 @@ func main() {
 	fmt.Println("Running in directory: " + dir)
 
 	rabbitmq.SetupRabbitExchange(
-		rabbitmq.ConnectionConfig{
+		&rabbitmq.ConnectionConfig{
 			Host: "localhost",
 			Port: 5672,
 			User: "guest",
 			Pass: "guest",
-			ExchangeNames: []string{
-				"CodeCollaborate",
+			Exchanges: []rabbitmq.ExchangeConfig{
+				{
+					ExchangeName: "CodeCollaborate",
+					Durable:      true,
+				},
 			},
 		},
 	)

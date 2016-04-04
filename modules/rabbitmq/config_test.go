@@ -2,10 +2,10 @@ package rabbitmq
 
 import (
 	"crypto/tls"
-	"strings"
-	"testing"
 	"os"
 	"strconv"
+	"strings"
+	"testing"
 )
 
 func TestConnectionString(t *testing.T) {
@@ -39,23 +39,22 @@ func TestConnectionString(t *testing.T) {
 
 func TestQueueName(t *testing.T) {
 
-	hostname, err :=  os.Hostname();
+	hostname, err := os.Hostname()
 	if err != nil {
 		t.Fatal("Could not get hostname")
 	}
 
-
 	for i := uint64(0); i < 20; i++ {
-		queueId := i
+		queueID := i
 
-		queueCfg := QueueConfig{
+		queueCfg := SubscriberConfig{
 			ExchangeName: "Exchange",
-			QueueId: queueId,
+			QueueID:      queueID,
 			Keys:         []string{"Key1", "Key2"},
-			IsWorkQueue: false,
+			IsWorkQueue:  false,
 		}
 
-		expected := hostname + "-" + strconv.FormatUint(queueId, 10)
+		expected := hostname + "-" + strconv.FormatUint(queueID, 10)
 		if queueCfg.QueueName() != expected {
 			t.Fatalf("QueueName incorrect; expected [%s], got [%s]", expected, queueCfg.QueueName())
 		}

@@ -26,10 +26,10 @@ script:
 - ./CheckFormatting.sh
 - ./RunTests.sh
 # Build on different architectures and OS-es
-- GOOS=windows GOARCH=386 go build -v -o bin/server_windows_x86.exe
-- GOOS=linux GOARCH=386 go build -v -o bin/server_linux_x86
-- GOOS=windows GOARCH=amd64 go build -v -o bin/server_windows_amd64.exe
-- GOOS=linux GOARCH=amd64 go build -v -o bin/server_linux_amd64
+- GOOS=windows GOARCH=386 go build -o bin/server_windows_x86.exe
+- GOOS=linux GOARCH=386 go build -o bin/server_linux_x86
+- GOOS=windows GOARCH=amd64 go build -o bin/server_windows_amd64.exe
+- GOOS=linux GOARCH=amd64 go build -o bin/server_linux_amd64
 
 deploy:
   on:

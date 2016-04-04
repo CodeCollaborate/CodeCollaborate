@@ -2,18 +2,13 @@ package datahandling
 
 import "fmt"
 
-/**
- * Handle the data received by the WebSocket connection.
- * @author: Austin Fahsl and Benedict Wong
- */
-
+// DataHandler handles the json data received from the WebSocket connection.
 type DataHandler struct {
 }
 
-/**
- * Handle the data received by the WebSocket connection.
- */
-func (dh DataHandler) Handle(wsId uint64, messageType int, message []byte) error {
+// Handle takes the WebSocket Id, MessageType and message in byte-array form,
+// processing the data, and updating DB/FS/RabbitMQ as needed.
+func (dh DataHandler) Handle(wsID uint64, messageType int, message []byte) error {
 	fmt.Printf("Handling Message: %s\n", message)
 	return nil
 }

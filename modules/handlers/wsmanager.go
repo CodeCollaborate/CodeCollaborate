@@ -10,21 +10,19 @@ import (
 	"sync/atomic"
 )
 
-var atomicIdCounter uint64 = 0
+// Counter for unique ID of WebSockets Connections. Unique to hostname.
+var atomicIDCounter uint64
+
+// Define WebSocket Upgrader that ignores origin; there is never going to be a referral source.
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
-} // use default options
+}
 
-/**
- * RabbitMq manager for CodeCollaborate Server.
- * @author: Austin Fahsl and Benedict Wong
- */
-
-/**
- * Create a new WebSocket connection given a http request.
- */
+// NewWSConn accepts a HTTP Upgrade request, creating a new websocket connection.
+// Once a WebSocket connection is created, will setup the Receiving and Sending routines,
+// then
 func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	// Receive and upgrade request
 	if request.URL.Path != "/ws/" {
@@ -43,43 +41,41 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	defer wsConn.Close()
 
 	// Generate unique ID for this websocket
-	var wsId uint64 = atomic.AddUint64(&atomicIdCounter, 1)
+	wsID := atomic.AddUint64(&atomicIDCounter, 1)
 
 	// Run WSSendingHandler in a separate GoRoutine
-	go WSSendingRoutine(wsId, wsConn)
+	sendingRoutineControl := utils.NewControl()
+	go WSSendingRoutine(wsID, wsConn, sendingRoutineControl)
 
 	for {
-		// messageType, message, err := wsConn.ReadMessage()
 		messageType, message, err := wsConn.ReadMessage()
 		if err != nil {
-			fmt.Println("WebSocket failed to read message, exiting handler\n")
+			fmt.Println("WebSocket failed to read message, exiting handler")
+			sendingRoutineControl.Exit <- true
 			break
 		}
 		dh := datahandling.DataHandler{}
-		dh.Handle(wsId, messageType, message)
+		dh.Handle(wsID, messageType, message)
 	}
 }
 
-/**
- * Receives messages from the RabbitMq subscriber and passes them to the WebSocket.
- */
-func WSSendingRoutine(wsId uint64, wsConn *websocket.Conn) {
+// WSSendingRoutine receives messages from the RabbitMq subscriber and passes them to the WebSocket.
+func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *utils.Control) {
 
-	ch, messages, err := rabbitmq.RunSubscriber(
-		rabbitmq.QueueConfig{
+	err := rabbitmq.RunSubscriber(
+		&rabbitmq.SubscriberConfig{
 			ExchangeName: "CodeCollaborate",
-			QueueId:      wsId,
+			QueueID:      wsID,
 			Keys:         []string{},
 			IsWorkQueue:  false,
+			HandleMessageFunc: func(msg rabbitmq.AMQPMessage) error {
+				return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
+			},
+			Control: ctrl,
 		},
 	)
 	if err != nil {
 		utils.LogOnError(err, "Failed to subscribe")
 		return
-	}
-	defer ch.Close()
-
-	for message := range messages {
-		wsConn.WriteMessage(websocket.TextMessage, message.Body)
 	}
 }
