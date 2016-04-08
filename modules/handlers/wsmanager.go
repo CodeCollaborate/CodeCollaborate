@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
+	"sync/atomic"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
-	"net/http"
-	"sync/atomic"
 )
 
 // Counter for unique ID of WebSockets Connections. Unique to hostname.
@@ -35,7 +37,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 	wsConn, err := upgrader.Upgrade(responseWriter, request, nil)
 	if err != nil {
-		fmt.Println("Failed to upgrade connection: %s\n", err)
+		fmt.Printf("Failed to upgrade connection: %s\n", err)
 		return
 	}
 	defer wsConn.Close()
@@ -62,9 +64,12 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 // WSSendingRoutine receives messages from the RabbitMq subscriber and passes them to the WebSocket.
 func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *utils.Control) {
 
+	// Don't check for error; if it would have
+	config := config.GetConfig()
+
 	err := rabbitmq.RunSubscriber(
-		&rabbitmq.SubscriberConfig{
-			ExchangeName: "CodeCollaborate",
+		&rabbitmq.AMQPSubCfg{
+			ExchangeName: config.ServerConfig.Name,
 			QueueID:      wsID,
 			Keys:         []string{},
 			IsWorkQueue:  false,

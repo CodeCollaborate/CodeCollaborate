@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/CodeCollaborate/Server/modules/handlers"
-	"github.com/CodeCollaborate/Server/modules/rabbitmq"
-	"github.com/CodeCollaborate/Server/utils"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/handlers"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var addr = flag.String("addr", "0.0.0.0:80", "http service address")
@@ -22,6 +24,12 @@ func main() {
 	//managers.ConnectMGo()
 	//defer managers.GetPrimaryMGoSession().Close()
 
+	err := config.InitConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := config.GetConfig()
+
 	// Get working directory
 	dir, err := os.Getwd()
 	if err != nil {
@@ -30,18 +38,18 @@ func main() {
 	}
 	fmt.Println("Running in directory: " + dir)
 
+	AMQPControl := utils.NewControl()
+
 	rabbitmq.SetupRabbitExchange(
-		&rabbitmq.ConnectionConfig{
-			Host: "localhost",
-			Port: 5672,
-			User: "guest",
-			Pass: "guest",
-			Exchanges: []rabbitmq.ExchangeConfig{
+		&rabbitmq.AMQPConnCfg{
+			ConnCfg: config.ConnectionConfig["RabbitMQ"],
+			Exchanges: []rabbitmq.AMQPExchCfg{
 				{
-					ExchangeName: "CodeCollaborate",
+					ExchangeName: config.ServerConfig.Name,
 					Durable:      true,
 				},
 			},
+			Control: AMQPControl,
 		},
 	)
 
@@ -50,4 +58,6 @@ func main() {
 	fmt.Println("Binding to address: " + *addr)
 	err = http.ListenAndServe(*addr, nil)
 	utils.FailOnError(err, "Could not bind to port")
+
+	AMQPControl.Exit <- true
 }

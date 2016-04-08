@@ -2,14 +2,16 @@ package rabbitmq
 
 import (
 	"fmt"
-	"github.com/CodeCollaborate/Server/utils"
-	"github.com/streadway/amqp"
 	"reflect"
 	"sync"
 	"testing"
+
+	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/utils"
+	"github.com/streadway/amqp"
 )
 
-var testExchange = ExchangeConfig{
+var testExchange = AMQPExchCfg{
 	ExchangeName: "TestExchange",
 	Durable:      false,
 }
@@ -46,13 +48,12 @@ func TestSetupRabbitExchange(t *testing.T) {
 	channelQueue = nil
 
 	SetupRabbitExchange(
-		&ConnectionConfig{
-			Host: "localhost",
-			Port: 5672,
-			User: "guest",
-			Pass: "guest",
-			Exchanges: []ExchangeConfig{
-				testExchange,
+		&AMQPConnCfg{
+			ConnCfg: config.ConnCfg{
+				Host:     "localhost",
+				Port:     5672,
+				Username: "guest",
+				Password: "guest",
 			},
 		},
 	)
@@ -75,12 +76,14 @@ func TestSendMessage(t *testing.T) {
 	channelQueue = nil
 
 	SetupRabbitExchange(
-		&ConnectionConfig{
-			Host: "localhost",
-			Port: 5672,
-			User: "guest",
-			Pass: "guest",
-			Exchanges: []ExchangeConfig{
+		&AMQPConnCfg{
+			ConnCfg: config.ConnCfg{
+				Host:     "localhost",
+				Port:     5672,
+				Username: "guest",
+				Password: "guest",
+			},
+			Exchanges: []AMQPExchCfg{
 				testExchange,
 			},
 		},
@@ -111,7 +114,7 @@ func TestSendMessage(t *testing.T) {
 	go func() {
 		defer wg.Done()
 
-		RunSubscriber(&SubscriberConfig{
+		RunSubscriber(&AMQPSubCfg{
 			ExchangeName: testExchange.ExchangeName,
 			QueueID:      queueID,
 			Keys:         []string{},
@@ -131,7 +134,7 @@ func TestSendMessage(t *testing.T) {
 
 	go func() {
 		defer wg.Done()
-		RunPublisher(&PublisherConfig{
+		RunPublisher(&AMQPPubCfg{
 			ExchangeName: testExchange.ExchangeName,
 			Messages:     publisherMessages,
 			Control:      publisherControl,

@@ -3,40 +3,39 @@ package rabbitmq
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/CodeCollaborate/Server/utils"
 	"os"
+
+	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 // Gets the hostname of this machine, for use in QueueName()
 var hostname, _ = os.Hostname()
 
-// ConnectionConfig represents the settings needed to create a new connection, and initialize the required exchanges.
-type ConnectionConfig struct {
-	Host      string
-	Port      int
-	User      string
-	Pass      string
-	Exchanges []ExchangeConfig
+// AMQPConnCfg represents the settings needed to create a new connection, and initialize the required exchanges.
+type AMQPConnCfg struct {
+	config.ConnCfg
+	Exchanges []AMQPExchCfg
 	TLSConfig *tls.Config
 	Control   *utils.Control
 }
 
-// ExchangeConfig represents the basic variables of any exchange
-type ExchangeConfig struct {
+// ConnectionString returns the connection string, using amqps:// if TLSConfig has been set, amqp:// otherwise.
+func (cfg AMQPConnCfg) ConnectionString() string {
+	if cfg.TLSConfig != nil {
+		return fmt.Sprintf("amqps://%s:%s@%s:%d/", cfg.Username, cfg.Password, cfg.Host, cfg.Port)
+	}
+	return fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.Username, cfg.Password, cfg.Host, cfg.Port)
+}
+
+// AMQPExchCfg represents the basic variables of any exchange
+type AMQPExchCfg struct {
 	ExchangeName string
 	Durable      bool
 }
 
-// ConnectionString returns the connection string, using amqps:// if TLSConfig has been set, amqp:// otherwise.
-func (cfg ConnectionConfig) ConnectionString() string {
-	if cfg.TLSConfig != nil {
-		return fmt.Sprintf("amqps://%s:%s@%s:%d/", cfg.User, cfg.Pass, cfg.Host, cfg.Port)
-	}
-	return fmt.Sprintf("amqp://%s:%s@%s:%d/", cfg.User, cfg.Pass, cfg.Host, cfg.Port)
-}
-
-// SubscriberConfig represents the settings needed to create a new subscriber, including the queues and key bindings
-type SubscriberConfig struct {
+// AMQPSubCfg represents the settings needed to create a new subscriber, including the queues and key bindings
+type AMQPSubCfg struct {
 	ExchangeName      string
 	QueueID           uint64
 	Keys              []string
@@ -46,12 +45,12 @@ type SubscriberConfig struct {
 }
 
 // QueueName generates the Queue
-func (cfg SubscriberConfig) QueueName() string {
+func (cfg AMQPSubCfg) QueueName() string {
 	return fmt.Sprintf("%s-%d", hostname, cfg.QueueID)
 }
 
-// PublisherConfig represents the settings needed to create a new publisher
-type PublisherConfig struct {
+// AMQPPubCfg represents the settings needed to create a new publisher
+type AMQPPubCfg struct {
 	ExchangeName string
 	Messages     chan AMQPMessage
 	Control      *utils.Control
