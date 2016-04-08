@@ -30,3 +30,7 @@ _testmain.go
 
 # Config files
 /config*
+
+# Vendored files
+/vendor/*
+!/vendor/vendor.json
