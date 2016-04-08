@@ -6,14 +6,18 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 func TestConnectionString(t *testing.T) {
-	connCfg := ConnectionConfig{
-		Host: "host",
-		Port: 80,
-		User: "username",
-		Pass: "password",
+	connCfg := AMQPConnCfg{
+		ConnCfg: config.ConnCfg{
+			Host:     "host",
+			Port:     80,
+			Username: "username",
+			Password: "password",
+		},
 	}
 
 	if !strings.HasPrefix(connCfg.ConnectionString(), "amqp://") {
@@ -22,11 +26,13 @@ func TestConnectionString(t *testing.T) {
 		t.Fatal("Connection string incorrectly generated")
 	}
 
-	connCfgWithTLS := ConnectionConfig{
-		Host:      "host",
-		Port:      80,
-		User:      "username",
-		Pass:      "password",
+	connCfgWithTLS := AMQPConnCfg{
+		ConnCfg: config.ConnCfg{
+			Host:     "host",
+			Port:     80,
+			Username: "username",
+			Password: "password",
+		},
 		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	}
 
@@ -47,7 +53,7 @@ func TestQueueName(t *testing.T) {
 	for i := uint64(0); i < 20; i++ {
 		queueID := i
 
-		queueCfg := SubscriberConfig{
+		queueCfg := AMQPSubCfg{
 			ExchangeName: "Exchange",
 			QueueID:      queueID,
 			Keys:         []string{"Key1", "Key2"},

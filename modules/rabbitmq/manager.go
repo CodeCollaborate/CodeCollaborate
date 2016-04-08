@@ -2,9 +2,10 @@ package rabbitmq
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
-	"sync"
 )
 
 /**
@@ -28,7 +29,7 @@ func GetChannel() (*amqp.Channel, error) {
 // into the ChannelQueue. The generation of channels will be done on a new GoRoutine, avoiding blocking, or having
 // to pass the RabbitMQ Connection around. This method will also attempt to auto-reconnect if the critical setup steps
 // fail.
-func SetupRabbitExchange(cfg *ConnectionConfig) {
+func SetupRabbitExchange(cfg *AMQPConnCfg) {
 	if cfg.Control == nil {
 		cfg.Control = utils.NewControl()
 	}
@@ -87,7 +88,11 @@ func SetupRabbitExchange(cfg *ConnectionConfig) {
 						default:
 						}
 
-						channelQueue <- ch
+						select {
+						case <-cfg.Control.Exit:
+							break
+						case channelQueue <- ch:
+						}
 					}
 					conn.Close()
 				}
@@ -104,7 +109,7 @@ func SetupRabbitExchange(cfg *ConnectionConfig) {
 // RunSubscriber creates a new subscriber based on the QueueConfig provided. The RabbitMQ Channel used
 // is returned, along with a Go Channel of the pushed messages from the RabbitMQ Exchange. Developers should
 // remember to defer the closing of the RabbitMQ Channel.
-func RunSubscriber(cfg *SubscriberConfig) error {
+func RunSubscriber(cfg *AMQPSubCfg) error {
 	if cfg.Control == nil {
 		cfg.Control = utils.NewControl()
 	}
@@ -172,13 +177,11 @@ func RunSubscriber(cfg *SubscriberConfig) error {
 			utils.LogOnError(err, "Failed to handle message")
 		}
 	}
-
-	return nil
 }
 
 // RunPublisher creates a new publisher, and continually pushes messages submitted to the Go channel
 // to RabbitMQ.
-func RunPublisher(cfg *PublisherConfig) error {
+func RunPublisher(cfg *AMQPPubCfg) error {
 	if cfg.Control == nil {
 		cfg.Control = utils.NewControl()
 	}
@@ -216,6 +219,4 @@ func RunPublisher(cfg *PublisherConfig) error {
 			utils.LogOnError(err, "Failed to publish a message")
 		}
 	}
-
-	return err
 }
