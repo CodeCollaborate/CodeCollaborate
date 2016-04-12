@@ -1,5 +1,9 @@
 package config
 
+/**
+ * Configuration for the CodeCollaborate Server.
+ */
+
 var config *Config
 var configDir = "./config"
 

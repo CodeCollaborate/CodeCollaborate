@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+/**
+ * Utility functions for the CodeCollaborate Server.
+ */
+
 //// read is this application's translation to the message format, scanning from
 //// stdin.
 //func Read(r io.Reader) <-chan string {

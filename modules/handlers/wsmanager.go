@@ -12,6 +12,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+/**
+ * WSManager handles all WebSocket upgrade requests.
+ */
+
 // Counter for unique ID of WebSockets Connections. Unique to hostname.
 var atomicIDCounter uint64
 

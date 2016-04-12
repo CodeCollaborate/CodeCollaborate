@@ -1,5 +1,9 @@
 package config
 
+/**
+ * Models for the configuration CodeCollaborate Server.
+ */
+
 // ConnCfgMap is a map of ConnCfgs, keyed on the connection name.
 type ConnCfgMap map[string]ConnCfg
 

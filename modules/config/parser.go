@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 )
 
+/**
+ * Parses configuration files for the CodeCollaborate Server.
+ */
+
 func parseConfig(filepath string) (*Config, error) {
 
 	serverConfig, err := parseServerConfig(filepath)

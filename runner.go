@@ -13,6 +13,10 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 )
 
+/**
+ * Runner.go starts the server. It initializes processes and begins listening for websocket requests.
+ */
+
 var addr = flag.String("addr", "0.0.0.0:80", "http service address")
 
 func main() {
@@ -38,8 +42,10 @@ func main() {
 	}
 	fmt.Println("Running in directory: " + dir)
 
+	// Creates a NewControl block for multithreading control
 	AMQPControl := utils.NewControl()
 
+	// RabbitMQ uses "Exchanges" as containers for Queues, and ours is initialized here.
 	rabbitmq.SetupRabbitExchange(
 		&rabbitmq.AMQPConnCfg{
 			ConnCfg: config.ConnectionConfig["RabbitMQ"],
@@ -59,5 +65,6 @@ func main() {
 	err = http.ListenAndServe(*addr, nil)
 	utils.FailOnError(err, "Could not bind to port")
 
+	// Kill the SetupRabbitExchange thread (Multithreading control)
 	AMQPControl.Exit <- true
 }

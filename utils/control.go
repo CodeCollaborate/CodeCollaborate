@@ -2,6 +2,10 @@ package utils
 
 import "sync"
 
+/**
+ * Control utilities for multithreading.
+ */
+
 // Control groups common multi-threading control variables, allowing for waiting until thread is ready,
 // and setting exit flag.
 type Control struct {

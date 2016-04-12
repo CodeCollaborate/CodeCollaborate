@@ -10,7 +10,6 @@ import (
 
 /**
  * RabbitMq manager for CodeCollaborate Server.
- * @author: Austin Fahsl and Benedict Wong
  */
 
 var channelQueueCreationMutex = sync.Mutex{}

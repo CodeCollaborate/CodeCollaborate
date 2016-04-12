@@ -16,7 +16,6 @@ branches:
 #  - /v\d+\.\d+\.\d+.*/
 
 install:
-- go get github.com/kardianos/govendor
 - go get golang.org/x/tools/cmd/goimports
 - ./GetDependencies.sh
 

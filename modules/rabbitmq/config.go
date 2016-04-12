@@ -9,6 +9,10 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 )
 
+/**
+ * Configuration structures and variables for RabbitMQ.
+ */
+
 // Gets the hostname of this machine, for use in QueueName()
 var hostname, _ = os.Hostname()
 

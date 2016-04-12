@@ -2,6 +2,10 @@ package datahandling
 
 import "fmt"
 
+/**
+ * Data Handling logic for the CodeCollaborate Server.
+ */
+
 // DataHandler handles the json data received from the WebSocket connection.
 type DataHandler struct {
 }
