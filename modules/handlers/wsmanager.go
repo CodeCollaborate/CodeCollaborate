@@ -61,7 +61,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 			break
 		}
 		dh := datahandling.DataHandler{}
-		dh.Handle(wsID, messageType, message)
+		go dh.Handle(wsID, messageType, message)
 	}
 }
 
