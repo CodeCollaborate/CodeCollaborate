@@ -29,7 +29,7 @@ func initUserRequests() {
 		return p, err
 	}
 
-	requestMap["UserLookup"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["UserLookup"] = func(req abstractRequest) (request, error) {
 		p := new(userLookupRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -37,7 +37,7 @@ func initUserRequests() {
 		return p, err
 	}
 
-	requestMap["UserProjects"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["UserProjects"] = func(req abstractRequest) (request, error) {
 		p := new(userProjectsRequest)
 		p.abstractRequest = req
 		rawData := p.Data

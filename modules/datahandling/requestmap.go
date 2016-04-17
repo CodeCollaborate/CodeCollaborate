@@ -9,8 +9,9 @@ import (
  */
 
 // map to lookup authenticated api functions
-// TODO rename to authenticatedRequestMap
-var requestMap = make(map[string](func(req abstractRequest) (request, error)))
+var authenticatedRequestMap = make(map[string](func(req abstractRequest) (request, error)))
+
+// map to lookup unauthenticated api functions
 var unauthenticatedRequestMap = make(map[string](func(req abstractRequest) (request, error)))
 
 func init() {
@@ -34,7 +35,7 @@ func getFullRequest(req abstractRequest) (request, error) {
 
 // authenticatedRequest returns fully parsed Request from the given authenticated AbstractRequest
 func authenticatedRequest(req abstractRequest) (request, error) {
-	constructor := requestMap[req.Resource+req.Method]
+	constructor := authenticatedRequestMap[req.Resource+req.Method]
 	if constructor == nil {
 		err := errors.New("The function for the given request does not exist in the authenticated map.")
 		return nil, err

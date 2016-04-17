@@ -16,7 +16,7 @@ func initProjectRequests() {
 	// This isn't an ideal way of populating the map since there is so much duplicate code, but extracting this
 	// requires some kind of restructuring of the request hierarchy, which can come later because we can't come up
 	// with an obvious way to do it.
-	requestMap["ProjectCreateRequest"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectCreateRequest"] = func(req abstractRequest) (request, error) {
 		p := new(projectCreateRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -24,7 +24,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectRename"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectRename"] = func(req abstractRequest) (request, error) {
 		p := new(projectRenameRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -32,7 +32,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectGetPermissionsConstants"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectGetPermissionsConstants"] = func(req abstractRequest) (request, error) {
 		p := new(projectGetPermissionConstantsRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -40,7 +40,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectGrantPermissions"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectGrantPermissions"] = func(req abstractRequest) (request, error) {
 		p := new(projectGrantPermissionsRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -48,7 +48,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectRevokePermissions"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectRevokePermissions"] = func(req abstractRequest) (request, error) {
 		p := new(projectRevokePermissionsRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -56,7 +56,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectGetOnlineClients"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectGetOnlineClients"] = func(req abstractRequest) (request, error) {
 		p := new(projectGetOnlineClientsRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -64,7 +64,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectLookup"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectLookup"] = func(req abstractRequest) (request, error) {
 		p := new(projectLookupRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -72,7 +72,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectGetFiles"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectGetFiles"] = func(req abstractRequest) (request, error) {
 		p := new(projectGetFilesRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -80,7 +80,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectSubscribe"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectSubscribe"] = func(req abstractRequest) (request, error) {
 		p := new(projectSubscribeRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -88,7 +88,7 @@ func initProjectRequests() {
 		return p, err
 	}
 
-	requestMap["ProjectDelete"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["ProjectDelete"] = func(req abstractRequest) (request, error) {
 		p := new(projectDeleteRequest)
 		p.abstractRequest = req
 		rawData := p.Data

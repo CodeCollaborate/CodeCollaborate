@@ -13,7 +13,7 @@ func initFileRequests() {
 		return
 	}
 
-	requestMap["FileCreate"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["FileCreate"] = func(req abstractRequest) (request, error) {
 		p := new(fileCreateRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -21,7 +21,7 @@ func initFileRequests() {
 		return p, err
 	}
 
-	requestMap["FileRename"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["FileRename"] = func(req abstractRequest) (request, error) {
 		p := new(fileRenameRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -29,7 +29,7 @@ func initFileRequests() {
 		return p, err
 	}
 
-	requestMap["FileMove"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["FileMove"] = func(req abstractRequest) (request, error) {
 		p := new(fileMoveRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -37,7 +37,7 @@ func initFileRequests() {
 		return p, err
 	}
 
-	requestMap["FileDelete"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["FileDelete"] = func(req abstractRequest) (request, error) {
 		p := new(fileDeleteRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -45,7 +45,7 @@ func initFileRequests() {
 		return p, err
 	}
 
-	requestMap["FileChange"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["FileChange"] = func(req abstractRequest) (request, error) {
 		p := new(fileChangeRequest)
 		p.abstractRequest = req
 		rawData := p.Data
@@ -53,7 +53,7 @@ func initFileRequests() {
 		return p, err
 	}
 
-	requestMap["FilePull"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["FilePull"] = func(req abstractRequest) (request, error) {
 		p := new(filePullRequest)
 		p.abstractRequest = req
 		rawData := p.Data
