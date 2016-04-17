@@ -1,8 +1,9 @@
 package datahandling
 
 import (
-	"testing"
 	"encoding/json"
+	"reflect"
+	"testing"
 )
 
 func TestGetRequestMap(t *testing.T) {
@@ -11,14 +12,18 @@ func TestGetRequestMap(t *testing.T) {
 	req.Resource = "Project"
 	req.Method = "Lookup"
 
-	req.Data = json.RawMessage("{\"ProjectIds\": [{\"ProjectId\" :12345}]}")
+	req.Data = json.RawMessage("{\"ProjectIds\": [12345, 38292]}")
 
 	newRequest, err := GetRequestMap(req)
-	if (err != nil) {
+	if err != nil {
 		t.Fatal(err)
 	}
-	err2 := newRequest.Process()
-	if (err2 != nil) {
-		t.Fatal("Dicks")
+
+	switch newRequest.(type) {
+	default:
+		t.Fatalf("newRequest is the wrong type, expected: *projectLookupRequest, actual: %s\n", reflect.TypeOf(newRequest))
+	case *projectLookupRequest:
+
 	}
+
 }

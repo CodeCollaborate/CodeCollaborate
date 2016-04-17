@@ -2,6 +2,7 @@ package datahandling
 
 import (
 	"encoding/json"
+
 	"github.com/CodeCollaborate/Server/utils"
 )
 
@@ -9,49 +10,63 @@ import (
  * Interfaces.go describes the structs and itnerfaces used in the data handling
  */
 
-// ProcessorInterface should be implemented by all request models.
-// Provides standard interface for calling the processing.
+// Request should be implemented by all request models.
+// Provides standard interface for calling the processing
 type Request interface {
-	Process() (err error)
+	Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error)
 }
 
-// Interface which defines the different data blocks
-type Data interface {
-	UnmarshalData(req *AbstractRequest)
-}
-
-// generic request type
+// AbstractRequest is the generic request type
 type AbstractRequest struct {
-	Tag uint64
-	Resource string
-	SenderId string
+	Tag         int64
+	Resource    string
+	SenderID    string
 	SenderToken string
-	Method string
-	Time uint64
-	Data json.RawMessage // date is a byte for now because we don't want it to unmarshal it yet
+	Method      string
+	Timestamp   int64
+	Data        json.RawMessage // date is a byte for now because we don't want it to unmarshal it yet
 }
 
-// testable parsing into abstractRequests
-func CreateAbstractRequest(jsony []byte) (req AbstractRequest, err error) {
+// CreateAbstractRequest is the testable parsing into abstractRequests
+func createAbstractRequest(jsony []byte) (req AbstractRequest, err error) {
 	err = json.Unmarshal(jsony, &req)
 	if err != nil {
 		utils.LogOnError(err, "Failed to parse json")
-		return
+		return req, err
 	}
-	return
+	return req, err
 }
 
-
-
-// Provides interfaces of messages sent from the server
-type ServerMessage interface {
-	Send()
+// ServerMessageWrapper provides interfaces of messages sent from the server
+// This section provides the struct definitions of server replies
+type ServerMessageWrapper struct {
+	Type          string
+	Timestamp     int64
+	ServerMessage serverMessage
 }
 
+type serverMessage interface {
+	serverMessageType() string
+}
+
+// Response is the type which is the server responses to the client
 type Response struct {
-
+	Tag    int64
+	Status int
+	Data   interface{}
 }
 
-type Notification struct {
+func (message Response) serverMessageType() string {
+	return "Response"
+}
 
+// Notification is the type which is the unprompted server messages to clients
+type Notification struct {
+	Resource string
+	Method   string
+	Data     interface{}
+}
+
+func (message Notification) serverMessageType() string {
+	return "Notification"
 }

@@ -2,6 +2,7 @@ package datahandling
 
 import (
 	"fmt"
+
 	"github.com/CodeCollaborate/Server/utils"
 )
 
@@ -18,13 +19,12 @@ type DataHandler struct {
 func (dh DataHandler) Handle(wsID uint64, messageType int, message []byte) error {
 	fmt.Printf("Handling Message: %s\n", message)
 
-	req, err := CreateAbstractRequest(message);
-	if (err != nil) {
+	req, err := createAbstractRequest(message)
+	if err != nil {
 		utils.LogOnError(err, "Failed to parse json")
 		return nil
 	}
 	fmt.Print(req)
-
 
 	return nil
 }
