@@ -12,12 +12,12 @@ import (
 // ProcessorInterface should be implemented by all request models.
 // Provides standard interface for calling the processing.
 type Request interface {
-	Process()
+	Process() (err error)
 }
 
 // Interface which defines the different data blocks
 type Data interface {
-	UnmarshalData()
+	UnmarshalData(req *AbstractRequest)
 }
 
 // generic request type
