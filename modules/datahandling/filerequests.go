@@ -74,6 +74,7 @@ type fileCreateRequest struct {
 }
 
 func (p fileCreateRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved file create request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -86,6 +87,7 @@ type fileRenameRequest struct {
 }
 
 func (p fileRenameRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved file rename request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -98,6 +100,7 @@ type fileMoveRequest struct {
 }
 
 func (p fileMoveRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved file move request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -109,6 +112,7 @@ type fileDeleteRequest struct {
 }
 
 func (p fileDeleteRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved file delete request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -121,6 +125,7 @@ type fileChangeRequest struct {
 }
 
 func (p fileChangeRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved file change request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -132,6 +137,7 @@ type filePullRequest struct {
 }
 
 func (p filePullRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved file pull request from %s\n", p.SenderID)
 	return nil, nil, nil
 }

@@ -49,7 +49,7 @@ func initProjectRequests() {
 	}
 
 	requestMap["ProjectRevokePermissions"] = func(req AbstractRequest) (Request, error) {
-		p := new(projectRevokePermissions)
+		p := new(projectRevokePermissionsRequest)
 		p.AbstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
@@ -57,7 +57,7 @@ func initProjectRequests() {
 	}
 
 	requestMap["ProjectGetOnlineClients"] = func(req AbstractRequest) (Request, error) {
-		p := new(projectGetOnlineClients)
+		p := new(projectGetOnlineClientsRequest)
 		p.AbstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
@@ -150,25 +150,25 @@ func (p projectGrantPermissionsRequest) Process() (response *ServerMessageWrappe
 }
 
 // Project.RevokePermissions
-type projectRevokePermissions struct {
+type projectRevokePermissionsRequest struct {
 	ProjectID      string
 	RevokeUsername string
 	AbstractRequest
 }
 
-func (p projectRevokePermissions) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p projectRevokePermissionsRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved project revoke permissions request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
 
 // Project.GetOnlineClients
-type projectGetOnlineClients struct {
+type projectGetOnlineClientsRequest struct {
 	ProjectID string
 	AbstractRequest
 }
 
-func (p projectGetOnlineClients) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p projectGetOnlineClientsRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 	return nil, nil, nil

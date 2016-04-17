@@ -59,6 +59,7 @@ type userRegisterRequest struct {
 }
 
 func (p userRegisterRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved register request from %s\n", p.Username)
 	return nil, nil, nil
 }
@@ -71,6 +72,7 @@ type userLoginRequest struct {
 }
 
 func (p userLoginRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved login request from %s\n", p.Username)
 	return nil, nil, nil
 }
@@ -82,6 +84,7 @@ type userLookupRequest struct {
 }
 
 func (p userLookupRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved user lookup request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -92,6 +95,7 @@ type userProjectsRequest struct {
 }
 
 func (p userProjectsRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+	// TODO
 	fmt.Printf("Recieved user projects request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
