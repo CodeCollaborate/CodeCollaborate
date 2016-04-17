@@ -4,7 +4,7 @@
 
 STATUS=0
 
-./CheckFormatting.sh
+./RunFormatter.sh
 
 STATUS=$(($STATUS + $?))
 
