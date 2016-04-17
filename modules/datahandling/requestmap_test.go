@@ -49,7 +49,7 @@ func TestUnauthenticatedRequest(t *testing.T) {
 	switch newRequest.(type) {
 	default:
 		t.Fatalf("newRequest is the wrong type, expected: *userRegiserRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *userRegiserRequest:
+	case *userRegisterRequest:
 
 	}
 }
