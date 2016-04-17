@@ -10,8 +10,8 @@ import (
 
 // map to lookup authenticated api functions
 // TODO rename to authenticatedRequestMap
-var requestMap = make(map[string](func(req AbstractRequest) (Request, error)))
-var unauthenticatedRequestMap = make(map[string](func(req AbstractRequest) (Request, error)))
+var requestMap = make(map[string](func(req abstractRequest) (request, error)))
+var unauthenticatedRequestMap = make(map[string](func(req abstractRequest) (request, error)))
 
 func init() {
 	initProjectRequests()
@@ -19,7 +19,7 @@ func init() {
 	initFileRequests()
 }
 
-func getFullRequest(req AbstractRequest) (Request, error) {
+func getFullRequest(req abstractRequest) (request, error) {
 	if req.SenderToken == "" {
 		// unauthenticated request
 		return unauthenticatedRequest(req)
@@ -33,7 +33,7 @@ func getFullRequest(req AbstractRequest) (Request, error) {
 }
 
 // authenticatedRequest returns fully parsed Request from the given authenticated AbstractRequest
-func authenticatedRequest(req AbstractRequest) (Request, error) {
+func authenticatedRequest(req abstractRequest) (request, error) {
 	constructor := requestMap[req.Resource+req.Method]
 	if constructor == nil {
 		err := errors.New("The function for the given request does not exist in the authenticated map.")
@@ -44,7 +44,7 @@ func authenticatedRequest(req AbstractRequest) (Request, error) {
 }
 
 // unauthenticatedRequest returns fully parsed Request from the given unauthenticated AbstractRequest
-func unauthenticatedRequest(req AbstractRequest) (Request, error) {
+func unauthenticatedRequest(req abstractRequest) (request, error) {
 	constructor := unauthenticatedRequestMap[req.Resource+req.Method]
 	if constructor == nil {
 		err := errors.New("The function for the given request does not exist in the unauthenticated map.")

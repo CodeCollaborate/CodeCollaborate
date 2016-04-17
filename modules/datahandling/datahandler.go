@@ -33,7 +33,7 @@ func (dh DataHandler) Handle(wsID uint64, messageType int, message []byte) error
 		return err
 	}
 
-	response, notification, err := fullR.Process()
+	response, notification, err := fullR.process()
 
 	if err != nil {
 		utils.LogOnError(err, "Failed to process request")
@@ -51,7 +51,7 @@ func (dh DataHandler) Handle(wsID uint64, messageType int, message []byte) error
 	return nil
 }
 
-func authenticate(abs AbstractRequest) bool {
+func authenticate(abs abstractRequest) bool {
 	// TODO: implement this
 	return true
 }

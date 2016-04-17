@@ -12,12 +12,12 @@ import (
 
 // Request should be implemented by all request models.
 // Provides standard interface for calling the processing
-type Request interface {
-	Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error)
+type request interface {
+	process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error)
 }
 
 // AbstractRequest is the generic request type
-type AbstractRequest struct {
+type abstractRequest struct {
 	Tag         int64
 	Resource    string
 	SenderID    string
@@ -28,7 +28,7 @@ type AbstractRequest struct {
 }
 
 // CreateAbstractRequest is the testable parsing into abstractRequests
-func createAbstractRequest(jsony []byte) (req AbstractRequest, err error) {
+func createAbstractRequest(jsony []byte) (req abstractRequest, err error) {
 	err = json.Unmarshal(jsony, &req)
 	if err != nil {
 		utils.LogOnError(err, "Failed to parse json")
@@ -39,7 +39,7 @@ func createAbstractRequest(jsony []byte) (req AbstractRequest, err error) {
 
 // ServerMessageWrapper provides interfaces of messages sent from the server
 // This section provides the struct definitions of server replies
-type ServerMessageWrapper struct {
+type serverMessageWrapper struct {
 	Type          string
 	Timestamp     int64
 	ServerMessage serverMessage
@@ -50,23 +50,23 @@ type serverMessage interface {
 }
 
 // Response is the type which is the server responses to the client
-type Response struct {
+type response struct {
 	Tag    int64
 	Status int
 	Data   interface{}
 }
 
-func (message Response) serverMessageType() string {
+func (message response) serverMessageType() string {
 	return "Response"
 }
 
 // Notification is the type which is the unprompted server messages to clients
-type Notification struct {
+type notification struct {
 	Resource string
 	Method   string
 	Data     interface{}
 }
 
-func (message Notification) serverMessageType() string {
+func (message notification) serverMessageType() string {
 	return "Notification"
 }

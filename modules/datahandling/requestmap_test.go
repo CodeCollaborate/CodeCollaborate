@@ -7,7 +7,7 @@ import (
 )
 
 func TestAuthenticatedGetRequestMap(t *testing.T) {
-	req := *new(AbstractRequest)
+	req := *new(abstractRequest)
 
 	req.Resource = "Project"
 	req.Method = "Lookup"
@@ -29,7 +29,7 @@ func TestAuthenticatedGetRequestMap(t *testing.T) {
 }
 
 func TestUnauthenticatedRequest(t *testing.T) {
-	req := *new(AbstractRequest)
+	req := *new(abstractRequest)
 	req.Resource = "User"
 	req.Method = "Register"
 

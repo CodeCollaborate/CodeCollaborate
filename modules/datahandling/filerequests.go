@@ -13,49 +13,49 @@ func initFileRequests() {
 		return
 	}
 
-	requestMap["FileCreate"] = func(req AbstractRequest) (Request, error) {
+	requestMap["FileCreate"] = func(req abstractRequest) (request, error) {
 		p := new(fileCreateRequest)
-		p.AbstractRequest = req
+		p.abstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
 		return p, err
 	}
 
-	requestMap["FileRename"] = func(req AbstractRequest) (Request, error) {
+	requestMap["FileRename"] = func(req abstractRequest) (request, error) {
 		p := new(fileRenameRequest)
-		p.AbstractRequest = req
+		p.abstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
 		return p, err
 	}
 
-	requestMap["FileMove"] = func(req AbstractRequest) (Request, error) {
+	requestMap["FileMove"] = func(req abstractRequest) (request, error) {
 		p := new(fileMoveRequest)
-		p.AbstractRequest = req
+		p.abstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
 		return p, err
 	}
 
-	requestMap["FileDelete"] = func(req AbstractRequest) (Request, error) {
+	requestMap["FileDelete"] = func(req abstractRequest) (request, error) {
 		p := new(fileDeleteRequest)
-		p.AbstractRequest = req
+		p.abstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
 		return p, err
 	}
 
-	requestMap["FileChange"] = func(req AbstractRequest) (Request, error) {
+	requestMap["FileChange"] = func(req abstractRequest) (request, error) {
 		p := new(fileChangeRequest)
-		p.AbstractRequest = req
+		p.abstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
 		return p, err
 	}
 
-	requestMap["FilePull"] = func(req AbstractRequest) (Request, error) {
+	requestMap["FilePull"] = func(req abstractRequest) (request, error) {
 		p := new(filePullRequest)
-		p.AbstractRequest = req
+		p.abstractRequest = req
 		rawData := p.Data
 		err := json.Unmarshal(rawData, &p)
 		return p, err
@@ -70,10 +70,10 @@ type fileCreateRequest struct {
 	RelativePath string
 	ProjectID    string
 	FileBytes    []byte
-	AbstractRequest
+	abstractRequest
 }
 
-func (p fileCreateRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p fileCreateRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved file create request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -83,10 +83,10 @@ func (p fileCreateRequest) Process() (response *ServerMessageWrapper, notificati
 type fileRenameRequest struct {
 	FileID  string
 	NewName string
-	AbstractRequest
+	abstractRequest
 }
 
-func (p fileRenameRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p fileRenameRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved file rename request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -96,10 +96,10 @@ func (p fileRenameRequest) Process() (response *ServerMessageWrapper, notificati
 type fileMoveRequest struct {
 	FileID  string
 	NewPath string
-	AbstractRequest
+	abstractRequest
 }
 
-func (p fileMoveRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p fileMoveRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved file move request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -108,10 +108,10 @@ func (p fileMoveRequest) Process() (response *ServerMessageWrapper, notification
 // File.Delete
 type fileDeleteRequest struct {
 	FileID string
-	AbstractRequest
+	abstractRequest
 }
 
-func (p fileDeleteRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p fileDeleteRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved file delete request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -121,10 +121,10 @@ func (p fileDeleteRequest) Process() (response *ServerMessageWrapper, notificati
 type fileChangeRequest struct {
 	FileID  string
 	Changes []string
-	AbstractRequest
+	abstractRequest
 }
 
-func (p fileChangeRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p fileChangeRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved file change request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -133,10 +133,10 @@ func (p fileChangeRequest) Process() (response *ServerMessageWrapper, notificati
 // File.Pull
 type filePullRequest struct {
 	FileID string
-	AbstractRequest
+	abstractRequest
 }
 
-func (p filePullRequest) Process() (response *ServerMessageWrapper, notification *ServerMessageWrapper, err error) {
+func (p filePullRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved file pull request from %s\n", p.SenderID)
 	return nil, nil, nil

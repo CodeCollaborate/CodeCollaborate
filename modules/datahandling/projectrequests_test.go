@@ -7,7 +7,7 @@ import (
 )
 
 func TestProjectLookupRequest_Process(t *testing.T) {
-	req := *new(AbstractRequest)
+	req := *new(abstractRequest)
 
 	req.Resource = "Project"
 	req.Method = "Lookup"
@@ -20,7 +20,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	response, notification, err2 := newRequest.Process()
+	response, notification, err2 := newRequest.process()
 	if err2 != nil {
 		t.Fatal(err2)
 	}
