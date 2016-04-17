@@ -11,10 +11,11 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 
 	req.Resource = "Project"
 	req.Method = "Lookup"
+	req.SenderToken = "supersecure"
 
 	req.Data = json.RawMessage("{\"ProjectIds\": [12345, 38292]}")
 
-	newRequest, err := GetRequestMap(req)
+	newRequest, err := getFullRequest(req)
 	if err != nil {
 		t.Fatal(err)
 	}
