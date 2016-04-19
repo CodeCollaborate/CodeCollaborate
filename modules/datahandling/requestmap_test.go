@@ -14,7 +14,7 @@ func TestAuthenticatedGetRequestMap(t *testing.T) {
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{\"ProjectIds\": [12345, 38292]}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestUnauthenticatedRequest(t *testing.T) {
 			"\"Password\":\"correct horse battery staple\"" +
 			"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}

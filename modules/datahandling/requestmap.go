@@ -9,10 +9,10 @@ import (
  */
 
 // map to lookup authenticated api functions
-var authenticatedRequestMap = make(map[string](func(req abstractRequest) (request, error)))
+var authenticatedRequestMap = make(map[string](func(req *abstractRequest) (request, error)))
 
 // map to lookup unauthenticated api functions
-var unauthenticatedRequestMap = make(map[string](func(req abstractRequest) (request, error)))
+var unauthenticatedRequestMap = make(map[string](func(req *abstractRequest) (request, error)))
 
 func init() {
 	initProjectRequests()
@@ -20,13 +20,13 @@ func init() {
 	initFileRequests()
 }
 
-func getFullRequest(req abstractRequest) (request, error) {
-	if req.SenderToken == "" {
+func getFullRequest(req *abstractRequest) (request, error) {
+	if (*req).SenderToken == "" {
 		// unauthenticated request
 		return unauthenticatedRequest(req)
 	}
 	// authenticated request
-	if authenticate(req) {
+	if authenticate(*req) {
 		return authenticatedRequest(req)
 	}
 
@@ -34,8 +34,8 @@ func getFullRequest(req abstractRequest) (request, error) {
 }
 
 // authenticatedRequest returns fully parsed Request from the given authenticated AbstractRequest
-func authenticatedRequest(req abstractRequest) (request, error) {
-	constructor := authenticatedRequestMap[req.Resource+"."+req.Method]
+func authenticatedRequest(req *abstractRequest) (request, error) {
+	constructor := authenticatedRequestMap[(*req).Resource+"."+(*req).Method]
 	if constructor == nil {
 		err := errors.New("The function for the given request does not exist in the authenticated map.")
 		return nil, err
@@ -45,8 +45,8 @@ func authenticatedRequest(req abstractRequest) (request, error) {
 }
 
 // unauthenticatedRequest returns fully parsed Request from the given unauthenticated AbstractRequest
-func unauthenticatedRequest(req abstractRequest) (request, error) {
-	constructor := unauthenticatedRequestMap[req.Resource+"."+req.Method]
+func unauthenticatedRequest(req *abstractRequest) (request, error) {
+	constructor := unauthenticatedRequestMap[(*req).Resource+"."+(*req).Method]
 	if constructor == nil {
 		err := errors.New("The function for the given request does not exist in the unauthenticated map.")
 		return nil, err

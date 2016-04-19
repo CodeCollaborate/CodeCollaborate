@@ -12,27 +12,27 @@ func initFileRequests() {
 		return
 	}
 
-	authenticatedRequestMap["File.Create"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["File.Create"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(fileCreateRequest), req)
 	}
 
-	authenticatedRequestMap["File.Rename"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["File.Rename"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(fileRenameRequest), req)
 	}
 
-	authenticatedRequestMap["File.Move"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["File.Move"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(fileMoveRequest), req)
 	}
 
-	authenticatedRequestMap["File.Delete"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["File.Delete"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(fileDeleteRequest), req)
 	}
 
-	authenticatedRequestMap["File.Change"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["File.Change"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(fileChangeRequest), req)
 	}
 
-	authenticatedRequestMap["File.Pull"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["File.Pull"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(filePullRequest), req)
 	}
 
@@ -48,8 +48,8 @@ type fileCreateRequest struct {
 	abstractRequest
 }
 
-func (f *fileCreateRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *fileCreateRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p fileCreateRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -65,8 +65,8 @@ type fileRenameRequest struct {
 	abstractRequest
 }
 
-func (f *fileRenameRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *fileRenameRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p fileRenameRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -82,8 +82,8 @@ type fileMoveRequest struct {
 	abstractRequest
 }
 
-func (f *fileMoveRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *fileMoveRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p fileMoveRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -98,8 +98,8 @@ type fileDeleteRequest struct {
 	abstractRequest
 }
 
-func (f *fileDeleteRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *fileDeleteRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p fileDeleteRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -115,8 +115,8 @@ type fileChangeRequest struct {
 	abstractRequest
 }
 
-func (f *fileChangeRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *fileChangeRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p fileChangeRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -131,8 +131,8 @@ type filePullRequest struct {
 	abstractRequest
 }
 
-func (f *filePullRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *filePullRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p filePullRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {

@@ -12,43 +12,43 @@ func initProjectRequests() {
 		return
 	}
 
-	authenticatedRequestMap["Project.Create"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.Create"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectCreateRequest), req)
 	}
 
-	authenticatedRequestMap["Project.Rename"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.Rename"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectRenameRequest), req)
 	}
 
-	authenticatedRequestMap["Project.GetPermissionsConstants"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.GetPermissionsConstants"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectGetPermissionConstantsRequest), req)
 	}
 
-	authenticatedRequestMap["Project.GrantPermissions"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.GrantPermissions"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectGrantPermissionsRequest), req)
 	}
 
-	authenticatedRequestMap["Project.RevokePermissions"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.RevokePermissions"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectRevokePermissionsRequest), req)
 	}
 
-	authenticatedRequestMap["Project.GetOnlineClients"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.GetOnlineClients"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectGetOnlineClientsRequest), req)
 	}
 
-	authenticatedRequestMap["Project.Lookup"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.Lookup"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectLookupRequest), req)
 	}
 
-	authenticatedRequestMap["Project.GetFiles"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.GetFiles"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectLookupRequest), req)
 	}
 
-	authenticatedRequestMap["Project.Subscribe"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.Subscribe"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectSubscribeRequest), req)
 	}
 
-	authenticatedRequestMap["Project.Delete"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.Delete"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(projectDeleteRequest), req)
 	}
 
@@ -61,8 +61,8 @@ type projectCreateRequest struct {
 	abstractRequest
 }
 
-func (p *projectCreateRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 func (p projectCreateRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -78,8 +78,8 @@ type projectRenameRequest struct {
 	abstractRequest
 }
 
-func (p *projectRenameRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 func (p projectRenameRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -93,8 +93,8 @@ type projectGetPermissionConstantsRequest struct {
 	abstractRequest
 }
 
-func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 func (p projectGetPermissionConstantsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -117,8 +117,8 @@ func (p projectGrantPermissionsRequest) process() (response *serverMessageWrappe
 	return nil, nil, nil
 }
 
-func (p *projectGrantPermissionsRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 // Project.RevokePermissions
@@ -134,8 +134,8 @@ func (p projectRevokePermissionsRequest) process() (response *serverMessageWrapp
 	return nil, nil, nil
 }
 
-func (p *projectRevokePermissionsRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 // Project.GetOnlineClients
@@ -150,8 +150,8 @@ func (p projectGetOnlineClientsRequest) process() (response *serverMessageWrappe
 	return nil, nil, nil
 }
 
-func (p *projectGetOnlineClientsRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectGetOnlineClientsRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 // Project.Lookup
@@ -166,8 +166,8 @@ func (p projectLookupRequest) process() (response *serverMessageWrapper, notific
 	return nil, nil, nil
 }
 
-func (p *projectLookupRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectLookupRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 // Project.GetFiles
@@ -182,8 +182,8 @@ func (p projectGetFilesRequest) process() (response *serverMessageWrapper, notif
 	return nil, nil, nil
 }
 
-func (p *projectGetFilesRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectGetFilesRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 // Project.Subscribe
@@ -198,8 +198,8 @@ func (p projectSubscribeRequest) process() (response *serverMessageWrapper, noti
 	return nil, nil, nil
 }
 
-func (p *projectSubscribeRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectSubscribeRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 // Project.Delete
@@ -214,8 +214,8 @@ func (p projectDeleteRequest) process() (response *serverMessageWrapper, notific
 	return nil, nil, nil
 }
 
-func (p *projectDeleteRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
+func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
 }
 
 
