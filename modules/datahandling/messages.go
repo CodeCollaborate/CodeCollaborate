@@ -14,6 +14,7 @@ import (
 // Provides standard interface for calling the processing
 type request interface {
 	process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error)
+	setAbstractRequest(absReq abstractRequest)
 }
 
 // AbstractRequest is the generic request type
@@ -34,6 +35,13 @@ func createAbstractRequest(jsony []byte) (req abstractRequest, err error) {
 		utils.LogOnError(err, "Failed to parse json")
 		return req, err
 	}
+	return req, err
+}
+
+func commonJson(req request, absReq abstractRequest) (request, error){
+	req.setAbstractRequest(absReq)
+	rawData := absReq.Data
+	err := json.Unmarshal(rawData, &req)
 	return req, err
 }
 
