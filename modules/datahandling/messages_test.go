@@ -4,16 +4,15 @@ import (
 	"testing"
 )
 
-var testJSON = []byte(
-	"{\"Tag\":12345, " +
-		"\"Resource\":\"Project\", " +
-		"\"Method\":\"Lookup\", " +
-		"\"SenderID\":\"loganga\", " +
-		"\"SenderToken\":\"test\", " +
-		"\"Timestamp\":1460839273, " +
-		"\"Data\":{\"ProjectIds\": [{\"ProjectId\" :12345}]}}")
-
-func TestCreateAbstractRequest(t *testing.T) {
+func TestCreateValidAbstractRequest(t *testing.T) {
+	var testJSON = []byte(
+		"{\"Tag\":12345, " +
+			"\"Resource\":\"Project\", " +
+			"\"Method\":\"Lookup\", " +
+			"\"SenderID\":\"loganga\", " +
+			"\"SenderToken\":\"test\", " +
+			"\"Timestamp\":1460839273, " +
+			"\"Data\":{\"ProjectIds\": [{\"ProjectId\" :12345}]}}")
 	req, err := createAbstractRequest(testJSON)
 	if err != nil {
 		t.Fatal(err)
@@ -38,5 +37,42 @@ func TestCreateAbstractRequest(t *testing.T) {
 	}
 	if req.Data == nil {
 		t.Fail()
+	}
+}
+
+func TestMalformedJSON(t *testing.T) {
+	var testJSON = []byte(
+		"{\"Tag\":12345, " +
+			"\"Resource\":\"Project\", " +
+			"/" +
+			"\"Method\":\"Lookup\", " +
+			"\"SenderID\":\"loganga\", " +
+			"\"SenderToken\":\"test\", " +
+			"\"Timestamp\":1460839273, " +
+			"\"Data\":{\"ProjectIds\": [{\"ProjectId\" :12345}]}}")
+	req, err := createAbstractRequest(testJSON)
+	if err == nil {
+		t.Fatal("Failed to catch malformed JSON")
+	}
+	if req != nil {
+		t.Fatal(req)
+	}
+}
+
+func TestInvalidJSONInnerType(t *testing.T) {
+	var testJSON = []byte(
+		"{\"Tag\":\"mytag\", " + // this is the bad type
+			"\"Resource\":\"Project\", " +
+			"\"Method\":\"Lookup\", " +
+			"\"SenderID\":\"loganga\", " +
+			"\"SenderToken\":\"test\", " +
+			"\"Timestamp\":1460839273, " +
+			"\"Data\":{\"ProjectIds\": [{\"ProjectId\" :12345}]}}")
+	req, err := createAbstractRequest(testJSON)
+	if err == nil {
+		t.Fatal("Failed to catch invalid type of Tag")
+	}
+	if req != nil {
+		t.Fatal(req)
 	}
 }
