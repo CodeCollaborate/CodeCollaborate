@@ -33,7 +33,7 @@ func createAbstractRequest(jsony []byte) (req *abstractRequest, err error) {
 	err = json.Unmarshal(jsony, &req)
 	if err != nil {
 		utils.LogOnError(err, "Failed to parse json")
-		return req, err
+		return nil, err
 	}
 	return req, err
 }
