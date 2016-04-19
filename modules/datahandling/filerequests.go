@@ -43,7 +43,7 @@ func initFileRequests() {
 type fileCreateRequest struct {
 	Name         string
 	RelativePath string
-	ProjectID    string
+	ProjectID    int64
 	FileBytes    []byte
 	abstractRequest
 }
@@ -60,7 +60,7 @@ func (p fileCreateRequest) process() (response *serverMessageWrapper, notificati
 
 // File.Rename
 type fileRenameRequest struct {
-	FileID  string
+	FileID  int64
 	NewName string
 	abstractRequest
 }
@@ -77,7 +77,7 @@ func (p fileRenameRequest) process() (response *serverMessageWrapper, notificati
 
 // File.Move
 type fileMoveRequest struct {
-	FileID  string
+	FileID  int64
 	NewPath string
 	abstractRequest
 }
@@ -94,7 +94,7 @@ func (p fileMoveRequest) process() (response *serverMessageWrapper, notification
 
 // File.Delete
 type fileDeleteRequest struct {
-	FileID string
+	FileID int64
 	abstractRequest
 }
 
@@ -110,7 +110,7 @@ func (p fileDeleteRequest) process() (response *serverMessageWrapper, notificati
 
 // File.Change
 type fileChangeRequest struct {
-	FileID  string
+	FileID  int64
 	Changes []string
 	abstractRequest
 }
@@ -127,7 +127,7 @@ func (p fileChangeRequest) process() (response *serverMessageWrapper, notificati
 
 // File.Pull
 type filePullRequest struct {
-	FileID string
+	FileID int64
 	abstractRequest
 }
 

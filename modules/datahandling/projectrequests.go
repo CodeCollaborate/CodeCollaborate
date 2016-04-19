@@ -41,7 +41,7 @@ func initProjectRequests() {
 	}
 
 	authenticatedRequestMap["Project.GetFiles"] = func(req abstractRequest) (request, error) {
-		return commonJson(new(projectLookupRequest), req)
+		return commonJson(new(projectGetFilesRequest), req)
 	}
 
 	authenticatedRequestMap["Project.Subscribe"] = func(req abstractRequest) (request, error) {
@@ -73,7 +73,7 @@ func (p projectCreateRequest) process() (response *serverMessageWrapper, notific
 
 // Project.Rename
 type projectRenameRequest struct {
-	ProjectID string
+	ProjectID int64
 	NewName   string
 	abstractRequest
 }
@@ -105,7 +105,7 @@ func (p projectGetPermissionConstantsRequest) process() (response *serverMessage
 
 // Project.GrantPermissions
 type projectGrantPermissionsRequest struct {
-	ProjectID       string
+	ProjectID       int64
 	GrantUsername   string
 	PermissionLevel int
 	abstractRequest
@@ -123,7 +123,7 @@ func (p *projectGrantPermissionsRequest) setAbstractRequest(req abstractRequest)
 
 // Project.RevokePermissions
 type projectRevokePermissionsRequest struct {
-	ProjectID      string
+	ProjectID      int64
 	RevokeUsername string
 	abstractRequest
 }
@@ -140,7 +140,7 @@ func (p *projectRevokePermissionsRequest) setAbstractRequest(req abstractRequest
 
 // Project.GetOnlineClients
 type projectGetOnlineClientsRequest struct {
-	ProjectID string
+	ProjectID int64
 	abstractRequest
 }
 
@@ -172,7 +172,7 @@ func (p *projectLookupRequest) setAbstractRequest(req abstractRequest) {
 
 // Project.GetFiles
 type projectGetFilesRequest struct {
-	ProjectID string
+	ProjectID int64
 	abstractRequest
 }
 
@@ -188,7 +188,7 @@ func (p *projectGetFilesRequest) setAbstractRequest(req abstractRequest) {
 
 // Project.Subscribe
 type projectSubscribeRequest struct {
-	ProjectID string
+	ProjectID int64
 	abstractRequest
 }
 
@@ -204,7 +204,7 @@ func (p *projectSubscribeRequest) setAbstractRequest(req abstractRequest) {
 
 // Project.Delete
 type projectDeleteRequest struct {
-	ProjectID string
+	ProjectID int64
 	abstractRequest
 }
 

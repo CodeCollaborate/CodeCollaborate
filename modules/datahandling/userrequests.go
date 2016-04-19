@@ -70,7 +70,7 @@ func (p userLoginRequest) process() (response *serverMessageWrapper, notificatio
 
 // User.Lookup
 type userLookupRequest struct {
-	Usernames []int64
+	Usernames []string
 	abstractRequest
 }
 
