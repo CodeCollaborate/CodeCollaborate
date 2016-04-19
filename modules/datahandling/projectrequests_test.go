@@ -16,7 +16,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 
 	req.Data = json.RawMessage("{\"ProjectIds\": [12345, 38292]}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}

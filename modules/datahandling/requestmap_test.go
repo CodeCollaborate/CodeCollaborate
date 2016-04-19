@@ -18,7 +18,7 @@ func TestProjectCreateRequest(t *testing.T)	{
 		"\"Name\": \"Namey\"" +
 		"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestProjectRenameRequest(t *testing.T)	{
 	"\"ProjectID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestProjectGetPermissionConstantsRequest(t *testing.T)	{
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestProjectGrantPermissionsRequest(t *testing.T)	{
 	"\"PermissionLevel\": 1" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestProjectRevokePermissionsRequest(t *testing.T)	{
 	"\"RevokeUsername\": \"loganga\"" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestProjectGetOnlineClientsRequest(t *testing.T)	{
 	"\"ProjectID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestProjectLookupRequest(t *testing.T) {
 	req.Method = "Lookup"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{\"ProjectIds\": [12345, 38292]}")
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +171,7 @@ func TestProjectGetFilesRequest(t *testing.T)	{
 	"\"ProjectID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestProjectSubscribeRequest(t *testing.T)	{
 	"\"ProjectID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +215,7 @@ func TestProjectDeleteRequest(t *testing.T)	{
 	"\"ProjectID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func TestFileCreateRequest(t *testing.T)	{
 	"\"FileBytes\": [2]" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +265,7 @@ func TestFileRenameRequest(t *testing.T)	{
 	"\"FileID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +288,7 @@ func TestFileMoveRequest(t *testing.T)	{
 	"\"FileID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -310,7 +310,7 @@ func TestFileDeleteRequest(t *testing.T)	{
 	"\"FileID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,7 +333,7 @@ func TestFileChangeRequest(t *testing.T)	{
 	"\"Changes\": [\"ok\", \"k\"]" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -355,7 +355,7 @@ func TestFilePullRequest(t *testing.T)	{
 	"\"FileID\": 12345" +
 	"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -378,7 +378,7 @@ func TestUserLookupRequest(t *testing.T) {
 	req.Data = json.RawMessage(
 		"{\"Usernames\": [\"jshap70\"]" +
 		"}")
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -397,7 +397,7 @@ func TestUserProjectsRequest(t *testing.T) {
 	req.Method = "Projects"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{}")
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -423,7 +423,7 @@ func TestUserRegisterRequest(t *testing.T) {
 			"\"Password\":\"correct horse battery staple\"" +
 			"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -445,7 +445,7 @@ func TestUserLoginRequest(t *testing.T) {
 		"\"Password\":\"correct horse battery staple\"" +
 		"}")
 
-	newRequest, err := getFullRequest(req)
+	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
 	}

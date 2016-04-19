@@ -12,19 +12,19 @@ func initUserRequests() {
 		return
 	}
 
-	unauthenticatedRequestMap["User.Register"] = func(req abstractRequest) (request, error) {
+	unauthenticatedRequestMap["User.Register"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(userRegisterRequest), req)
 	}
 
-	unauthenticatedRequestMap["User.Login"] = func(req abstractRequest) (request, error) {
+	unauthenticatedRequestMap["User.Login"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(userLoginRequest), req)
 	}
 
-	authenticatedRequestMap["User.Lookup"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["User.Lookup"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(userLookupRequest), req)
 	}
 
-	authenticatedRequestMap["User.Projects"] = func(req abstractRequest) (request, error) {
+	authenticatedRequestMap["User.Projects"] = func(req *abstractRequest) (request, error) {
 		return commonJson(new(userProjectsRequest), req)
 	}
 
@@ -41,8 +41,8 @@ type userRegisterRequest struct {
 	abstractRequest
 }
 
-func (f *userRegisterRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *userRegisterRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p userRegisterRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -58,8 +58,8 @@ type userLoginRequest struct {
 	abstractRequest
 }
 
-func (f *userLoginRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *userLoginRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p userLoginRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -74,8 +74,8 @@ type userLookupRequest struct {
 	abstractRequest
 }
 
-func (f *userLookupRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *userLookupRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p userLookupRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -89,8 +89,8 @@ type userProjectsRequest struct {
 	abstractRequest
 }
 
-func (f *userProjectsRequest)setAbstractRequest(req abstractRequest) {
-	f.abstractRequest = req
+func (f *userProjectsRequest)setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
 }
 
 func (p userProjectsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
