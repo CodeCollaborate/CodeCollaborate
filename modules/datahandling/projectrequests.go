@@ -1,7 +1,6 @@
 package datahandling
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
@@ -13,87 +12,44 @@ func initProjectRequests() {
 		return
 	}
 
-	// This isn't an ideal way of populating the map since there is so much duplicate code, but extracting this
-	// requires some kind of restructuring of the request hierarchy, which can come later because we can't come up
-	// with an obvious way to do it.
-	authenticatedRequestMap["ProjectCreateRequest"] = func(req abstractRequest) (request, error) {
-		p := new(projectCreateRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.Create"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectCreateRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectRename"] = func(req abstractRequest) (request, error) {
-		p := new(projectRenameRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.Rename"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectRenameRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectGetPermissionsConstants"] = func(req abstractRequest) (request, error) {
-		p := new(projectGetPermissionConstantsRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.GetPermissionsConstants"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectGetPermissionConstantsRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectGrantPermissions"] = func(req abstractRequest) (request, error) {
-		p := new(projectGrantPermissionsRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.GrantPermissions"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectGrantPermissionsRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectRevokePermissions"] = func(req abstractRequest) (request, error) {
-		p := new(projectRevokePermissionsRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.RevokePermissions"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectRevokePermissionsRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectGetOnlineClients"] = func(req abstractRequest) (request, error) {
-		p := new(projectGetOnlineClientsRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.GetOnlineClients"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectGetOnlineClientsRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectLookup"] = func(req abstractRequest) (request, error) {
-		p := new(projectLookupRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.Lookup"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectLookupRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectGetFiles"] = func(req abstractRequest) (request, error) {
-		p := new(projectGetFilesRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.GetFiles"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectLookupRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectSubscribe"] = func(req abstractRequest) (request, error) {
-		p := new(projectSubscribeRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.Subscribe"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectSubscribeRequest), req)
 	}
 
-	authenticatedRequestMap["ProjectDelete"] = func(req abstractRequest) (request, error) {
-		p := new(projectDeleteRequest)
-		p.abstractRequest = req
-		rawData := p.Data
-		err := json.Unmarshal(rawData, &p)
-		return p, err
+	authenticatedRequestMap["Project.Delete"] = func(req abstractRequest) (request, error) {
+		return commonJson(new(projectDeleteRequest), req)
 	}
 
 	projectRequestsSetup = true
@@ -103,6 +59,10 @@ func initProjectRequests() {
 type projectCreateRequest struct {
 	Name string
 	abstractRequest
+}
+
+func (p projectCreateRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
 }
 
 func (p projectCreateRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
@@ -124,6 +84,10 @@ func (p projectRenameRequest) process() (response *serverMessageWrapper, notific
 	return nil, nil, nil
 }
 
+func (p projectRenameRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
+}
+
 // Project.GetPermissionConstants
 type projectGetPermissionConstantsRequest struct {
 	abstractRequest
@@ -133,6 +97,10 @@ func (p projectGetPermissionConstantsRequest) process() (response *serverMessage
 	// TODO
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	return nil, nil, nil
+}
+
+func (p projectGetPermissionConstantsRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
 }
 
 // Project.GrantPermissions
@@ -149,6 +117,10 @@ func (p projectGrantPermissionsRequest) process() (response *serverMessageWrappe
 	return nil, nil, nil
 }
 
+func (p projectGrantPermissionsRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
+}
+
 // Project.RevokePermissions
 type projectRevokePermissionsRequest struct {
 	ProjectID      string
@@ -160,6 +132,10 @@ func (p projectRevokePermissionsRequest) process() (response *serverMessageWrapp
 	// TODO
 	fmt.Printf("Recieved project revoke permissions request from %s\n", p.SenderID)
 	return nil, nil, nil
+}
+
+func (p projectRevokePermissionsRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
 }
 
 // Project.GetOnlineClients
@@ -174,6 +150,10 @@ func (p projectGetOnlineClientsRequest) process() (response *serverMessageWrappe
 	return nil, nil, nil
 }
 
+func (p projectGetOnlineClientsRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
+}
+
 // Project.Lookup
 type projectLookupRequest struct {
 	ProjectIDs []int64
@@ -184,6 +164,10 @@ func (p projectLookupRequest) process() (response *serverMessageWrapper, notific
 	// TODO
 	fmt.Printf("Recieved project lookup request from %s\n", p.SenderID)
 	return nil, nil, nil
+}
+
+func (p projectLookupRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
 }
 
 // Project.GetFiles
@@ -198,6 +182,10 @@ func (p projectGetFilesRequest) process() (response *serverMessageWrapper, notif
 	return nil, nil, nil
 }
 
+func (p projectGetFilesRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
+}
+
 // Project.Subscribe
 type projectSubscribeRequest struct {
 	ProjectID string
@@ -208,6 +196,10 @@ func (p projectSubscribeRequest) process() (response *serverMessageWrapper, noti
 	// TODO
 	fmt.Printf("Recieved project subscribe request from %s\n", p.SenderID)
 	return nil, nil, nil
+}
+
+func (p projectSubscribeRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
 }
 
 // Project.Delete
@@ -221,3 +213,11 @@ func (p projectDeleteRequest) process() (response *serverMessageWrapper, notific
 	fmt.Printf("Recieved project delete request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
+
+func (p projectDeleteRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
+}
+
+
+
+
