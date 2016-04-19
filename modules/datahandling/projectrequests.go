@@ -61,7 +61,7 @@ type projectCreateRequest struct {
 	abstractRequest
 }
 
-func (p projectCreateRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectCreateRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 
@@ -78,14 +78,14 @@ type projectRenameRequest struct {
 	abstractRequest
 }
 
+func (p *projectRenameRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
+}
+
 func (p projectRenameRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved project rename request from %s\n", p.SenderID)
 	return nil, nil, nil
-}
-
-func (p projectRenameRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
 }
 
 // Project.GetPermissionConstants
@@ -93,14 +93,14 @@ type projectGetPermissionConstantsRequest struct {
 	abstractRequest
 }
 
+func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req abstractRequest) {
+	p.abstractRequest = req
+}
+
 func (p projectGetPermissionConstantsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	return nil, nil, nil
-}
-
-func (p projectGetPermissionConstantsRequest) setAbstractRequest(req abstractRequest) {
-	p.abstractRequest = req
 }
 
 // Project.GrantPermissions
@@ -117,7 +117,7 @@ func (p projectGrantPermissionsRequest) process() (response *serverMessageWrappe
 	return nil, nil, nil
 }
 
-func (p projectGrantPermissionsRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectGrantPermissionsRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 
@@ -134,7 +134,7 @@ func (p projectRevokePermissionsRequest) process() (response *serverMessageWrapp
 	return nil, nil, nil
 }
 
-func (p projectRevokePermissionsRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectRevokePermissionsRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 
@@ -150,7 +150,7 @@ func (p projectGetOnlineClientsRequest) process() (response *serverMessageWrappe
 	return nil, nil, nil
 }
 
-func (p projectGetOnlineClientsRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectGetOnlineClientsRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 
@@ -166,7 +166,7 @@ func (p projectLookupRequest) process() (response *serverMessageWrapper, notific
 	return nil, nil, nil
 }
 
-func (p projectLookupRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectLookupRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 
@@ -182,7 +182,7 @@ func (p projectGetFilesRequest) process() (response *serverMessageWrapper, notif
 	return nil, nil, nil
 }
 
-func (p projectGetFilesRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectGetFilesRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 
@@ -198,7 +198,7 @@ func (p projectSubscribeRequest) process() (response *serverMessageWrapper, noti
 	return nil, nil, nil
 }
 
-func (p projectSubscribeRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectSubscribeRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 
@@ -214,7 +214,7 @@ func (p projectDeleteRequest) process() (response *serverMessageWrapper, notific
 	return nil, nil, nil
 }
 
-func (p projectDeleteRequest) setAbstractRequest(req abstractRequest) {
+func (p *projectDeleteRequest) setAbstractRequest(req abstractRequest) {
 	p.abstractRequest = req
 }
 

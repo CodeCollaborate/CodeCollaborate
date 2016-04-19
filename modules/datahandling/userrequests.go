@@ -41,7 +41,7 @@ type userRegisterRequest struct {
 	abstractRequest
 }
 
-func (f userRegisterRequest)setAbstractRequest(req abstractRequest) {
+func (f *userRegisterRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -58,7 +58,7 @@ type userLoginRequest struct {
 	abstractRequest
 }
 
-func (f userLoginRequest)setAbstractRequest(req abstractRequest) {
+func (f *userLoginRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -74,7 +74,7 @@ type userLookupRequest struct {
 	abstractRequest
 }
 
-func (f userLookupRequest)setAbstractRequest(req abstractRequest) {
+func (f *userLookupRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -89,7 +89,7 @@ type userProjectsRequest struct {
 	abstractRequest
 }
 
-func (f userProjectsRequest)setAbstractRequest(req abstractRequest) {
+func (f *userProjectsRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 

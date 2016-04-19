@@ -48,7 +48,7 @@ type fileCreateRequest struct {
 	abstractRequest
 }
 
-func (f fileCreateRequest)setAbstractRequest(req abstractRequest) {
+func (f *fileCreateRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -65,7 +65,7 @@ type fileRenameRequest struct {
 	abstractRequest
 }
 
-func (f fileRenameRequest)setAbstractRequest(req abstractRequest) {
+func (f *fileRenameRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -82,7 +82,7 @@ type fileMoveRequest struct {
 	abstractRequest
 }
 
-func (f fileMoveRequest)setAbstractRequest(req abstractRequest) {
+func (f *fileMoveRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -98,7 +98,7 @@ type fileDeleteRequest struct {
 	abstractRequest
 }
 
-func (f fileDeleteRequest)setAbstractRequest(req abstractRequest) {
+func (f *fileDeleteRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -115,7 +115,7 @@ type fileChangeRequest struct {
 	abstractRequest
 }
 
-func (f fileChangeRequest)setAbstractRequest(req abstractRequest) {
+func (f *fileChangeRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 
@@ -131,7 +131,7 @@ type filePullRequest struct {
 	abstractRequest
 }
 
-func (f filePullRequest)setAbstractRequest(req abstractRequest) {
+func (f *filePullRequest)setAbstractRequest(req abstractRequest) {
 	f.abstractRequest = req
 }
 

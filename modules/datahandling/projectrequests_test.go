@@ -9,6 +9,7 @@ import (
 func TestProjectLookupRequest_Process(t *testing.T) {
 	req := *new(abstractRequest)
 
+	req.SenderID = "loganga"
 	req.Resource = "Project"
 	req.Method = "Lookup"
 	req.SenderToken = "supersecure"
@@ -26,7 +27,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 	}
 
 	if response == nil || notification == nil {
-		t.SkipNow() // added April 17, 2016
+		// TODO: check if process worked
 		fmt.Println("unimplemented response and notification logic!")
 	}
 }
