@@ -38,7 +38,7 @@ func createAbstractRequest(jsony []byte) (req *abstractRequest, err error) {
 	return req, err
 }
 
-func commonJson(req request, absReq *abstractRequest) (request, error){
+func commonJSON(req request, absReq *abstractRequest) (request, error) {
 	req.setAbstractRequest(absReq)
 	rawData := (*absReq).Data
 	err := json.Unmarshal(rawData, req)

@@ -13,19 +13,19 @@ func initUserRequests() {
 	}
 
 	unauthenticatedRequestMap["User.Register"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(userRegisterRequest), req)
+		return commonJSON(new(userRegisterRequest), req)
 	}
 
 	unauthenticatedRequestMap["User.Login"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(userLoginRequest), req)
+		return commonJSON(new(userLoginRequest), req)
 	}
 
 	authenticatedRequestMap["User.Lookup"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(userLookupRequest), req)
+		return commonJSON(new(userLookupRequest), req)
 	}
 
 	authenticatedRequestMap["User.Projects"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(userProjectsRequest), req)
+		return commonJSON(new(userProjectsRequest), req)
 	}
 
 	userRequestsSetup = true
@@ -41,13 +41,13 @@ type userRegisterRequest struct {
 	abstractRequest
 }
 
-func (f *userRegisterRequest)setAbstractRequest(req *abstractRequest) {
+func (f *userRegisterRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (p userRegisterRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f userRegisterRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
-	fmt.Printf("Recieved register request from %s\n", p.Username)
+	fmt.Printf("Recieved register request from %s\n", f.Username)
 	return nil, nil, nil
 }
 
@@ -58,13 +58,13 @@ type userLoginRequest struct {
 	abstractRequest
 }
 
-func (f *userLoginRequest)setAbstractRequest(req *abstractRequest) {
+func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (p userLoginRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f userLoginRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
-	fmt.Printf("Recieved login request from %s\n", p.Username)
+	fmt.Printf("Recieved login request from %s\n", f.Username)
 	return nil, nil, nil
 }
 
@@ -74,13 +74,13 @@ type userLookupRequest struct {
 	abstractRequest
 }
 
-func (f *userLookupRequest)setAbstractRequest(req *abstractRequest) {
+func (f *userLookupRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (p userLookupRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f userLookupRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
-	fmt.Printf("Recieved user lookup request from %s\n", p.SenderID)
+	fmt.Printf("Recieved user lookup request from %s\n", f.SenderID)
 	return nil, nil, nil
 }
 
@@ -89,12 +89,12 @@ type userProjectsRequest struct {
 	abstractRequest
 }
 
-func (f *userProjectsRequest)setAbstractRequest(req *abstractRequest) {
+func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (p userProjectsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f userProjectsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
 	// TODO
-	fmt.Printf("Recieved user projects request from %s\n", p.SenderID)
+	fmt.Printf("Recieved user projects request from %s\n", f.SenderID)
 	return nil, nil, nil
 }

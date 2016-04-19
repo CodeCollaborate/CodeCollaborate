@@ -9,7 +9,7 @@ import (
 // authenticated
 
 // Project functions
-func TestProjectCreateRequest(t *testing.T)	{
+func TestProjectCreateRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Create"
@@ -31,15 +31,15 @@ func TestProjectCreateRequest(t *testing.T)	{
 	}
 }
 
-func TestProjectRenameRequest(t *testing.T)	{
+func TestProjectRenameRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Rename"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"NewName\": \"Namey\", " +
-	"\"ProjectID\": 12345" +
-	"}")
+		"\"NewName\": \"Namey\", " +
+		"\"ProjectID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -54,7 +54,7 @@ func TestProjectRenameRequest(t *testing.T)	{
 	}
 }
 
-func TestProjectGetPermissionConstantsRequest(t *testing.T)	{
+func TestProjectGetPermissionConstantsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GetPermissionsConstants"
@@ -74,16 +74,16 @@ func TestProjectGetPermissionConstantsRequest(t *testing.T)	{
 	}
 }
 
-func TestProjectGrantPermissionsRequest(t *testing.T)	{
+func TestProjectGrantPermissionsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GrantPermissions"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"ProjectID\": 12345, " +
-	"\"GrantUsername\": \"loganga\", " +
-	"\"PermissionLevel\": 1" +
-	"}")
+		"\"ProjectID\": 12345, " +
+		"\"GrantUsername\": \"loganga\", " +
+		"\"PermissionLevel\": 1" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -98,15 +98,15 @@ func TestProjectGrantPermissionsRequest(t *testing.T)	{
 	}
 }
 
-func TestProjectRevokePermissionsRequest(t *testing.T)	{
+func TestProjectRevokePermissionsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "RevokePermissions"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"ProjectID\": 12345, " +
-	"\"RevokeUsername\": \"loganga\"" +
-	"}")
+		"\"ProjectID\": 12345, " +
+		"\"RevokeUsername\": \"loganga\"" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -121,14 +121,14 @@ func TestProjectRevokePermissionsRequest(t *testing.T)	{
 	}
 }
 
-func TestProjectGetOnlineClientsRequest(t *testing.T)	{
+func TestProjectGetOnlineClientsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GetOnlineClients"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"ProjectID\": 12345" +
-	"}")
+		"\"ProjectID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -162,14 +162,14 @@ func TestProjectLookupRequest(t *testing.T) {
 	}
 }
 
-func TestProjectGetFilesRequest(t *testing.T)	{
+func TestProjectGetFilesRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GetFiles"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"ProjectID\": 12345" +
-	"}")
+		"\"ProjectID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -184,14 +184,14 @@ func TestProjectGetFilesRequest(t *testing.T)	{
 	}
 }
 
-func TestProjectSubscribeRequest(t *testing.T)	{
+func TestProjectSubscribeRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Subscribe"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"ProjectID\": 12345" +
-	"}")
+		"\"ProjectID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -206,14 +206,14 @@ func TestProjectSubscribeRequest(t *testing.T)	{
 	}
 }
 
-func TestProjectDeleteRequest(t *testing.T)	{
+func TestProjectDeleteRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Delete"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"ProjectID\": 12345" +
-	"}")
+		"\"ProjectID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -230,17 +230,17 @@ func TestProjectDeleteRequest(t *testing.T)	{
 
 // File functions
 
-func TestFileCreateRequest(t *testing.T)	{
+func TestFileCreateRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Create"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"Name\": \"Namey\", " +
-	"\"RelativePath\": \"src/\", " +
-	"\"ProjectID\": 12345, " +
-	"\"FileBytes\": [2]" +
-	"}")
+		"\"Name\": \"Namey\", " +
+		"\"RelativePath\": \"src/\", " +
+		"\"ProjectID\": 12345, " +
+		"\"FileBytes\": [2]" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -255,15 +255,15 @@ func TestFileCreateRequest(t *testing.T)	{
 	}
 }
 
-func TestFileRenameRequest(t *testing.T)	{
+func TestFileRenameRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Rename"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"NewName\": \"Namey\", " +
-	"\"FileID\": 12345" +
-	"}")
+		"\"NewName\": \"Namey\", " +
+		"\"FileID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -278,15 +278,15 @@ func TestFileRenameRequest(t *testing.T)	{
 	}
 }
 
-func TestFileMoveRequest(t *testing.T)	{
+func TestFileMoveRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Move"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"NewPath\": \"golang/\", " +
-	"\"FileID\": 12345" +
-	"}")
+		"\"NewPath\": \"golang/\", " +
+		"\"FileID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -301,14 +301,14 @@ func TestFileMoveRequest(t *testing.T)	{
 	}
 }
 
-func TestFileDeleteRequest(t *testing.T)	{
+func TestFileDeleteRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Delete"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"FileID\": 12345" +
-	"}")
+		"\"FileID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -323,15 +323,15 @@ func TestFileDeleteRequest(t *testing.T)	{
 	}
 }
 
-func TestFileChangeRequest(t *testing.T)	{
+func TestFileChangeRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Change"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"FileID\": 12345," +
-	"\"Changes\": [\"ok\", \"k\"]" +
-	"}")
+		"\"FileID\": 12345," +
+		"\"Changes\": [\"ok\", \"k\"]" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -346,14 +346,14 @@ func TestFileChangeRequest(t *testing.T)	{
 	}
 }
 
-func TestFilePullRequest(t *testing.T)	{
+func TestFilePullRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Pull"
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
-	"\"FileID\": 12345" +
-	"}")
+		"\"FileID\": 12345" +
+		"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -377,7 +377,7 @@ func TestUserLookupRequest(t *testing.T) {
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage(
 		"{\"Usernames\": [\"jshap70\"]" +
-		"}")
+			"}")
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
 		t.Fatal(err)
@@ -442,8 +442,8 @@ func TestUserLoginRequest(t *testing.T) {
 	req.Method = "Login"
 	req.Data = json.RawMessage(
 		"{\"Username\": \"loganga\", " +
-		"\"Password\":\"correct horse battery staple\"" +
-		"}")
+			"\"Password\":\"correct horse battery staple\"" +
+			"}")
 
 	newRequest, err := getFullRequest(&req)
 	if err != nil {

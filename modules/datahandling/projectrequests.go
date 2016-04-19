@@ -13,43 +13,43 @@ func initProjectRequests() {
 	}
 
 	authenticatedRequestMap["Project.Create"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectCreateRequest), req)
+		return commonJSON(new(projectCreateRequest), req)
 	}
 
 	authenticatedRequestMap["Project.Rename"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectRenameRequest), req)
+		return commonJSON(new(projectRenameRequest), req)
 	}
 
 	authenticatedRequestMap["Project.GetPermissionsConstants"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectGetPermissionConstantsRequest), req)
+		return commonJSON(new(projectGetPermissionConstantsRequest), req)
 	}
 
 	authenticatedRequestMap["Project.GrantPermissions"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectGrantPermissionsRequest), req)
+		return commonJSON(new(projectGrantPermissionsRequest), req)
 	}
 
 	authenticatedRequestMap["Project.RevokePermissions"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectRevokePermissionsRequest), req)
+		return commonJSON(new(projectRevokePermissionsRequest), req)
 	}
 
 	authenticatedRequestMap["Project.GetOnlineClients"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectGetOnlineClientsRequest), req)
+		return commonJSON(new(projectGetOnlineClientsRequest), req)
 	}
 
 	authenticatedRequestMap["Project.Lookup"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectLookupRequest), req)
+		return commonJSON(new(projectLookupRequest), req)
 	}
 
 	authenticatedRequestMap["Project.GetFiles"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectGetFilesRequest), req)
+		return commonJSON(new(projectGetFilesRequest), req)
 	}
 
 	authenticatedRequestMap["Project.Subscribe"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectSubscribeRequest), req)
+		return commonJSON(new(projectSubscribeRequest), req)
 	}
 
 	authenticatedRequestMap["Project.Delete"] = func(req *abstractRequest) (request, error) {
-		return commonJson(new(projectDeleteRequest), req)
+		return commonJSON(new(projectDeleteRequest), req)
 	}
 
 	projectRequestsSetup = true
@@ -217,7 +217,3 @@ func (p projectDeleteRequest) process() (response *serverMessageWrapper, notific
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
-
-
-
-
