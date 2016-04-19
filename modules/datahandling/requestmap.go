@@ -35,7 +35,7 @@ func getFullRequest(req abstractRequest) (request, error) {
 
 // authenticatedRequest returns fully parsed Request from the given authenticated AbstractRequest
 func authenticatedRequest(req abstractRequest) (request, error) {
-	constructor := authenticatedRequestMap[req.Resource+req.Method]
+	constructor := authenticatedRequestMap[req.Resource+"."+req.Method]
 	if constructor == nil {
 		err := errors.New("The function for the given request does not exist in the authenticated map.")
 		return nil, err
@@ -46,7 +46,7 @@ func authenticatedRequest(req abstractRequest) (request, error) {
 
 // unauthenticatedRequest returns fully parsed Request from the given unauthenticated AbstractRequest
 func unauthenticatedRequest(req abstractRequest) (request, error) {
-	constructor := unauthenticatedRequestMap[req.Resource+req.Method]
+	constructor := unauthenticatedRequestMap[req.Resource+"."+req.Method]
 	if constructor == nil {
 		err := errors.New("The function for the given request does not exist in the unauthenticated map.")
 		return nil, err

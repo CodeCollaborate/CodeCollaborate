@@ -13,19 +13,19 @@ func initUserRequests() {
 	}
 
 	unauthenticatedRequestMap["User.Register"] = func(req abstractRequest) (request, error) {
-		return commonJson(new(fileCreateRequest), req)
+		return commonJson(new(userRegisterRequest), req)
 	}
 
 	unauthenticatedRequestMap["User.Login"] = func(req abstractRequest) (request, error) {
-		return commonJson(new(fileCreateRequest), req)
+		return commonJson(new(userLoginRequest), req)
 	}
 
 	authenticatedRequestMap["User.Lookup"] = func(req abstractRequest) (request, error) {
-		return commonJson(new(fileCreateRequest), req)
+		return commonJson(new(userLookupRequest), req)
 	}
 
 	authenticatedRequestMap["User.Projects"] = func(req abstractRequest) (request, error) {
-		return commonJson(new(fileCreateRequest), req)
+		return commonJson(new(userProjectsRequest), req)
 	}
 
 	userRequestsSetup = true
