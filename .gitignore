@@ -29,4 +29,9 @@ _testmain.go
 *.project
 
 # Config files
-config/auth.cfg
+/config*
+!/config/defaults/*
+
+# Vendored files
+/vendor/*
+!/vendor/vendor.json

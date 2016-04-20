@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# Check if formatting and tests pass before allowing commits.
+
+STATUS=0
+
+./RunFormatter.sh
+
+STATUS=$(($STATUS + $?))
+
+if [ "$STATUS" != 0 ]; then
+    printf -- "Formatting Checks failed, aborting commit\n"
+    exit $STATUS
+fi
+
+printf -- "\n\n"
+./RunTests.sh
+
+STATUS=$(($STATUS + $?))
+
+if [ "$STATUS" != 0 ]; then
+    printf -- "Tests failed, aborting commit\n"
+    exit $STATUS
+fi
+
+exit 0
