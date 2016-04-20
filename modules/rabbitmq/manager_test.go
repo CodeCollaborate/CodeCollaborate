@@ -6,17 +6,29 @@ import (
 	"sync"
 	"testing"
 
+	"os"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
 )
+
+var rabbitConfig config.ConnCfg
 
 var testExchange = AMQPExchCfg{
 	ExchangeName: "TestExchange",
 	Durable:      false,
 }
 
+func TestMain(m *testing.M) {
+	config.SetConfigDir("../../config")
+	config.InitConfig()
+	rabbitConfig = config.GetConfig().ConnectionConfig["RabbitMQ"]
+	os.Exit(m.Run())
+}
+
 func TestGetChannel(t *testing.T) {
+
 	var wg sync.WaitGroup
 
 	_, err := GetChannel()
@@ -47,47 +59,80 @@ func TestGetChannel(t *testing.T) {
 func TestSetupRabbitExchange(t *testing.T) {
 	channelQueue = nil
 
-	SetupRabbitExchange(
+	err := SetupRabbitExchange(
 		&AMQPConnCfg{
-			ConnCfg: config.ConnCfg{
-				Host:     "localhost",
-				Port:     5672,
-				Username: "guest",
-				Password: "guest",
-			},
+			ConnCfg: rabbitConfig,
 		},
 	)
+	if err != nil {
+		t.Fatal("Failed to connect to Rabbit Exchange: Timed out")
+	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for i := 0; i < 10; i++ {
-			_, err := GetChannel()
-			if err != nil {
-				t.Fatal("Rabbit Exchange could not be setup.")
-			}
+	for i := 0; i < 10; i++ {
+		_, err := GetChannel()
+		if err != nil {
+			t.Fatal("Rabbit Exchange could not be setup.")
 		}
-	}()
-	wg.Wait()
+	}
+}
+
+func TestSetupRabbitExchangeInvalidAddress(t *testing.T) {
+	channelQueue = nil
+
+	err := SetupRabbitExchange(
+		&AMQPConnCfg{
+			ConnCfg: config.ConnCfg{},
+		},
+	)
+	if err == nil {
+		t.Fatal("Should have failed to setup exchange")
+	}
+
+	_, err = GetChannel()
+	if err == nil {
+		t.Fatal("Channel should have failed; setup did not succeed.")
+	}
+}
+
+func TestSetupRabbitExchangeFailConnection(t *testing.T) {
+	channelQueue = nil
+
+	config := config.ConnCfg{}
+	config = rabbitConfig
+	config.Username = ""
+	config.Password = ""
+	config.Timeout = 1
+	config.NumRetries = 1
+
+	err := SetupRabbitExchange(
+		&AMQPConnCfg{
+			ConnCfg: config,
+		},
+	)
+	if err == nil {
+		t.Fatal("Should have failed to setup exchange")
+	}
+
+	_, err = GetChannel()
+	if err == nil {
+		t.Fatal("Channel should have failed; setup did not succeed.")
+	}
 }
 
 func TestSendMessage(t *testing.T) {
 	channelQueue = nil
 
-	SetupRabbitExchange(
+	err := SetupRabbitExchange(
 		&AMQPConnCfg{
-			ConnCfg: config.ConnCfg{
-				Host:     "localhost",
-				Port:     5672,
-				Username: "guest",
-				Password: "guest",
-			},
+			ConnCfg: rabbitConfig,
 			Exchanges: []AMQPExchCfg{
 				testExchange,
 			},
 		},
 	)
+	if err != nil {
+		t.Fatal("Failed to connect to Rabbit Exchange: Timed out")
+	}
 
 	queueID := uint64(0)
 	routingKey := fmt.Sprintf("%s-%d", hostname, queueID)

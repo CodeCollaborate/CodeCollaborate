@@ -21,8 +21,10 @@ type ServerCfg struct {
 
 // ConnCfg represents the information required to make a connection
 type ConnCfg struct {
-	Host     string
-	Port     uint16
-	Username string
-	Password string
+	Host       string
+	Port       uint16
+	Username   string
+	Password   string
+	Timeout    uint16
+	NumRetries uint16
 }
