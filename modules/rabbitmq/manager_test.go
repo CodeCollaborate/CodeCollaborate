@@ -6,25 +6,23 @@ import (
 	"sync"
 	"testing"
 
-	"os"
-
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
 )
-
-var rabbitConfig config.ConnCfg
 
 var testExchange = AMQPExchCfg{
 	ExchangeName: "TestExchange",
 	Durable:      false,
 }
 
-func TestMain(m *testing.M) {
+func getRabbitMQConfig(t *testing.T) config.ConnCfg {
 	config.SetConfigDir("../../config")
-	config.InitConfig()
-	rabbitConfig = config.GetConfig().ConnectionConfig["RabbitMQ"]
-	os.Exit(m.Run())
+	err := config.InitConfig()
+	if err != nil {
+		t.Fatal("Could not get connection config")
+	}
+	return config.GetConfig().ConnectionConfig["RabbitMQ"]
 }
 
 func TestGetChannel(t *testing.T) {
@@ -61,7 +59,7 @@ func TestSetupRabbitExchange(t *testing.T) {
 
 	err := SetupRabbitExchange(
 		&AMQPConnCfg{
-			ConnCfg: rabbitConfig,
+			ConnCfg: getRabbitMQConfig(t),
 		},
 	)
 	if err != nil {
@@ -98,7 +96,7 @@ func TestSetupRabbitExchangeFailConnection(t *testing.T) {
 	channelQueue = nil
 
 	config := config.ConnCfg{}
-	config = rabbitConfig
+	config = getRabbitMQConfig(t)
 	config.Username = ""
 	config.Password = ""
 	config.Timeout = 1
@@ -124,7 +122,7 @@ func TestSendMessage(t *testing.T) {
 
 	err := SetupRabbitExchange(
 		&AMQPConnCfg{
-			ConnCfg: rabbitConfig,
+			ConnCfg: getRabbitMQConfig(t),
 			Exchanges: []AMQPExchCfg{
 				testExchange,
 			},
