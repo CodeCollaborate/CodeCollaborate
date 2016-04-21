@@ -44,7 +44,7 @@ if [[ "$($GOPATH/bin/goimports -l $FILES 2>&1)" ]]; then
     RESULT_GOIMPORTS="  REFORMATTED: GoImports"
 fi
 
-printf -- "SUMMARY:\n"
+printf -- "\nSUMMARY:\n"
 printf -- "--------------------------------------------------------------------------------\n"
 
 echo $RESULT_GOLINT

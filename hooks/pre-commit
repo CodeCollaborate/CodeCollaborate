@@ -10,6 +10,7 @@ STATUS=$(($STATUS + $?))
 
 if [ "$STATUS" != 0 ]; then
     printf -- "Formatting Checks failed, aborting commit\n"
+    exit $STATUS
 fi
 
 printf -- "\n\n"
@@ -19,6 +20,7 @@ STATUS=$(($STATUS + $?))
 
 if [ "$STATUS" != 0 ]; then
     printf -- "Tests failed, aborting commit\n"
+    exit $STATUS
 fi
 
-exit $STATUS
+exit 0
