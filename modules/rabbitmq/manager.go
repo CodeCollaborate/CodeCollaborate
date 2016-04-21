@@ -4,6 +4,9 @@ import (
 	"errors"
 	"sync"
 
+	"net"
+	"time"
+
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
 )
@@ -11,6 +14,10 @@ import (
 /**
  * RabbitMq manager for CodeCollaborate Server.
  */
+const (
+	defaultHeartbeat         = 10 * time.Second
+	defaultConnectionTimeout = 30
+)
 
 var channelQueueCreationMutex = sync.Mutex{}
 var channelQueue chan *amqp.Channel
@@ -28,25 +35,51 @@ func GetChannel() (*amqp.Channel, error) {
 // into the ChannelQueue. The generation of channels will be done on a new GoRoutine, avoiding blocking, or having
 // to pass the RabbitMQ Connection around. This method will also attempt to auto-reconnect if the critical setup steps
 // fail.
-func SetupRabbitExchange(cfg *AMQPConnCfg) {
+func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 	if cfg.Control == nil {
 		cfg.Control = utils.NewControl()
 	}
 
+	success := true
+
 	if channelQueue == nil {
 		channelQueueCreationMutex.Lock()
 		if channelQueue == nil {
-			channelQueue = make(chan *amqp.Channel)
 
 			ready := make(chan bool)
 			go func() {
 				// Loop; if connection drops, we should try to restore connection before creating new channels.
+				retries := uint16(0)
+
 			redialLoop:
 				for {
-					conn, err := amqp.Dial(cfg.ConnectionString())
+					conn, err := amqp.DialConfig(cfg.ConnectionString(), amqp.Config{
+						Heartbeat: defaultHeartbeat,
+						Dial:      getNewDialer(cfg.Timeout),
+					})
 					if err != nil {
 						utils.LogOnError(err, "Failed to connect to RabbitMQ")
+						if retries >= cfg.NumRetries {
+							ready <- false
+							if channelQueue == nil {
+								for {
+									select {
+									case channelQueue <- nil:
+									default:
+										channelQueue = nil
+										return
+									}
+								}
+							}
+							return
+						}
+						retries++
 						continue redialLoop
+					}
+					retries = 0
+
+					if channelQueue == nil {
+						channelQueue = make(chan *amqp.Channel)
 					}
 
 					ch, err := conn.Channel()
@@ -96,12 +129,40 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) {
 					conn.Close()
 				}
 			}()
-			<-ready
+			success = <-ready
 
 			// Signal that this connection is ready
 			cfg.Control.Ready.Done()
 		}
 		channelQueueCreationMutex.Unlock()
+	}
+
+	if !success {
+		return errors.New("Failed to connect - timed out.")
+	}
+
+	return nil
+}
+
+func getNewDialer(timeout uint16) func(network, addr string) (net.Conn, error) {
+
+	if timeout == 0 {
+		timeout = defaultConnectionTimeout
+	}
+
+	// returns dialer using timeout if non-zero, or dialer using default timeout otherwise.
+	return func(network, addr string) (net.Conn, error) {
+		conn, err := net.DialTimeout(network, addr, time.Duration(timeout)*time.Second)
+		if err != nil {
+			return nil, err
+		}
+
+		// Heartbeating hasn't started yet, don't stall forever on a dead server.
+		if err := conn.SetReadDeadline(time.Now().Add(time.Duration(timeout) * time.Second)); err != nil {
+			return nil, err
+		}
+
+		return conn, nil
 	}
 }
 

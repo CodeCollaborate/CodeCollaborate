@@ -30,6 +30,7 @@ _testmain.go
 
 # Config files
 /config*
+!/config/defaults/*
 
 # Vendored files
 /vendor/*
