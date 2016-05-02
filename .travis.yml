@@ -16,8 +16,8 @@ branches:
 # Also run on v<major>.<minor> tags
 #  - /v\d+\.\d+\.\d+.*/
 
-before_install:
-- travisScripts/InstallCouchBase.sh
+#before_install:
+#- travisScripts/InstallCouchBase.sh
 
 install:
 - go get golang.org/x/tools/cmd/goimports
