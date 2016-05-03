@@ -9,7 +9,9 @@ import (
 	"gopkg.in/couchbase/gocb.v1"
 )
 
-type couchBaseConn struct {
+var couchbasedb *couchbaseConn
+
+type couchbaseConn struct {
 	config config.ConnCfg
 	bucket *gocb.Bucket
 }
@@ -20,40 +22,45 @@ type cbFile struct {
 	Changes []string `json:"changes"`
 }
 
-func openCouchBase() (*couchBaseConn, error) {
-	var c *couchBaseConn
-	c = new(couchBaseConn)
-	configMap := config.GetConfig()
-	c.config = configMap.ConnectionConfig["Couchbase"]
+func openCouchBase() (*couchbaseConn, error) {
+	if couchbasedb != nil && couchbasedb.bucket != nil {
+		return couchbasedb, nil
+	}
+
+	if (couchbasedb == nil || couchbasedb.config == (config.ConnCfg{})) {
+		couchbasedb = new(couchbaseConn)
+		configMap := config.GetConfig()
+		couchbasedb.config = configMap.ConnectionConfig["Couchbase"]
+	}
 
 	var documentsCluster *gocb.Cluster
 	var err error
 
-	if strings.HasPrefix(c.config.Host, "couchbase://") {
-		documentsCluster, err = gocb.Connect(c.config.Host)
+	if strings.HasPrefix(couchbasedb.config.Host, "couchbase://") {
+		documentsCluster, err = gocb.Connect(couchbasedb.config.Host)
 	} else {
-		documentsCluster, err = gocb.Connect("couchbase://" + c.config.Host + ":" + strconv.Itoa(int(c.config.Port)))
+		documentsCluster, err = gocb.Connect("couchbase://" + couchbasedb.config.Host + ":" + strconv.Itoa(int(couchbasedb.config.Port)))
 	}
 
 	if err != nil {
-		return c, err
+		return couchbasedb, err
 	}
 
-	myBucket, err := documentsCluster.OpenBucket("documents", c.config.Password)
+	myBucket, err := documentsCluster.OpenBucket("documents", couchbasedb.config.Password)
 	if err != nil {
-		return c, err
+		return couchbasedb, err
 	}
+	couchbasedb.bucket = myBucket
 
-	c.bucket = myBucket
-	// TODO: find out why this is setting the timeout to 0
-	//c.bucket.SetOperationTimeout(time.Duration(c.config.Timeout))
-
-	return c, nil
+	return couchbasedb, nil
 }
 
-func (c couchBaseConn) close() error {
-	if c.bucket != nil {
-		c.bucket.Close()
+// CloseCouchbase closes the CouchBase db connection
+// YOU PROBABLY DON'T NEED TO RUN THIS EVER
+func CloseCouchbase() error {
+	if couchbasedb.bucket != nil {
+		couchbasedb.bucket.Close()
+		couchbasedb = nil
 	} else {
 		return errors.New("Bucket not created")
 	}
@@ -64,14 +71,13 @@ func (c couchBaseConn) close() error {
 // CBInsertNewFile inserts a new document into couchbase with CBFile.FileID == fileID
 func cbInsertNewFile(file cbFile) error {
 	cb, err := openCouchBase()
-	defer cb.close()
+	//defer cb.close()
 
 	if err != nil {
 		return err
 	}
 
 	_, err = cb.bucket.Insert(strconv.FormatInt(file.FileID, 10), file, 0)
-
 	return err
 }
 
@@ -83,12 +89,9 @@ func CBInsertNewFile(fileID int64, version int64, changes []string) error {
 // CBDeleteFile deletes the document with FileID == fileID from couchbase
 func CBDeleteFile(fileID int64) error {
 	cb, err := openCouchBase()
-	defer cb.close()
-
 	if err != nil {
 		return err
 	}
-
 	_, err = cb.bucket.Remove(strconv.FormatInt(fileID, 10), 0)
 	return err
 }
@@ -96,8 +99,6 @@ func CBDeleteFile(fileID int64) error {
 // CBGetFileVersion returns the current version of the file for the given FileID
 func CBGetFileVersion(fileID int64) (int64, error) {
 	cb, err := openCouchBase()
-	defer cb.close()
-
 	if err != nil {
 		return -1, err
 	}
@@ -115,8 +116,6 @@ func CBGetFileVersion(fileID int64) (int64, error) {
 // CBGetFileChanges returns the array of file changes for the given fileID
 func CBGetFileChanges(fileID int64) ([]string, error) {
 	cb, err := openCouchBase()
-	defer cb.close()
-
 	if err != nil {
 		return []string{}, err
 	}
@@ -125,6 +124,7 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 	if err != nil {
 		return []string{}, err
 	}
+
 	var changes []string
 	frag.Content("changes", &changes)
 
@@ -134,11 +134,12 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
 func CBAppendFileChange(fileID int64, version int64, change string) error {
 	cb, err := openCouchBase()
-	defer cb.close()
+	//defer cb.close()
 
 	if err != nil {
 		return err
 	}
+
 	_, err = cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), 0, 0).PushBack("changes", change, false).Replace("version", version).Execute()
 	return err
 }

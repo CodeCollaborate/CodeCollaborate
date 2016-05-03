@@ -22,7 +22,7 @@ func TestOpenCouchBase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer cb.close()
+	defer CloseCouchbase()
 
 	_, err = cb.bucket.Upsert("testingDocumentPleaseIgnore", "mydoc", 0)
 	if err != nil {
