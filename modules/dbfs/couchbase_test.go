@@ -46,6 +46,22 @@ func TestOpenCouchBase(t *testing.T) {
 
 }
 
+func TestCloseCouchbase(t *testing.T) {
+	configSetup()
+	_, err := openCouchBase()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = CloseCouchbase()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = CloseCouchbase()
+	if err != ErrDbNotInitialized {
+		t.Fatal("Wrong error recieved")
+	}
+}
+
 func TestCBInsertNewFile(t *testing.T) {
 	configSetup()
 

@@ -1,7 +1,6 @@
 package dbfs
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 
@@ -27,7 +26,7 @@ func openCouchBase() (*couchbaseConn, error) {
 		return couchbasedb, nil
 	}
 
-	if (couchbasedb == nil || couchbasedb.config == (config.ConnCfg{})) {
+	if couchbasedb == nil || couchbasedb.config == (config.ConnCfg{}) {
 		couchbasedb = new(couchbaseConn)
 		configMap := config.GetConfig()
 		couchbasedb.config = configMap.ConnectionConfig["Couchbase"]
@@ -37,7 +36,7 @@ func openCouchBase() (*couchbaseConn, error) {
 	var err error
 
 	if strings.HasPrefix(couchbasedb.config.Host, "couchbase://") {
-		documentsCluster, err = gocb.Connect(couchbasedb.config.Host)
+		documentsCluster, err = gocb.Connect(couchbasedb.config.Host + ":" + strconv.Itoa(int(couchbasedb.config.Port)))
 	} else {
 		documentsCluster, err = gocb.Connect("couchbase://" + couchbasedb.config.Host + ":" + strconv.Itoa(int(couchbasedb.config.Port)))
 	}
@@ -58,11 +57,11 @@ func openCouchBase() (*couchbaseConn, error) {
 // CloseCouchbase closes the CouchBase db connection
 // YOU PROBABLY DON'T NEED TO RUN THIS EVER
 func CloseCouchbase() error {
-	if couchbasedb.bucket != nil {
+	if couchbasedb != nil && couchbasedb.bucket != nil {
 		couchbasedb.bucket.Close()
 		couchbasedb = nil
 	} else {
-		return errors.New("Bucket not created")
+		return ErrDbNotInitialized
 	}
 
 	return nil
