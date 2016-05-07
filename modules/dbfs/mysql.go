@@ -9,6 +9,10 @@ import (
 
 	"time"
 
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 )
@@ -216,7 +220,7 @@ func MySQLProjectDelete(projectID int64) error {
 }
 
 // MySQLProjectGetFiles returns the Files from the project with projectID = projectID
-func MySQLProjectGetFiles(projectID int64) (files []File, err error) {
+func MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error) {
 	mysql, err := openMySQLConn(mysqldbName)
 	if err != nil {
 		return nil, err
@@ -228,7 +232,7 @@ func MySQLProjectGetFiles(projectID int64) (files []File, err error) {
 	}
 
 	for rows.Next() {
-		file := File{}
+		file := FileMeta{}
 		err = rows.Scan(&file.FileID, &file.Creator, &file.CreationDate, &file.RelativePath, &file.ProjectID, &file.Filename)
 		if err != nil {
 			return nil, err
@@ -326,12 +330,22 @@ func MySQLProjectLookup(projectID int64) (name string, permisions map[string]Pro
 
 // MySQLFileCreate create a new file in MySQL
 func MySQLFileCreate(username string, filename string, relativePath string, projectID int64) (fileID int64, err error) {
+	pathsep := strconv.QuoteRune(os.PathSeparator)
+	if strings.Contains(filename, pathsep[1:len(pathsep)-1]) {
+		return -1, ErrMalliciousRequest
+	}
+
+	filepathClean := filepath.Clean(relativePath)
+	if strings.HasPrefix(filepathClean, "..") {
+		return -1, ErrMalliciousRequest
+	}
+
 	mysql, err := openMySQLConn(mysqldbName)
 	if err != nil {
 		return -1, err
 	}
 
-	rows, err := mysql.db.Query("CALL file_create(?,?,?,?)", username, filename, relativePath, projectID)
+	rows, err := mysql.db.Query("CALL file_create(?,?,?,?)", username, filename, filepathClean, projectID)
 	if err != nil {
 		return -1, err
 	}
@@ -367,12 +381,17 @@ func MySQLFileDelete(fileID int64) error {
 
 // MySQLFileMove updates MySQL with the  new path of the file with FileID == 'fileID'
 func MySQLFileMove(fileID int64, newPath string) error {
+	newPathClean := filepath.Clean(newPath)
+	if strings.HasPrefix(newPathClean, "..") {
+		return ErrMalliciousRequest
+	}
+
 	mysql, err := openMySQLConn(mysqldbName)
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL file_move(?, ?)", fileID, newPath)
+	result, err := mysql.db.Exec("CALL file_move(?, ?)", fileID, newPathClean)
 	if err != nil {
 		return err
 	}
@@ -386,6 +405,11 @@ func MySQLFileMove(fileID int64, newPath string) error {
 
 // MySQLFileRename updates MySQL with the new name of the file with FileID == 'fileID'
 func MySQLFileRename(fileID int64, newName string) error {
+	pathsep := strconv.QuoteRune(os.PathSeparator)
+	if strings.Contains(newName, pathsep[1:len(pathsep)-1]) {
+		return ErrMalliciousRequest
+	}
+
 	mysql, err := openMySQLConn(mysqldbName)
 	if err != nil {
 		return err

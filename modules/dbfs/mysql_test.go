@@ -158,7 +158,7 @@ func TestMySQLProjectDelete(t *testing.T) {
 	}
 
 	// test trying to delete a project that contains files
-	_, err = MySQLFileCreate("jshap70", "file-y", "./", projectID)
+	_, err = MySQLFileCreate("jshap70", "file-y", ".", projectID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +184,7 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
 
 	projectID, err := MySQLProjectCreate("jshap70", "codecollabcore")
-	MySQLFileCreate("jshap70", "file-y", "./", projectID)
+	MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
 	files, err := MySQLProjectGetFiles(projectID)
 
@@ -198,7 +198,7 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 	if len(files) != 1 {
 		t.Fatalf("Project %v returned not the correct length, expected: 1, actual: %v", projectID, len(files))
 	}
-	if files[0].FileID == -1 || files[0].Creator != "jshap70" || files[0].RelativePath != "./" || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
+	if files[0].FileID == -1 || files[0].Creator != "jshap70" || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
 }
@@ -333,7 +333,7 @@ func TestMySQLFileCreate(t *testing.T) {
 	mysqldbName = "cc" // TODO: change to "testing"?
 	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, err := MySQLFileCreate("jshap70", "file-y", "./", projectID)
+	fileID, err := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
 	files, _ := MySQLProjectGetFiles(projectID)
 
@@ -347,7 +347,7 @@ func TestMySQLFileCreate(t *testing.T) {
 	if len(files) != 1 {
 		t.Fatalf("Project %v returned not the correct length, expected: 1, actual: %v", projectID, len(files))
 	}
-	if files[0].FileID != fileID || files[0].Creator != "jshap70" || files[0].RelativePath != "./" || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
+	if files[0].FileID != fileID || files[0].Creator != "jshap70" || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
 }
@@ -357,7 +357,7 @@ func TestMySQLFileDelete(t *testing.T) {
 	mysqldbName = "cc" // TODO: change to "testing"?
 	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := MySQLFileCreate("jshap70", "file-y", "./", projectID)
+	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 	err := MySQLFileDelete(fileID)
 
 	files, _ := MySQLProjectGetFiles(projectID)
@@ -377,9 +377,9 @@ func TestMySQLFileMove(t *testing.T) {
 	mysqldbName = "cc" // TODO: change to "testing"?
 	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := MySQLFileCreate("jshap70", "file-y", "./", projectID)
+	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
-	err := MySQLFileMove(fileID, "./cc/")
+	err := MySQLFileMove(fileID, "cc")
 
 	files, _ := MySQLProjectGetFiles(projectID)
 	_ = MySQLProjectDelete(projectID)
@@ -391,7 +391,7 @@ func TestMySQLFileMove(t *testing.T) {
 	if len(files) != 1 {
 		t.Fatalf("Project %v returned not the correct length, expected: 1, actual: %v", projectID, len(files))
 	}
-	if files[0].FileID != fileID || files[0].RelativePath != "./cc/" || files[0].ProjectID != projectID {
+	if files[0].FileID != fileID || files[0].RelativePath != "cc" || files[0].ProjectID != projectID {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
 }
@@ -401,7 +401,7 @@ func TestMySQLRenameFile(t *testing.T) {
 	mysqldbName = "cc" // TODO: change to "testing"?
 	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := MySQLFileCreate("jshap70", "file-y", "./", projectID)
+	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
 	err := MySQLFileRename(fileID, "file-z")
 

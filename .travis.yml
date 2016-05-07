@@ -17,6 +17,8 @@ branches:
 #  - /v\d+\.\d+\.\d+.*/
 
 before_install:
+- sudo apt-get -qq update
+- sudo apt-get install -y mysql-server
 - travisScripts/InstallCouchBase.sh
 
 install:
@@ -24,6 +26,10 @@ install:
 - go get github.com/golang/lint/golint
 - ./GetDependencies.sh
 - cp ./config/defaults/* ./config
+- travisScripts/SetupMySQL.sh
+
+before-script:
+- cat ./config/mysqlSetup.sql | mysql -uroot
 
 script:
 # Run checks & tests

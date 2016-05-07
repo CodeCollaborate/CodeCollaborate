@@ -15,8 +15,9 @@ type Config struct {
 
 // ServerCfg contains various config items that pertain to the server
 type ServerCfg struct {
-	Name string
-	Port uint16
+	Name        string
+	Port        uint16
+	ProjectPath string
 }
 
 // ConnCfg represents the information required to make a connection

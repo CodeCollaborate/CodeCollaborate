@@ -11,6 +11,9 @@ var ErrNoDbChange = errors.New("No entries were correctly altered")
 // DbNotInitialized : active db connection does not exist
 var ErrDbNotInitialized = errors.New("The database was not propperly initialized before execution")
 
+// ErrMalliciousRequest : The request attempted to directly tamper with our filesystemp / database
+var ErrMalliciousRequest = errors.New("The request attempted to directly tamper with our filesystemp / database")
+
 // Project is the type which represents a row in the MySQL `Project` table
 type Project struct {
 	ProjectID       int64
@@ -26,8 +29,8 @@ type ProjectPermission struct {
 	GrantedDate     time.Time
 }
 
-// File is the type which represents a row in the MySQL `File` table
-type File struct {
+// FileMeta is the type contains all the meta data about a file
+type FileMeta struct {
 	FileID       int64
 	Creator      string
 	CreationDate time.Time
