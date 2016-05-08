@@ -27,9 +27,10 @@ install:
 - ./GetDependencies.sh
 - cp ./config/defaults/* ./config
 - travisScripts/SetupMySQL.sh
-
-before-script:
 - cat ./config/mysqlSetup.sql | mysql -uroot
+- cat ./config/mysqlSchemaSetup.sql | mysql -uroot
+- mysql -e "SHOW DATABASES" -uroot
+
 
 script:
 # Run checks & tests
