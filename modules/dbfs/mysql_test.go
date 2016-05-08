@@ -419,3 +419,28 @@ func TestMySQLRenameFile(t *testing.T) {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
 }
+
+func TestMySQLFileGetInfo(t *testing.T) {
+	configSetup()
+	mysqldbName = "cc" // TODO: change to "testing"?
+	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
+	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
+
+	filebefore, err := MySQLFileGetInfo(fileID)
+	_ = MySQLFileMove(fileID, "cc")
+	fileafter, err := MySQLFileGetInfo(fileID)
+
+	_ = MySQLProjectDelete(projectID)
+	_ = mySQLUserDelete("jshap70", "secret")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filebefore.FileID != fileID || filebefore.RelativePath != "." || filebefore.ProjectID != projectID {
+		t.Fatalf("Wrong return, got project: %v", filebefore)
+	}
+	if fileafter.FileID != fileID || fileafter.RelativePath != "cc" || fileafter.ProjectID != projectID {
+		t.Fatalf("Wrong return, got project: %v", filebefore)
+	}
+}

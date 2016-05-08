@@ -10,6 +10,8 @@ printf -- "Checking Formatting:\n-----------------------------------------------
 # Check GoLint
 if [[ "$(for p in $PACKAGES; do golint $p 2>&1; done)" ]]; then
     echo "->FAILED: GoLint - failed linting checks"
+    for p in $PACKAGES; do golint $p 2>&1; done
+    printf -- "\n"
     STATUS=1
 else
     echo "  PASSED: GoLint"

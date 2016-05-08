@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// NoDbChange : No rows or values in the DB were changed, which was an unexpected result
+// ErrNoDbChange : No rows or values in the DB were changed, which was an unexpected result
 var ErrNoDbChange = errors.New("No entries were correctly altered")
 
-// DbNotInitialized : active db connection does not exist
+// ErrDbNotInitialized : active db connection does not exist
 var ErrDbNotInitialized = errors.New("The database was not propperly initialized before execution")
 
 // ErrMalliciousRequest : The request attempted to directly tamper with our filesystemp / database

@@ -36,7 +36,7 @@ CREATE TABLE `File` (
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
   CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE NO ACTION ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=96 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=153 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -76,7 +76,7 @@ CREATE TABLE `Project` (
   UNIQUE KEY `NameOwner_UNIQUE` (`Name`,`Owner`),
   KEY `fk_Project_Username_idx` (`Owner`),
   CONSTRAINT `fk_Project_Username` FOREIGN KEY (`Owner`) REFERENCES `User` (`Username`) ON DELETE NO ACTION ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=226 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=346 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -87,13 +87,13 @@ CREATE TABLE `Project` (
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `cc`.`Project_BEFORE_DELETE` BEFORE DELETE ON `Project` FOR EACH ROW
-BEGIN
-	DELETE FROM Permissions
+  /*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `cc`.`Project_BEFORE_DELETE` BEFORE DELETE ON `Project` FOR EACH ROW
+  BEGIN
+    DELETE FROM Permissions
     WHERE Permissions.ProjectID = OLD.ProjectID;
     DELETE FROM `File`
     WHERE `File`.ProjectID = OLD.ProjectID;
-END */;;
+  END */;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -137,12 +137,12 @@ CREATE TABLE `User` (
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `file_create`(IN username varchar(25), IN filename varchar(50), IN relativePath varchar(2083), IN projectID bigint(20))
-BEGIN
-	INSERT INTO `File`
+  BEGIN
+    INSERT INTO `File`
     (Creator, RelativePath, ProjectID, Filename)
     VALUES (username, relativePath, projectID, filename);
     SELECT LAST_INSERT_ID();
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -159,10 +159,31 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `file_delete`(IN fileID bigint(20))
-BEGIN
-	DELETE FROM `File`
+  BEGIN
+    DELETE FROM `File`
     WHERE `File`.FileID = fileID;
-END ;;
+  END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `file_get_info` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `file_get_info`(IN fileID bigint(20))
+  BEGIN
+    SELECT `File`.`Creator`, `File`.`CreationDate`, `File`.`RelativePath`, `File`.`ProjectID`, `File`.`Filename`
+    FROM File
+    WHERE `File`.`FileID` = fileID;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -179,11 +200,11 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `file_move`(IN fileID bigint(20), IN newPath varchar(2083))
-BEGIN
-	UPDATE `File`
+  BEGIN
+    UPDATE `File`
     SET `File`.RelativePath = newPath
     WHERE `File`.FileID = fileID;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -200,11 +221,11 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `file_rename`(IN fileID bigint(20), IN newName varchar(50))
-BEGIN
-	UPDATE `File`
+  BEGIN
+    UPDATE `File`
     SET `File`.Filename = newName
     WHERE `File`.FileID = fileID;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -221,11 +242,11 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_create`(IN projectName varchar(50), IN username varchar(25))
-BEGIN
-	INSERT INTO Project (`Name`, `Owner`)
+  BEGIN
+    INSERT INTO Project (`Name`, `Owner`)
     VALUES (projectName, username);
     SELECT LAST_INSERT_ID();
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -242,10 +263,10 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_delete`(IN projectID bigint(20))
-BEGIN
-	DELETE FROM Project
+  BEGIN
+    DELETE FROM Project
     WHERE Project.ProjectID = projectID;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -262,11 +283,11 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_get_files`(IN projectID bigint(20))
-BEGIN
-	SELECT * 
+  BEGIN
+    SELECT *
     FROM File
     WHERE File.ProjectID = projectID;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -283,17 +304,17 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_grant_permissions`(IN projectID bigint(20),
-												IN grantUsername varchar(25),
-                                                IN permissionLevel tinyint(1),
-                                                IN grantedByUsername varchar(25))
-BEGIN
-	insert into `Permissions` 
+                                                                        IN grantUsername varchar(25),
+                                                                        IN permissionLevel tinyint(1),
+                                                                        IN grantedByUsername varchar(25))
+  BEGIN
+    insert into `Permissions`
     (Username, ProjectID, PermissionLevel, GrantedBy)
     values (grantUsername, projectID, permissionLevel, grantedByUsername)
     on duplicate key update
-        PermissionLevel = permissionLevel, 
-        GrantedBy = grantedByUsername;
-END ;;
+      PermissionLevel = permissionLevel,
+      GrantedBy = grantedByUsername;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -310,16 +331,16 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_lookup`(IN projectID bigint(20))
-BEGIN
-	SELECT `Project`.`Name`, `Permissions`.`Username`, `Permissions`.`PermissionLevel`, `Permissions`.`GrantedBy`, `Permissions`.`GrantedDate` 
+  BEGIN
+    SELECT `Project`.`Name`, `Permissions`.`Username`, `Permissions`.`PermissionLevel`, `Permissions`.`GrantedBy`, `Permissions`.`GrantedDate`
     FROM Project LEFT JOIN Permissions
-		ON Project.ProjectID = Permissions.ProjectID
-	WHERE Project.ProjectID = projectID
+        ON Project.ProjectID = Permissions.ProjectID
+    WHERE Project.ProjectID = projectID
     UNION
     SELECT `Project`.`Name`, `Project`.`Owner`, 10, `Project`.`Owner`, 0
     FROM `Project`
     WHERE `Project`.`ProjectID` = projectID;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -336,11 +357,11 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_rename`(IN projectID bigint(20), IN newName varchar(50))
-BEGIN
-	UPDATE Project
+  BEGIN
+    UPDATE Project
     SET `Name` = newName
     WHERE Project.ProjectID = projectID;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -357,12 +378,12 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_revoke_permissions`(IN projectID bigint(20),
-												IN revokeUsername varchar(25))
-BEGIN
-	DELETE FROM Permissions
+                                                                         IN revokeUsername varchar(25))
+  BEGIN
+    DELETE FROM Permissions
     WHERE Permissions.ProjectID = projectID
-		AND Permissions.Username = revokeUsername;
-END ;;
+          AND Permissions.Username = revokeUsername;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -379,10 +400,10 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `user_delete`(IN username varchar(25))
-BEGIN
-	DELETE FROM `User`
+  BEGIN
+    DELETE FROM `User`
     WHERE `User`.Username = username;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -399,10 +420,10 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `user_get_password`(IN username varchar(25))
-BEGIN
-	SELECT Password
+  BEGIN
+    SELECT Password
     FROM User where User.Username = username;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -419,10 +440,10 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `user_lookup`(IN username varchar(25))
-BEGIN
-	SELECT FirstName, LastName, Email, Username
+  BEGIN
+    SELECT FirstName, LastName, Email, Username
     FROM User where User.Username = username;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -439,15 +460,15 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `user_projects`(IN username varchar(25))
-BEGIN
-	SELECT `Project`.`ProjectID`, `Project`.`Name`, `Permissions`.`PermissionLevel`
-    FROM (Permissions LEFT JOIN Project ON Permissions.ProjectID = Project.ProjectID) 
-    WHERE Permissions.Username = username 
+  BEGIN
+    SELECT `Project`.`ProjectID`, `Project`.`Name`, `Permissions`.`PermissionLevel`
+    FROM (Permissions LEFT JOIN Project ON Permissions.ProjectID = Project.ProjectID)
+    WHERE Permissions.Username = username
     UNION
-    SELECT `Project`.`ProjectID`, `Project`.`Name`, 10 
+    SELECT `Project`.`ProjectID`, `Project`.`Name`, 10
     FROM `Project`
     WHERE `Project`.`Owner` = username;
-END ;;
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -463,14 +484,14 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `user_register`(IN username varchar(25), 
-									IN pass varchar(50), 
-                                    IN email varchar(50), 
-                                    IN firstName varchar(30), 
-                                    IN lastName varchar(30))
-BEGIN
-	INSERT INTO User VALUES (username, pass, email, firstName, lastName);
-END ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `user_register`(IN username varchar(25),
+                                                            IN pass varchar(50),
+                                                            IN email varchar(50),
+                                                            IN firstName varchar(30),
+                                                            IN lastName varchar(30))
+  BEGIN
+    INSERT INTO User VALUES (username, pass, email, firstName, lastName);
+  END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -486,4 +507,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-05-07 19:36:22
+-- Dump completed on 2016-05-08 17:41:40

@@ -426,3 +426,27 @@ func MySQLFileRename(fileID int64, newName string) error {
 	}
 	return nil
 }
+
+// MySQLFileGetInfo returns the meta data about the given file
+func MySQLFileGetInfo(fileID int64) (FileMeta, error) {
+	file := FileMeta{}
+	mysql, err := openMySQLConn(mysqldbName)
+	if err != nil {
+		return file, err
+	}
+
+	rows, err := mysql.db.Query("CALL file_get_info(?)", fileID)
+	if err != nil {
+		return file, err
+	}
+
+	file.FileID = fileID
+	for rows.Next() {
+		err = rows.Scan(&file.Creator, &file.CreationDate, &file.RelativePath, &file.ProjectID, &file.Filename)
+		if err != nil {
+			return file, err
+		}
+	}
+
+	return file, nil
+}
