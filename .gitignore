@@ -25,6 +25,7 @@ _testmain.go
 
 # Eclipse, IntelliJ project files
 .idea
+*.iml
 *.project
 
 # Config files
