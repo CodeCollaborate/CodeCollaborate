@@ -3,13 +3,13 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "yc/AtS4YqKJrwaJTbHKmDYVrtVE=",
+			"checksumSHA1": "6yx0/n2JGlqdBkdwT9qxF2YGvmI=",
 			"path": "github.com/gorilla/websocket",
 			"revision": "e2e3d8414d0fbae04004f151979f4e27c6747fe7",
 			"revisionTime": "2016-03-13T18:57:37Z"
 		},
 		{
-			"checksumSHA1": "rKV8YLkXpeNG1Oix8hlYqVsEFb4=",
+			"checksumSHA1": "uboKbybSheSH99DWeX328g+tfbw=",
 			"path": "github.com/streadway/amqp",
 			"revision": "2e25825abdbd7752ff08b270d313b93519a0a232",
 			"revisionTime": "2016-03-11T21:55:03Z"

@@ -1,4 +1,5 @@
 sudo: required
+dist: trusty
 language: go
 go:
 - 1.6
@@ -15,15 +16,23 @@ branches:
 # Also run on v<major>.<minor> tags
 #  - /v\d+\.\d+\.\d+.*/
 
+before_install:
+- sudo apt-get -qq update
+- sudo apt-get install -y mysql-server
+- travisScripts/InstallCouchBase.sh
+
 install:
+- cp ./config/defaults/* ./config
 - go get golang.org/x/tools/cmd/goimports
 - go get github.com/golang/lint/golint
 - ./GetDependencies.sh
-- cp ./config/defaults/* ./config
+- cat ./config/mysqlTestingSetup.sql | mysql -uroot
+- cat ./config/mysqlTestingSchemaSetup.sql | mysql -uroot
+#- mysql -e "SHOW DATABASES" -uroot
 
 script:
 # Run checks & tests
-- ./CheckFormatting.sh
+- travisScripts/CheckFormatting.sh
 - ./RunTests.sh
 # Build on different architectures and OS-es
 - GOOS=windows GOARCH=386 go build -o bin/server_windows_x86.exe
