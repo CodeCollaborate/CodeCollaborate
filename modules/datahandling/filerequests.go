@@ -110,8 +110,9 @@ func (f fileDeleteRequest) process() (response *serverMessageWrapper, notificati
 
 // File.Change
 type fileChangeRequest struct {
-	FileID  int64
-	Changes []string
+	FileID      int64
+	Changes     []string
+	FileVersion int64
 	abstractRequest
 }
 

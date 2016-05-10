@@ -330,6 +330,7 @@ func TestFileChangeRequest(t *testing.T) {
 	req.SenderToken = "supersecure"
 	req.Data = json.RawMessage("{" +
 		"\"FileID\": 12345," +
+		"\"FileVersion\": 25," +
 		"\"Changes\": [\"ok\", \"k\"]" +
 		"}")
 

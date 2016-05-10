@@ -24,14 +24,18 @@ _testmain.go
 *.prof
 
 # Eclipse, IntelliJ project files
-*.iml
 .idea
+*.iml
 *.project
 
 # Config files
-/config*
-!/config/defaults/*
+/config/*
+!/config/defaults/
 
 # Vendored files
 /vendor/*
 !/vendor/vendor.json
+
+# Filesystem testing temp
+/testing
+ProjectFiles
