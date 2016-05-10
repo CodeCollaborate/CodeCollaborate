@@ -2,11 +2,9 @@ package dbfs
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/config"
@@ -15,9 +13,8 @@ import (
 func TestFileWrite(t *testing.T) {
 	configSetup()
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
-	pathsep := strconv.QuoteRune(os.PathSeparator)[1:2]
-	filepath1 := projectParentPath + pathsep + "10" + pathsep + "myFile1.txt"
-	filepath2 := projectParentPath + pathsep + "10" + pathsep + "hi" + pathsep + "myFile2.txt"
+	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
+	filepath2 := filepath.Join(projectParentPath, "10", "hi", "myFile2.txt")
 
 	fileText := []byte("hello\nWelcome to my file\n")
 
@@ -38,17 +35,17 @@ func TestFileWrite(t *testing.T) {
 
 	// Test a bad path
 	_, err = FileWrite("..", "myFile.txt", 10, fileText)
-	if err != ErrMalliciousRequest {
+	if err != ErrMaliciousRequest {
 		t.Fatal("Expected failure to write to bad location")
 	}
 	// Test a worse but hidden path
 	_, err = FileWrite("fake/../../../", "myFile.txt", 10, fileText)
-	if err != ErrMalliciousRequest {
+	if err != ErrMaliciousRequest {
 		t.Fatal("Expected failure to write to bad location")
 	}
 	// Test with a bad filename
 	_, err = FileWrite(".", "../myFile.txt", 10, fileText)
-	if err != ErrMalliciousRequest {
+	if err != ErrMaliciousRequest {
 		t.Fatal("Expected failure to write to bad location")
 	}
 
@@ -67,27 +64,26 @@ func TestFileWrite(t *testing.T) {
 
 	os.Remove(filepath2)
 	os.Remove(filepath1)
-	os.Remove(projectParentPath + pathsep + "10" + pathsep + "hi/")
-	os.Remove(projectParentPath + pathsep + "10")
+	os.Remove(filepath.Join(projectParentPath, "10", "hi/"))
+	os.Remove(filepath.Join(projectParentPath, "10"))
 	os.Remove(projectParentPath)
 }
 
 func TestFileRead(t *testing.T) {
 	configSetup()
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
-	pathsep := strconv.QuoteRune(os.PathSeparator)[1:2]
-	filepath1 := projectParentPath + pathsep + "10" + pathsep + "myFile1.txt"
+	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
+
 	fileText := []byte("hello\nWelcome to my file\n")
 
 	defer os.Remove(projectParentPath)
-	defer os.Remove(projectParentPath + pathsep + "10")
+	defer os.Remove(filepath.Join(projectParentPath, "10"))
 	defer os.Remove(filepath1)
 
-	loc, err := FileWrite(".", "myFile1.txt", 10, fileText)
+	_, err := FileWrite(".", "myFile1.txt", 10, fileText)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(loc)
 
 	data, err := FileRead(".", "myFile1.txt", 10)
 

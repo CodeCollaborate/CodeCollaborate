@@ -45,7 +45,11 @@ func openCouchBase() (*couchbaseConn, error) {
 		return couchbasedb, err
 	}
 
-	myBucket, err := documentsCluster.OpenBucket("documents", couchbasedb.config.Password)
+	if couchbasedb.config.Schema == "" {
+		couchbasedb.config.Schema = "documents"
+	}
+
+	myBucket, err := documentsCluster.OpenBucket(couchbasedb.config.Schema, couchbasedb.config.Password)
 	if err != nil {
 		return couchbasedb, err
 	}

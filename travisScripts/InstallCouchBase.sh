@@ -5,4 +5,4 @@ sudo dpkg -i couchbase_server.deb
 sudo service couchbase-server restart
 sleep 5
 /opt/couchbase/bin/couchbase-cli cluster-init -c localhost:8091 --cluster-username=Administrator --cluster-password=password --cluster-ramsize=512
-/opt/couchbase/bin/couchbase-cli bucket-create -c localhost:8091 -u Administrator -p password --bucket=documents --bucket-type=couchbase --bucket-ramsize=512 --wait
+/opt/couchbase/bin/couchbase-cli bucket-create -c localhost:8091 -u Administrator -p password --bucket=testing --bucket-type=couchbase --bucket-ramsize=512 --wait

@@ -8,7 +8,7 @@ import (
 func TestOpenMySQLConn(t *testing.T) {
 	configSetup()
 
-	my, err := openMySQLConn("cc")
+	my, err := getMySQLConn()
 	defer CloseMySQL()
 
 	if err != nil {
@@ -25,7 +25,7 @@ func TestOpenMySQLConn(t *testing.T) {
 
 func TestCloseMySQL(t *testing.T) {
 	configSetup()
-	_, err := openMySQLConn("cc")
+	_, err := getMySQLConn()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,10 +41,16 @@ func TestCloseMySQL(t *testing.T) {
 
 func TestMySQLUserRegister(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
 	mySQLUserDelete("jshap70", "secret")
 
-	err := MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	err := MySQLUserRegister(user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,9 +62,16 @@ func TestMySQLUserRegister(t *testing.T) {
 
 func TestMySQLUserGetPass(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
 	mySQLUserDelete("jshap70", "secret")
-	err := MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	err := MySQLUserRegister(user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,19 +89,26 @@ func TestMySQLUserGetPass(t *testing.T) {
 
 func TestMySQLUserLookup(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
 	mySQLUserDelete("jshap70", "secret")
-	err := MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	err := MySQLUserRegister(user)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	firstname, lastname, email, err := MySQLUserLookup("jshap70")
+	userRet, err := MySQLUserLookup("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if firstname != "Joel" || lastname != "Shapiro" || email != "joel@codecollab.cc" {
-		t.Fatalf("Wrong return, got: %v %v, email: %v", firstname, lastname, email)
+	if userRet.FirstName != "Joel" || userRet.LastName != "Shapiro" || userRet.Email != "joel@codecollab.cc" {
+		t.Fatalf("Wrong return, got: %v %v, email: %v", userRet.FirstName, userRet.LastName, userRet.Email)
 	}
 
 	err = mySQLUserDelete("jshap70", "secret")
@@ -99,9 +119,16 @@ func TestMySQLUserLookup(t *testing.T) {
 
 func TestMySQLUserProjects(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
 	mySQLUserDelete("jshap70", "secret")
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 
 	projects, err := MySQLUserProjects("jshap70")
@@ -121,8 +148,15 @@ func TestMySQLUserProjects(t *testing.T) {
 
 func TestMySQLProjectCreate(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
 
 	projectID, err := MySQLProjectCreate("jshap70", "codecollabcore")
 	if err != nil {
@@ -149,8 +183,15 @@ func TestMySQLProjectCreate(t *testing.T) {
 
 func TestMySQLProjectDelete(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
 
 	projectID, err := MySQLProjectCreate("jshap70", "codecollabcore")
 	if err != nil {
@@ -180,8 +221,15 @@ func TestMySQLProjectDelete(t *testing.T) {
 
 func TestMySQLProjectGetFiles(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
 
 	projectID, err := MySQLProjectCreate("jshap70", "codecollabcore")
 	MySQLFileCreate("jshap70", "file-y", ".", projectID)
@@ -205,9 +253,24 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 
 func TestMySQLProjectGrantPermission(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
-	MySQLUserRegister("fahslaj", "secret", "austin@codecollab.cc", "Austin", "Fahsl")
+
+	userJoel := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	userAustin := UserMeta{
+		Username:  "fahslaj",
+		Password:  "secret",
+		Email:     "austin@codecollab.cc",
+		FirstName: "Austin",
+		LastName:  "Fahsl"}
+
+	MySQLUserRegister(userJoel)
+	MySQLUserRegister(userAustin)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 
 	err := MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
@@ -243,9 +306,24 @@ func TestMySQLProjectGrantPermission(t *testing.T) {
 
 func TestMySQLProjectLookup(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
-	MySQLUserRegister("fahslaj", "secret", "austin@codecollab.cc", "Austin", "Fahsl")
+
+	userJoel := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	userAustin := UserMeta{
+		Username:  "fahslaj",
+		Password:  "secret",
+		Email:     "austin@codecollab.cc",
+		FirstName: "Austin",
+		LastName:  "Fahsl"}
+
+	MySQLUserRegister(userJoel)
+	MySQLUserRegister(userAustin)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 
 	err := MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
@@ -281,9 +359,24 @@ func TestMySQLProjectLookup(t *testing.T) {
 
 func TestMySQLProjectRevokePermission(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
-	MySQLUserRegister("fahslaj", "secret", "austin@codecollab.cc", "Austin", "Fahsl")
+
+	userJoel := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	userAustin := UserMeta{
+		Username:  "fahslaj",
+		Password:  "secret",
+		Email:     "austin@codecollab.cc",
+		FirstName: "Austin",
+		LastName:  "Fahsl"}
+
+	MySQLUserRegister(userJoel)
+	MySQLUserRegister(userAustin)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 
 	MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
@@ -309,9 +402,17 @@ func TestMySQLProjectRevokePermission(t *testing.T) {
 
 func TestMySQLProjectRename(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
 	mySQLUserDelete("jshap70", "secret")
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 
 	err := MySQLProjectRename(projectID, "newName")
@@ -330,8 +431,16 @@ func TestMySQLProjectRename(t *testing.T) {
 
 func TestMySQLFileCreate(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, err := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
@@ -354,8 +463,16 @@ func TestMySQLFileCreate(t *testing.T) {
 
 func TestMySQLFileDelete(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 	err := MySQLFileDelete(fileID)
@@ -374,8 +491,16 @@ func TestMySQLFileDelete(t *testing.T) {
 
 func TestMySQLFileMove(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
@@ -398,8 +523,16 @@ func TestMySQLFileMove(t *testing.T) {
 
 func TestMySQLRenameFile(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
@@ -422,8 +555,16 @@ func TestMySQLRenameFile(t *testing.T) {
 
 func TestMySQLFileGetInfo(t *testing.T) {
 	configSetup()
-	mysqldbName = "cc" // TODO: change to "testing"?
-	MySQLUserRegister("jshap70", "secret", "joel@codecollab.cc", "Joel", "Shapiro")
+
+	user := UserMeta{
+		Username:  "jshap70",
+		Password:  "secret",
+		Email:     "joel@codecollab.cc",
+		FirstName: "Joel",
+		LastName:  "Shapiro"}
+
+	MySQLUserRegister(user)
+
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
 

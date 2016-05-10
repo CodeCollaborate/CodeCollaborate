@@ -26,8 +26,8 @@ install:
 - go get golang.org/x/tools/cmd/goimports
 - go get github.com/golang/lint/golint
 - ./GetDependencies.sh
-- cat ./config/mysqlSetup.sql | mysql -uroot
-- cat ./config/mysqlSchemaSetup.sql | mysql -uroot
+- cat ./config/mysqlTestingSetup.sql | mysql -uroot
+- cat ./config/mysqlTestingSchemaSetup.sql | mysql -uroot
 #- mysql -e "SHOW DATABASES" -uroot
 
 script:

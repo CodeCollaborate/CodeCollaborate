@@ -5,13 +5,13 @@ import (
 
 	_ "github.com/go-sql-driver/mysql" // required to load into local namespace to
 	// initialize sql driver mapping in sql.Open("mysql", ...)
-	"strconv"
 
 	"time"
 
-	"os"
 	"path/filepath"
 	"strings"
+
+	"fmt"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
@@ -19,18 +19,15 @@ import (
 
 var mysqldb *mysqlConn
 
-var mysqldbName = "cc"
-
 type mysqlConn struct {
 	config config.ConnCfg
 	db     *sql.DB
-	dbname string
 }
 
-func openMySQLConn(dbName string) (*mysqlConn, error) {
+func getMySQLConn() (*mysqlConn, error) {
 	if mysqldb != nil && mysqldb.db != nil {
 		err := mysqldb.db.Ping()
-		if err == nil && mysqldb.dbname == dbName {
+		if err == nil {
 			return mysqldb, nil
 		}
 	}
@@ -41,14 +38,18 @@ func openMySQLConn(dbName string) (*mysqlConn, error) {
 		mysqldb.config = configMap.ConnectionConfig["MySQL"]
 	}
 
-	db, err := sql.Open("mysql", mysqldb.config.Username+":"+mysqldb.config.Password+"@tcp("+mysqldb.config.Host+":"+strconv.Itoa(int(mysqldb.config.Port))+")/"+dbName+"?timeout="+strconv.Itoa(int(mysqldb.config.Timeout))+"s"+"&parseTime=true")
+	if couchbasedb.config.Schema == "" {
+		couchbasedb.config.Schema = "cc"
+	}
+
+	connString := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?timeout=%vs&parseTime=true", mysqldb.config.Username, mysqldb.config.Password, mysqldb.config.Host, int(mysqldb.config.Port), mysqldb.config.Schema, int(mysqldb.config.Timeout))
+	db, err := sql.Open("mysql", connString)
 	if err != nil {
 		utils.LogOnError(err, "Unable to connect to MySQL")
 		return mysqldb, err
 	}
 
 	mysqldb.db = db
-	mysqldb.dbname = dbName
 	return mysqldb, nil
 }
 
@@ -68,13 +69,13 @@ STORED PROCEDURES
 */
 
 // MySQLUserRegister registers a new user in MySQL
-func MySQLUserRegister(username string, pass string, email string, firstName string, lastName string) error {
-	mysql, err := openMySQLConn(mysqldbName)
+func MySQLUserRegister(user UserMeta) error {
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL user_register(?,?,?,?,?)", username, pass, email, firstName, lastName)
+	result, err := mysql.db.Exec("CALL user_register(?,?,?,?,?)", user.Username, user.Password, user.Email, user.FirstName, user.LastName)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func MySQLUserRegister(username string, pass string, email string, firstName str
 
 // MySQLUserGetPass is used to get the key and hash of a stored password to verify that a value is correct
 func MySQLUserGetPass(username string) (password string, err error) {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +113,7 @@ func MySQLUserGetPass(username string) (password string, err error) {
 // MySQLUserDelete deletes a user from MySQL
 // unexported b/c not part of the official API
 func mySQLUserDelete(username string, pass string) error {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -133,31 +134,30 @@ func mySQLUserDelete(username string, pass string) error {
 }
 
 // MySQLUserLookup returns user information about a user with the username 'username'
-func MySQLUserLookup(username string) (firstname string, lastname string, email string, err error) {
-	mysql, err := openMySQLConn(mysqldbName)
+func MySQLUserLookup(username string) (user UserMeta, err error) {
+	mysql, err := getMySQLConn()
 	if err != nil {
-		return "", "", "", err
+		return user, err
 	}
 
 	rows, err := mysql.db.Query("CALL user_lookup(?)", username)
 	if err != nil {
-		return "", "", "", err
+		return user, err
 	}
 
 	for rows.Next() {
-		var username string
-		err = rows.Scan(&firstname, &lastname, &email, &username)
+		err = rows.Scan(&user.FirstName, &user.LastName, &user.Email, &user.Username)
 		if err != nil {
-			return "", "", "", err
+			return user, err
 		}
 	}
 
-	return firstname, lastname, email, nil
+	return user, nil
 }
 
 // MySQLUserProjects returns the projectID, the project name, and the permission level the user `username` has on that project
 func MySQLUserProjects(username string) (projects []Project, err error) {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func MySQLUserProjects(username string) (projects []Project, err error) {
 
 // MySQLProjectCreate create a new project in MySQL
 func MySQLProjectCreate(username string, projectName string) (projectID int64, err error) {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return -1, err
 	}
@@ -202,7 +202,7 @@ func MySQLProjectCreate(username string, projectName string) (projectID int64, e
 
 // MySQLProjectDelete deletes a project from MySQL
 func MySQLProjectDelete(projectID int64) error {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func MySQLProjectDelete(projectID int64) error {
 
 // MySQLProjectGetFiles returns the Files from the project with projectID = projectID
 func MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error) {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error) {
 
 // MySQLProjectGrantPermission gives the user `grantUsername` the permision `permissionLevel` on project `projectID`
 func MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func MySQLProjectGrantPermission(projectID int64, grantUsername string, permissi
 // MySQLProjectRevokePermission removes revokeUsername's permissions from the project
 // DOES NOT WORK FOR OWNER
 func MySQLProjectRevokePermission(projectID int64, revokeUsername string) error {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func MySQLProjectRevokePermission(projectID int64, revokeUsername string) error 
 
 // MySQLProjectRename allows for you to rename projects
 func MySQLProjectRename(projectID int64, newName string) error {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -304,7 +304,7 @@ func MySQLProjectRename(projectID int64, newName string) error {
 // MySQLProjectLookup returns the project name and permissions for a project with ProjectID = 'projectID'
 func MySQLProjectLookup(projectID int64) (name string, permisions map[string]ProjectPermission, err error) {
 	permisions = make(map[string](ProjectPermission))
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return "", permisions, err
 	}
@@ -330,17 +330,16 @@ func MySQLProjectLookup(projectID int64) (name string, permisions map[string]Pro
 
 // MySQLFileCreate create a new file in MySQL
 func MySQLFileCreate(username string, filename string, relativePath string, projectID int64) (fileID int64, err error) {
-	pathsep := strconv.QuoteRune(os.PathSeparator)
-	if strings.Contains(filename, pathsep[1:len(pathsep)-1]) {
-		return -1, ErrMalliciousRequest
+	if strings.Contains(filename, filePathSeparator) {
+		return -1, ErrMaliciousRequest
 	}
 
 	filepathClean := filepath.Clean(relativePath)
 	if strings.HasPrefix(filepathClean, "..") {
-		return -1, ErrMalliciousRequest
+		return -1, ErrMaliciousRequest
 	}
 
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return -1, err
 	}
@@ -362,7 +361,7 @@ func MySQLFileCreate(username string, filename string, relativePath string, proj
 // MySQLFileDelete deletes a file from the MySQL database
 // this does not delete the actual file
 func MySQLFileDelete(fileID int64) error {
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -383,10 +382,10 @@ func MySQLFileDelete(fileID int64) error {
 func MySQLFileMove(fileID int64, newPath string) error {
 	newPathClean := filepath.Clean(newPath)
 	if strings.HasPrefix(newPathClean, "..") {
-		return ErrMalliciousRequest
+		return ErrMaliciousRequest
 	}
 
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -405,12 +404,11 @@ func MySQLFileMove(fileID int64, newPath string) error {
 
 // MySQLFileRename updates MySQL with the new name of the file with FileID == 'fileID'
 func MySQLFileRename(fileID int64, newName string) error {
-	pathsep := strconv.QuoteRune(os.PathSeparator)
-	if strings.Contains(newName, pathsep[1:len(pathsep)-1]) {
-		return ErrMalliciousRequest
+	if strings.Contains(newName, filePathSeparator) {
+		return ErrMaliciousRequest
 	}
 
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -430,7 +428,7 @@ func MySQLFileRename(fileID int64, newName string) error {
 // MySQLFileGetInfo returns the meta data about the given file
 func MySQLFileGetInfo(fileID int64) (FileMeta, error) {
 	file := FileMeta{}
-	mysql, err := openMySQLConn(mysqldbName)
+	mysql, err := getMySQLConn()
 	if err != nil {
 		return file, err
 	}

@@ -1,10 +1,10 @@
-USE `cc`;
-# USE `testing`;
+# USE `cc`;
+USE `testing`;
 
 
 -- MySQL dump 10.13  Distrib 5.7.12, for Linux (x86_64)
 --
--- Host: localhost    Database: cc
+-- Host: localhost    Database: testing
 -- ------------------------------------------------------
 -- Server version	5.7.12
 
@@ -90,7 +90,7 @@ CREATE TABLE `Project` (
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-  /*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `cc`.`Project_BEFORE_DELETE` BEFORE DELETE ON `Project` FOR EACH ROW
+  /*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `testing`.`Project_BEFORE_DELETE` BEFORE DELETE ON `Project` FOR EACH ROW
   BEGIN
     DELETE FROM Permissions
     WHERE Permissions.ProjectID = OLD.ProjectID;
@@ -123,11 +123,11 @@ CREATE TABLE `User` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping events for database 'cc'
+-- Dumping events for database 'testing'
 --
 
 --
--- Dumping routines for database 'cc'
+-- Dumping routines for database 'testing'
 --
 /*!50003 DROP PROCEDURE IF EXISTS `file_create` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;

@@ -28,4 +28,5 @@ type ConnCfg struct {
 	Password   string
 	Timeout    uint16
 	NumRetries uint16
+	Schema     string
 }
