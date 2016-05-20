@@ -52,7 +52,7 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileCreateRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved file create request from %s\n", f.SenderID)
 	return nil, nil, nil
@@ -69,7 +69,7 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileRenameRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f fileRenameRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved file rename request from %s\n", f.SenderID)
 	return nil, nil, nil
@@ -86,7 +86,7 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileMoveRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f fileMoveRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved file move request from %s\n", f.SenderID)
 	return nil, nil, nil
@@ -102,7 +102,7 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileDeleteRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f fileDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved file delete request from %s\n", f.SenderID)
 	return nil, nil, nil
@@ -120,7 +120,7 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileChangeRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f fileChangeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved file change request from %s\n", f.SenderID)
 	return nil, nil, nil
@@ -136,7 +136,7 @@ func (f *filePullRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f filePullRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (f filePullRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved file pull request from %s\n", f.SenderID)
 	return nil, nil, nil

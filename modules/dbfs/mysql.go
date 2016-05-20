@@ -156,7 +156,7 @@ func MySQLUserLookup(username string) (user UserMeta, err error) {
 }
 
 // MySQLUserProjects returns the projectID, the project name, and the permission level the user `username` has on that project
-func MySQLUserProjects(username string) (projects []Project, err error) {
+func MySQLUserProjects(username string) (projects []ProjectMeta, err error) {
 	mysql, err := getMySQLConn()
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func MySQLUserProjects(username string) (projects []Project, err error) {
 	}
 
 	for rows.Next() {
-		project := Project{}
+		project := ProjectMeta{}
 		err = rows.Scan(&project.ProjectID, &project.ProjectName, &project.PermissionLevel)
 		if err != nil {
 			return nil, err
@@ -264,7 +264,10 @@ func MySQLProjectGrantPermission(projectID int64, grantUsername string, permissi
 
 // MySQLProjectRevokePermission removes revokeUsername's permissions from the project
 // DOES NOT WORK FOR OWNER
-func MySQLProjectRevokePermission(projectID int64, revokeUsername string) error {
+func MySQLProjectRevokePermission(projectID int64, revokeUsername string, revokedByUsername string) error {
+
+	// TODO: check if permission high enough on project
+
 	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
@@ -308,6 +311,8 @@ func MySQLProjectLookup(projectID int64) (name string, permisions map[string]Pro
 	if err != nil {
 		return "", permisions, err
 	}
+
+	// TODO: un-hardcode '10' as the owner constant in the stored proc
 
 	rows, err := mysql.db.Query("CALL project_lookup(?)", projectID)
 	if err != nil {

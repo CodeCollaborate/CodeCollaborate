@@ -1,0 +1,14 @@
+things to put on redis:
+	temerary storage of project permissions w/ decaying timer
+	web auth tokens?
+	permission constants
+	online clients
+
+intergoprocdandling todos:
+	check if permission high enough on project before taking some actions
+	user authentication
+	figure out how to close ws connection on malicious request
+	actually write the other process() functions
+	un-hardcode '10' as the owner constant in the stored proc
+	
+

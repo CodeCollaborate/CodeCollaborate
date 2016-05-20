@@ -5,7 +5,7 @@ import (
 )
 
 /**
- * requestmap.go provides the pseudo-factory map for looking up the associated request
+ * provides the pseudo-factory map for looking up the associated request
  */
 
 // map to lookup authenticated api functions

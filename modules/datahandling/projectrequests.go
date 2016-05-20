@@ -2,6 +2,9 @@ package datahandling
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
 var projectRequestsSetup = false
@@ -65,10 +68,30 @@ func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectCreateRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
-	// TODO
-	fmt.Printf("Recieved project create request from %s\n", p.SenderID)
-	return nil, nil, nil
+func (p projectCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+	projectID, err := dbfs.MySQLProjectCreate(p.SenderID, p.Name)
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now()
+	res.Type = "Responce"
+
+	if err != nil {
+		//if err == project already exists {
+		// TODO: implement a specific error for this on the mysql.go side
+		//}
+
+		res.ServerMessage = response{
+			Status: servfail,
+			Tag:    p.Tag,
+			Data:   {"ProjectID": -1}}
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    p.Tag,
+			Data:   {"ProjectID": projectID}}
+	}
+
+	return res, nil, nil
 }
 
 // Project.Rename
@@ -82,10 +105,38 @@ func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectRenameRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
-	// TODO
-	fmt.Printf("Recieved project rename request from %s\n", p.SenderID)
-	return nil, nil, nil
+func (p projectRenameRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+
+	// TODO: check if permission high enough on project
+
+	err := dbfs.MySQLProjectRename(p.ProjectID, p.NewName)
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	if err != nil {
+		res.ServerMessage = response{
+			Status: servfail,
+			Tag:    p.Tag,
+			Data:   {}}
+		not = nil // don't send anything
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    p.Tag,
+			Data:   {}}
+		not.ServerMessage = notification{
+			Resource: p.Resource,
+			Method:   p.Method,
+			Data:     {"NewName": p.NewName}}
+	}
+
+	return res, not, nil
 }
 
 // Project.GetPermissionConstants
@@ -97,8 +148,8 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 	p.abstractRequest = *req
 }
 
-func (p projectGetPermissionConstantsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
-	// TODO
+func (p projectGetPermissionConstantsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+	// TODO: figure out how we want to do this on the db
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -111,10 +162,39 @@ type projectGrantPermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectGrantPermissionsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
-	// TODO
-	fmt.Printf("Recieved project grant permissions request from %s\n", p.SenderID)
-	return nil, nil, nil
+func (p projectGrantPermissionsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+	// TODO: check if permission high enough on project
+
+	err := dbfs.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	if err != nil {
+		res.ServerMessage = response{
+			Status: servfail,
+			Tag:    p.Tag,
+			Data:   {}}
+		not = nil
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    p.Tag,
+			Data:   {}}
+		not.ServerMessage = notification{
+			Resource: p.Resource,
+			Method:   p.Method,
+			Data: {
+				"GrantUsername":   p.GrantUsername,
+				"PermissionLevel": p.PermissionLevel}}
+	}
+
+	return res, not, nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -128,10 +208,36 @@ type projectRevokePermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectRevokePermissionsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
-	// TODO
-	fmt.Printf("Recieved project revoke permissions request from %s\n", p.SenderID)
-	return nil, nil, nil
+func (p projectRevokePermissionsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+	// TODO: check if permission high enough on project
+	err := dbfs.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	if err != nil {
+		res.ServerMessage = response{
+			Status: servfail,
+			Tag:    p.Tag,
+			Data:   {}}
+		not = nil
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    p.Tag,
+			Data:   {}}
+		not.ServerMessage = notification{
+			Resource: p.Resource,
+			Method:   p.Method,
+			Data:     {"RevokeUsername": p.RevokeUsername}}
+	}
+
+	return res, not, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -144,8 +250,8 @@ type projectGetOnlineClientsRequest struct {
 	abstractRequest
 }
 
-func (p projectGetOnlineClientsRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
-	// TODO
+func (p projectGetOnlineClientsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+	// TODO: add on redis
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -160,7 +266,7 @@ type projectLookupRequest struct {
 	abstractRequest
 }
 
-func (p projectLookupRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (p projectLookupRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved project lookup request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -176,7 +282,7 @@ type projectGetFilesRequest struct {
 	abstractRequest
 }
 
-func (p projectGetFilesRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (p projectGetFilesRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved get project files request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -192,7 +298,7 @@ type projectSubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectSubscribeRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (p projectSubscribeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved project subscribe request from %s\n", p.SenderID)
 	return nil, nil, nil
@@ -208,7 +314,7 @@ type projectDeleteRequest struct {
 	abstractRequest
 }
 
-func (p projectDeleteRequest) process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error) {
+func (p projectDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
 	fmt.Printf("Recieved project delete request from %s\n", p.SenderID)
 	return nil, nil, nil

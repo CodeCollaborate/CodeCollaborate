@@ -37,7 +37,6 @@ func (dh DataHandler) Handle(wsID uint64, messageType int, message []byte) error
 
 	if err != nil {
 		utils.LogOnError(err, "Failed to process request")
-		return err
 	}
 
 	if response != nil {
@@ -48,10 +47,11 @@ func (dh DataHandler) Handle(wsID uint64, messageType int, message []byte) error
 		// TODO: send on rabbit
 	}
 
-	return nil
+	return err
 }
 
 func authenticate(abs abstractRequest) bool {
+	fmt.Println("AUTHENTICATION IS NOT IMPLEMENTED YET")
 	// TODO: implement this
 	return true
 }

@@ -7,7 +7,7 @@ import (
 )
 
 /**
- * Interfaces.go describes the structs and itnerfaces used in the data handling
+ * describes the structs and itnerfaces used in the data handling
  */
 
 // Request should be implemented by all request models.
@@ -25,7 +25,7 @@ type abstractRequest struct {
 	SenderToken string
 	Method      string
 	Timestamp   int64
-	Data        json.RawMessage // date is a byte for now because we don't want it to unmarshal it yet
+	Data        json.RawMessage
 }
 
 // CreateAbstractRequest is the testable parsing into abstractRequests
@@ -78,3 +78,21 @@ type notification struct {
 func (message notification) serverMessageType() string {
 	return "Notification"
 }
+
+/**
+ * Status codes
+ */
+// success
+const success int = 200
+const accepted int = 202
+
+// meh
+
+// failure
+const fail int = 400
+const unauthorized int = 401
+const notFound int = 404
+const conflict int = 409
+
+// server failure
+const servfail int = 500

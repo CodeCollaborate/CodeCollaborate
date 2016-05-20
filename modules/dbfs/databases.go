@@ -14,19 +14,19 @@ var ErrDbNotInitialized = errors.New("The database was not propperly initialized
 // ErrMaliciousRequest : The request attempted to directly tamper with our filesystemp / database
 var ErrMaliciousRequest = errors.New("The request attempted to directly tamper with our filesystemp / database")
 
-// Project is the type which represents a row in the MySQL `Project` table
-type Project struct {
-	ProjectID       int64
-	ProjectName     string
-	PermissionLevel int
-}
-
 // ProjectPermission is the type which represents the permission relationship on projects
 type ProjectPermission struct {
 	Username        string
 	PermissionLevel int
 	GrantedBy       string
 	GrantedDate     time.Time
+}
+
+// ProjectMeta is the type which represents a row in the MySQL `Project` table
+type ProjectMeta struct {
+	ProjectID       int64
+	ProjectName     string
+	PermissionLevel int
 }
 
 // FileMeta is the type that contains all the metadata about a file
