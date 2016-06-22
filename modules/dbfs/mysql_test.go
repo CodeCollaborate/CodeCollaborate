@@ -132,7 +132,7 @@ func TestMySQLUserProjects(t *testing.T) {
 	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
 
 	projects, err := MySQLUserProjects("jshap70")
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 	if err != nil {
 		t.Fatal(err)
@@ -171,7 +171,7 @@ func TestMySQLProjectCreate(t *testing.T) {
 		t.Fatal("unexpected opperation allowed")
 	}
 
-	err = MySQLProjectDelete(projectID)
+	err = MySQLProjectDelete(projectID, "jshap70")
 	if err != nil {
 		t.Fatal(err, projectID)
 	}
@@ -204,11 +204,11 @@ func TestMySQLProjectDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = MySQLProjectDelete(projectID)
+	err = MySQLProjectDelete(projectID, "jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = MySQLProjectDelete(projectID)
+	err = MySQLProjectDelete(projectID, "jshap70")
 	if err == nil {
 		t.Fatal("project delete succeded 2x on the same projectID")
 	}
@@ -236,7 +236,7 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 
 	files, err := MySQLProjectGetFiles(projectID)
 
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
@@ -290,7 +290,7 @@ func TestMySQLProjectGrantPermission(t *testing.T) {
 		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
-	err = MySQLProjectDelete(projectID)
+	err = MySQLProjectDelete(projectID, "jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +332,7 @@ func TestMySQLProjectLookup(t *testing.T) {
 	}
 
 	name, perms, err := MySQLProjectLookup(projectID)
-	MySQLProjectDelete(projectID)
+	MySQLProjectDelete(projectID, "jshap70")
 	mySQLUserDelete("fahslaj", "secret")
 	mySQLUserDelete("jshap70", "secret")
 
@@ -389,8 +389,8 @@ func TestMySQLProjectRevokePermission(t *testing.T) {
 		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
-	MySQLProjectRevokePermission(projectID, "fahslaj")
-	_ = MySQLProjectDelete(projectID)
+	MySQLProjectRevokePermission(projectID, "fahslaj", "jshap70")
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 	_ = mySQLUserDelete("fahslaj", "secret")
 
@@ -421,7 +421,7 @@ func TestMySQLProjectRename(t *testing.T) {
 	}
 
 	projects, err := MySQLUserProjects("jshap70")
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 
 	if projects[0].ProjectID != projectID || projects[0].ProjectName != "newName" {
@@ -446,7 +446,7 @@ func TestMySQLFileCreate(t *testing.T) {
 
 	files, _ := MySQLProjectGetFiles(projectID)
 
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
@@ -478,7 +478,7 @@ func TestMySQLFileDelete(t *testing.T) {
 	err := MySQLFileDelete(fileID)
 
 	files, _ := MySQLProjectGetFiles(projectID)
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
@@ -507,7 +507,7 @@ func TestMySQLFileMove(t *testing.T) {
 	err := MySQLFileMove(fileID, "cc")
 
 	files, _ := MySQLProjectGetFiles(projectID)
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
@@ -539,7 +539,7 @@ func TestMySQLRenameFile(t *testing.T) {
 	err := MySQLFileRename(fileID, "file-z")
 
 	files, _ := MySQLProjectGetFiles(projectID)
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
@@ -572,7 +572,7 @@ func TestMySQLFileGetInfo(t *testing.T) {
 	_ = MySQLFileMove(fileID, "cc")
 	fileafter, err := MySQLFileGetInfo(fileID)
 
-	_ = MySQLProjectDelete(projectID)
+	_ = MySQLProjectDelete(projectID, "jshap70")
 	_ = mySQLUserDelete("jshap70", "secret")
 
 	if err != nil {

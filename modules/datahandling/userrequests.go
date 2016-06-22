@@ -58,11 +58,14 @@ func (f userRegisterRequest) process() (*serverMessageWrapper, *serverMessageWra
 		Email:     f.Email,
 		Password:  f.Password}
 
+	// TODO: password validation
+
 	err := dbfs.MySQLUserRegister(newUser)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now()
+	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
+
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
 			res.ServerMessage = response{Status: conflict, Tag: f.Tag}
@@ -88,6 +91,10 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f userLoginRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO implement login logic
+	// ??  lol  wat  do  ??
+	// ?? to verify pass ??
+	// ??  ??   ??   ??  ??
+
 	fmt.Printf("Recieved login request from %s\n", f.Username)
 	return nil, nil, nil
 }
@@ -119,7 +126,7 @@ func (f userLookupRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 	users = users[:index+1]
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now()
+	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
 
 	if len(users) < 0 {
@@ -130,14 +137,22 @@ func (f userLookupRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 			// return what we can but
 			// tell the client whatever they don't get back failed
 			res.ServerMessage = response{
-				Status: servfail,
+				Status: partialfail,
 				Tag:    f.Tag,
-				Data:   {"Users": users}}
+				Data: struct {
+					Users []dbfs.UserMeta
+				}{
+					users,
+				}}
 		} else {
 			res.ServerMessage = response{
 				Status: success,
 				Tag:    f.Tag,
-				Data:   {"Users": users}}
+				Data: struct {
+					Users []dbfs.UserMeta
+				}{
+					users,
+				}}
 		}
 	}
 	return res, nil, erro
@@ -156,19 +171,27 @@ func (f userProjectsRequest) process() (*serverMessageWrapper, *serverMessageWra
 	projects, err := dbfs.MySQLUserProjects(f.SenderID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now()
+	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
 
 	if err != nil {
 		res.ServerMessage = response{
-			Status: servfail,
+			Status: partialfail,
 			Tag:    f.Tag,
-			Data:   {"Projects": projects}}
+			Data: struct {
+				Projects []dbfs.ProjectMeta
+			}{
+				projects,
+			}}
 	} else {
 		res.ServerMessage = response{
 			Status: success,
 			Tag:    f.Tag,
-			Data:   {"Projects": projects}}
+			Data: struct {
+				Projects []dbfs.ProjectMeta
+			}{
+				projects,
+			}}
 	}
 
 	return res, nil, err

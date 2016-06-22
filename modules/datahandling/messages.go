@@ -93,6 +93,8 @@ const fail int = 400
 const unauthorized int = 401
 const notFound int = 404
 const conflict int = 409
+const partialfail int = 499
 
 // server failure
 const servfail int = 500
+const servpartialfail int = 599

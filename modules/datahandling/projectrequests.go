@@ -72,7 +72,7 @@ func (p projectCreateRequest) process() (*serverMessageWrapper, *serverMessageWr
 	projectID, err := dbfs.MySQLProjectCreate(p.SenderID, p.Name)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now()
+	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
 
 	if err != nil {
@@ -83,12 +83,17 @@ func (p projectCreateRequest) process() (*serverMessageWrapper, *serverMessageWr
 		res.ServerMessage = response{
 			Status: servfail,
 			Tag:    p.Tag,
-			Data:   {"ProjectID": -1}}
+			Data:   struct{ ProjectID int64 }{-1},
+		}
 	} else {
 		res.ServerMessage = response{
 			Status: success,
 			Tag:    p.Tag,
-			Data:   {"ProjectID": projectID}}
+			Data: struct {
+				ProjectID int64
+			}{
+				projectID,
+			}}
 	}
 
 	return res, nil, nil
@@ -112,7 +117,7 @@ func (p projectRenameRequest) process() (*serverMessageWrapper, *serverMessageWr
 	err := dbfs.MySQLProjectRename(p.ProjectID, p.NewName)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now()
+	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
 
 	not := new(serverMessageWrapper)
@@ -123,17 +128,21 @@ func (p projectRenameRequest) process() (*serverMessageWrapper, *serverMessageWr
 		res.ServerMessage = response{
 			Status: servfail,
 			Tag:    p.Tag,
-			Data:   {}}
+			Data:   struct{}{}}
 		not = nil // don't send anything
 	} else {
 		res.ServerMessage = response{
 			Status: success,
 			Tag:    p.Tag,
-			Data:   {}}
+			Data:   struct{}{}}
 		not.ServerMessage = notification{
 			Resource: p.Resource,
 			Method:   p.Method,
-			Data:     {"NewName": p.NewName}}
+			Data: struct {
+				NewName string
+			}{
+				p.NewName,
+			}}
 	}
 
 	return res, not, nil
@@ -168,7 +177,7 @@ func (p projectGrantPermissionsRequest) process() (*serverMessageWrapper, *serve
 	err := dbfs.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now()
+	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
 
 	not := new(serverMessageWrapper)
@@ -179,19 +188,23 @@ func (p projectGrantPermissionsRequest) process() (*serverMessageWrapper, *serve
 		res.ServerMessage = response{
 			Status: servfail,
 			Tag:    p.Tag,
-			Data:   {}}
+			Data:   struct{}{}}
 		not = nil
 	} else {
 		res.ServerMessage = response{
 			Status: success,
 			Tag:    p.Tag,
-			Data:   {}}
+			Data:   struct{}{}}
 		not.ServerMessage = notification{
 			Resource: p.Resource,
 			Method:   p.Method,
-			Data: {
-				"GrantUsername":   p.GrantUsername,
-				"PermissionLevel": p.PermissionLevel}}
+			Data: struct {
+				GrantUsername   string
+				PermissionLevel int
+			}{
+				p.GrantUsername,
+				p.PermissionLevel,
+			}}
 	}
 
 	return res, not, nil
@@ -213,7 +226,7 @@ func (p projectRevokePermissionsRequest) process() (*serverMessageWrapper, *serv
 	err := dbfs.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now()
+	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
 
 	not := new(serverMessageWrapper)
@@ -224,17 +237,21 @@ func (p projectRevokePermissionsRequest) process() (*serverMessageWrapper, *serv
 		res.ServerMessage = response{
 			Status: servfail,
 			Tag:    p.Tag,
-			Data:   {}}
+			Data:   struct{}{}}
 		not = nil
 	} else {
 		res.ServerMessage = response{
 			Status: success,
 			Tag:    p.Tag,
-			Data:   {}}
+			Data:   struct{}{}}
 		not.ServerMessage = notification{
 			Resource: p.Resource,
 			Method:   p.Method,
-			Data:     {"RevokeUsername": p.RevokeUsername}}
+			Data: struct {
+				RevokeUsername string
+			}{
+				p.RevokeUsername,
+			}}
 	}
 
 	return res, not, nil
@@ -251,7 +268,7 @@ type projectGetOnlineClientsRequest struct {
 }
 
 func (p projectGetOnlineClientsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: add on redis
+	// TODO: implement on redis (and actually implement redis)
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -266,10 +283,75 @@ type projectLookupRequest struct {
 	abstractRequest
 }
 
+// this request returns a slice of results for the projects we found, so we need the object that goes in that slice
+type projectLookupResult struct {
+	FileID      int64
+	Name        string
+	Permissions map[string](dbfs.ProjectPermission)
+}
+
 func (p projectLookupRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
-	fmt.Printf("Recieved project lookup request from %s\n", p.SenderID)
-	return nil, nil, nil
+	/*
+		We could do
+			data := make([]interface{}, len(p.ProjectIDs))
+		but it seems like poor practice and makes the object oriented side of my brain cry
+	*/
+	resultData := make([]projectLookupResult, len(p.ProjectIDs))
+
+	var errOut error
+	i := 0
+	for _, id := range p.ProjectIDs {
+		name, permissions, err := dbfs.MySQLProjectLookup(id)
+		if err != nil {
+			errOut = err
+		} else {
+			resultData[i] = projectLookupResult{
+				FileID:      id,
+				Name:        name,
+				Permissions: permissions}
+			i++
+		}
+	}
+	// shrink to cut off remainder left by errors
+	resultData = resultData[:i+1]
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	if errOut != nil {
+		if len(resultData) == 0 {
+			res.ServerMessage = response{
+				Status: fail,
+				Tag:    p.Tag,
+				Data: struct {
+					Projects []projectLookupResult
+				}{
+					resultData,
+				}}
+		} else {
+			res.ServerMessage = response{
+				Status: partialfail,
+				Tag:    p.Tag,
+				Data: struct {
+					Projects []projectLookupResult
+				}{
+					resultData,
+				}}
+		}
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    p.Tag,
+			Data: struct {
+				Projects []projectLookupResult
+			}{
+				resultData,
+			}}
+	}
+
+	//fmt.Printf("Recieved project lookup request from %s\n", p.SenderID)
+	return res, nil, nil
 }
 
 func (p *projectLookupRequest) setAbstractRequest(req *abstractRequest) {
@@ -282,10 +364,91 @@ type projectGetFilesRequest struct {
 	abstractRequest
 }
 
+type fileLookupResult struct {
+	FileID       int64
+	Filename     string
+	Creator      string
+	CreationDate time.Time
+	RelativePath string
+	ProjectID    int64
+	Version      int64
+}
+
 func (p projectGetFilesRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
-	fmt.Printf("Recieved get project files request from %s\n", p.SenderID)
-	return nil, nil, nil
+	files, err := dbfs.MySQLProjectGetFiles(p.ProjectID)
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	if err != nil {
+		res.ServerMessage = response{
+			Status: fail,
+			Tag:    p.Tag,
+			Data: struct {
+				Files []fileLookupResult
+			}{
+				make([]fileLookupResult, 0),
+			}}
+
+		return res, nil, nil
+	}
+
+	resultData := make([]fileLookupResult, len(files))
+
+	i := 0
+	var errOut error
+	for _, file := range files {
+		version, err := dbfs.CBGetFileVersion(file.FileID)
+		if err != nil {
+			errOut = err
+		} else {
+			resultData[i] = fileLookupResult{
+				FileID:       file.FileID,
+				Filename:     file.Filename,
+				Creator:      file.Creator,
+				CreationDate: file.CreationDate,
+				RelativePath: file.RelativePath,
+				ProjectID:    file.ProjectID,
+				Version:      version}
+			i++
+		}
+	}
+	// shrink to cut off remainder left by errors
+	resultData = resultData[:i+1]
+
+	if errOut != nil {
+		if len(resultData) == 0 {
+			res.ServerMessage = response{
+				Status: fail,
+				Tag:    p.Tag,
+				Data: struct {
+					Files []fileLookupResult
+				}{
+					resultData,
+				}}
+		} else {
+			res.ServerMessage = response{
+				Status: partialfail,
+				Tag:    p.Tag,
+				Data: struct {
+					Files []fileLookupResult
+				}{
+					resultData,
+				}}
+		}
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    p.Tag,
+			Data: struct {
+				Files []fileLookupResult
+			}{
+				resultData,
+			}}
+	}
+
+	return res, nil, nil
 }
 
 func (p *projectGetFilesRequest) setAbstractRequest(req *abstractRequest) {
@@ -299,7 +462,10 @@ type projectSubscribeRequest struct {
 }
 
 func (p projectSubscribeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
+	// SERIOUS ISSUE HERE
+	// TODO: figure out how to subscribe the sending go-routine on rabbit
+	// NOTE: we don't have scope to either the websocket or rabbit
+
 	fmt.Printf("Recieved project subscribe request from %s\n", p.SenderID)
 	return nil, nil, nil
 }
@@ -315,9 +481,45 @@ type projectDeleteRequest struct {
 }
 
 func (p projectDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
-	fmt.Printf("Recieved project delete request from %s\n", p.SenderID)
-	return nil, nil, nil
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	err := dbfs.MySQLProjectDelete(p.ProjectID, p.SenderID)
+	if err != nil {
+		if err == dbfs.ErrNoDbChange {
+			res.ServerMessage = response{
+				Status: fail,
+				Tag:    p.Tag,
+				Data:   struct{}{}}
+		} else {
+			res.ServerMessage = response{
+				Status: servfail,
+				Tag:    p.Tag,
+				Data:   struct{}{}}
+		}
+		not = nil
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    p.Tag,
+			Data:   struct{}{}}
+
+		not.ServerMessage = notification{
+			Resource: p.Resource,
+			Method:   p.Method,
+			Data: struct {
+				DeletedProjectID int64
+			}{
+				p.ProjectID,
+			}}
+	}
+
+	return res, not, nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {

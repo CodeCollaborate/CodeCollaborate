@@ -38,8 +38,8 @@ func getMySQLConn() (*mysqlConn, error) {
 		mysqldb.config = configMap.ConnectionConfig["MySQL"]
 	}
 
-	if couchbasedb.config.Schema == "" {
-		couchbasedb.config.Schema = "cc"
+	if mysqldb.config.Schema == "" {
+		mysqldb.config.Schema = "cc"
 	}
 
 	connString := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?timeout=%vs&parseTime=true", mysqldb.config.Username, mysqldb.config.Password, mysqldb.config.Host, int(mysqldb.config.Port), mysqldb.config.Schema, int(mysqldb.config.Timeout))
@@ -201,13 +201,13 @@ func MySQLProjectCreate(username string, projectName string) (projectID int64, e
 }
 
 // MySQLProjectDelete deletes a project from MySQL
-func MySQLProjectDelete(projectID int64) error {
+func MySQLProjectDelete(projectID int64, senderID string) error {
 	mysql, err := getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL project_delete(?)", projectID)
+	result, err := mysql.db.Exec("CALL project_delete(?,?)", projectID, senderID)
 	if err != nil {
 		return err
 	}

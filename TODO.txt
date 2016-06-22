@@ -1,14 +1,23 @@
 things to put on redis:
 	temerary storage of project permissions w/ decaying timer
-	web auth tokens?
+	web auth tokens? (I think this is a no)
 	permission constants
 	online clients
+	subscriptions?
 
 intergoprocdandling todos:
 	check if permission high enough on project before taking some actions
-	user authentication
+	user authentication / registration
 	figure out how to close ws connection on malicious request
-	actually write the other process() functions
 	un-hardcode '10' as the owner constant in the stored proc
+	figure out how to subscribe the sending go routine to more/less rabbit sockets
+	fix project_delete sproc to verify if has user with username = senderID has permission
+
+
+imediate todos:
+	figure out new cb.bucket.MutateIn format
+		http://developer.couchbase.com/documentation/server/4.5-dp/sub-doc-api.html
 	
+
+
 
