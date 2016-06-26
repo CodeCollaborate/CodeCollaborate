@@ -3,9 +3,10 @@ package datahandling
 import (
 	"encoding/json"
 	"fmt"
-	"testing"
-	"github.com/CodeCollaborate/Server/modules/config"
 	"log"
+	"testing"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 func configSetup() {

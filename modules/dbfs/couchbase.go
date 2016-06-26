@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/CodeCollaborate/Server/modules/config"
-	"gopkg.in/couchbase/gocb.v1"
+	"gopkg.in/couchbaselabs/gocb.v1"
 )
 
-var couchbasedb *couchbaseConn
+var couchbaseDB *couchbaseConn
 
 type couchbaseConn struct {
 	config config.ConnCfg
@@ -22,48 +22,48 @@ type cbFile struct {
 }
 
 func openCouchBase() (*couchbaseConn, error) {
-	if couchbasedb != nil && couchbasedb.bucket != nil {
-		return couchbasedb, nil
+	if couchbaseDB != nil && couchbaseDB.bucket != nil {
+		return couchbaseDB, nil
 	}
 
-	if couchbasedb == nil || couchbasedb.config == (config.ConnCfg{}) {
-		couchbasedb = new(couchbaseConn)
+	if couchbaseDB == nil || couchbaseDB.config == (config.ConnCfg{}) {
+		couchbaseDB = new(couchbaseConn)
 		configMap := config.GetConfig()
-		couchbasedb.config = configMap.ConnectionConfig["Couchbase"]
+		couchbaseDB.config = configMap.ConnectionConfig["Couchbase"]
 	}
 
 	var documentsCluster *gocb.Cluster
 	var err error
 
-	if strings.HasPrefix(couchbasedb.config.Host, "couchbase://") {
-		documentsCluster, err = gocb.Connect(couchbasedb.config.Host + ":" + strconv.Itoa(int(couchbasedb.config.Port)))
+	if strings.HasPrefix(couchbaseDB.config.Host, "couchbase://") {
+		documentsCluster, err = gocb.Connect(couchbaseDB.config.Host + ":" + strconv.Itoa(int(couchbaseDB.config.Port)))
 	} else {
-		documentsCluster, err = gocb.Connect("couchbase://" + couchbasedb.config.Host + ":" + strconv.Itoa(int(couchbasedb.config.Port)))
+		documentsCluster, err = gocb.Connect("couchbase://" + couchbaseDB.config.Host + ":" + strconv.Itoa(int(couchbaseDB.config.Port)))
 	}
 
 	if err != nil {
-		return couchbasedb, err
+		return couchbaseDB, err
 	}
 
-	if couchbasedb.config.Schema == "" {
-		couchbasedb.config.Schema = "documents"
+	if couchbaseDB.config.Schema == "" {
+		couchbaseDB.config.Schema = "documents"
 	}
 
-	myBucket, err := documentsCluster.OpenBucket(couchbasedb.config.Schema, couchbasedb.config.Password)
+	myBucket, err := documentsCluster.OpenBucket(couchbaseDB.config.Schema, couchbaseDB.config.Password)
 	if err != nil {
-		return couchbasedb, err
+		return couchbaseDB, err
 	}
-	couchbasedb.bucket = myBucket
+	couchbaseDB.bucket = myBucket
 
-	return couchbasedb, nil
+	return couchbaseDB, nil
 }
 
 // CloseCouchbase closes the CouchBase db connection
 // YOU PROBABLY DON'T NEED TO RUN THIS EVER
 func CloseCouchbase() error {
-	if couchbasedb != nil && couchbasedb.bucket != nil {
-		couchbasedb.bucket.Close()
-		couchbasedb = nil
+	if couchbaseDB != nil && couchbaseDB.bucket != nil {
+		couchbaseDB.bucket.Close()
+		couchbaseDB = nil
 	} else {
 		return ErrDbNotInitialized
 	}
@@ -143,6 +143,6 @@ func CBAppendFileChange(fileID int64, version int64, change string) error {
 		return err
 	}
 
-	_, err = cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), 0, 0).PushBack("changes", change, false).Replace("version", version).Execute()
+	_, err = cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), 0, 0).ArrayAppend("changes", change, false).Replace("version", version).Execute()
 	return err
 }

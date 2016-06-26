@@ -14,10 +14,5 @@ intergoprocdandling todos:
 	fix project_delete sproc to verify if has user with username = senderID has permission
 
 
-imediate todos:
-	figure out new cb.bucket.MutateIn format
-		http://developer.couchbase.com/documentation/server/4.5-dp/sub-doc-api.html
-	
-
 
 
