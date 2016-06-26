@@ -2,9 +2,10 @@ package datahandling
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"testing"
+
+	"reflect"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 )
@@ -45,14 +46,16 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectLookupRequest" {
+		t.Fatal("wrong request type")
+	}
 
 	response, notification, err2 := newRequest.process()
 	if err2 != nil {
 		t.Fatal(err2)
 	}
 
-	if response == nil || notification == nil {
-		// TODO: check if process worked
-		fmt.Println("unimplemented response and notification logic!")
+	if response == nil || notification != nil {
+		t.Fatal("did not properly process")
 	}
 }

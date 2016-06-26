@@ -305,32 +305,40 @@ func MySQLProjectRename(projectID int64, newName string) error {
 }
 
 // MySQLProjectLookup returns the project name and permissions for a project with ProjectID = 'projectID'
-func MySQLProjectLookup(projectID int64) (name string, permisions map[string]ProjectPermission, err error) {
-	permisions = make(map[string](ProjectPermission))
+func MySQLProjectLookup(projectID int64, username string) (name string, permissions map[string]ProjectPermission, err error) {
+	permissions = make(map[string](ProjectPermission))
 	mysql, err := getMySQLConn()
 	if err != nil {
-		return "", permisions, err
+		return "", permissions, err
 	}
 
 	// TODO: un-hardcode '10' as the owner constant in the stored proc
 
 	rows, err := mysql.db.Query("CALL project_lookup(?)", projectID)
 	if err != nil {
-		return "", permisions, err
+		return "", permissions, err
 	}
 
+	var hasAccess = false
 	for rows.Next() {
 		perm := ProjectPermission{}
-		var tiempo string
-		err = rows.Scan(&name, &perm.Username, &perm.PermissionLevel, &perm.GrantedBy, &tiempo)
-		perm.GrantedDate, _ = time.Parse("2006-01-02 15:04:05", tiempo)
+		var hora string
+		err = rows.Scan(&name, &perm.Username, &perm.PermissionLevel, &perm.GrantedBy, &hora)
+		perm.GrantedDate, _ = time.Parse("2006-01-02 15:04:05", hora)
 		if err != nil {
-			return "", permisions, err
+			return "", permissions, err
 		}
-		permisions[perm.Username] = perm
+		if !hasAccess && perm.PermissionLevel > 0 && perm.Username == username {
+			hasAccess = true
+		}
+		permissions[perm.Username] = perm
 	}
 
-	return name, permisions, err
+	// verify user has access to view this info
+	if hasAccess {
+		return name, permissions, err
+	}
+	return "", make(map[string](ProjectPermission)), err
 }
 
 // MySQLFileCreate create a new file in MySQL

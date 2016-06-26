@@ -331,7 +331,7 @@ func TestMySQLProjectLookup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name, perms, err := MySQLProjectLookup(projectID)
+	name, perms, err := MySQLProjectLookup(projectID, "fahslaj")
 	MySQLProjectDelete(projectID, "jshap70")
 	mySQLUserDelete("fahslaj", "secret")
 	mySQLUserDelete("jshap70", "secret")

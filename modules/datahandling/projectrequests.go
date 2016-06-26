@@ -301,7 +301,7 @@ func (p projectLookupRequest) process() (*serverMessageWrapper, *serverMessageWr
 	var errOut error
 	i := 0
 	for _, id := range p.ProjectIDs {
-		name, permissions, err := dbfs.MySQLProjectLookup(id)
+		name, permissions, err := dbfs.MySQLProjectLookup(id, p.SenderID)
 		if err != nil {
 			errOut = err
 		} else {
