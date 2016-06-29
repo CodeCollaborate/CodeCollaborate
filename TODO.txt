@@ -7,6 +7,8 @@ intergoprocdandling todos:
 	figure out how to close ws connection on malicious request
 	un-hardcode '10' as the owner constant in the stored proc
 	figure out how to subscribe the sending go routine to more/less rabbit sockets
+	decide on change to MySQLProjectLookup
+
 
 things to put on redis:
         temerary storage of project permissions w/ decaying timer

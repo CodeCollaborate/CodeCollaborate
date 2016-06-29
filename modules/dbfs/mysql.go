@@ -305,6 +305,15 @@ func MySQLProjectRename(projectID int64, newName string) error {
 }
 
 // MySQLProjectLookup returns the project name and permissions for a project with ProjectID = 'projectID'
+// TODO: decide if looking them up 1 at a time is good or not
+// Looking them up 1 at a time may seem worse, however we're looking up rows based on their primary key
+// so we get the speed benefits of it having a unique index on it
+// Thoughts:
+// 		FIND_IN_SET doesn't use any indices at all,
+// 		both IN and FIND_IN_SET have issues with integers
+// 		more issues when there are a variable number of ID's because MySQL doesn't have arrays
+//
+// http://stackoverflow.com/a/8150183 <- preferred if we switch b/c FIND_IN_SET doesn't use indexes
 func MySQLProjectLookup(projectID int64, username string) (name string, permissions map[string]ProjectPermission, err error) {
 	permissions = make(map[string](ProjectPermission))
 	mysql, err := getMySQLConn()
