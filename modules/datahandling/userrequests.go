@@ -96,7 +96,15 @@ func (f userLoginRequest) process() (*serverMessageWrapper, *serverMessageWrappe
 	// ??  ??   ??   ??  ??
 
 	fmt.Printf("Recieved login request from %s\n", f.Username)
-	return nil, nil, nil
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+	res.ServerMessage = response{
+		Status: unimplemented,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+	return res, nil, nil
 }
 
 // User.Lookup

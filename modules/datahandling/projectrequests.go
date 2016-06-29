@@ -160,7 +160,14 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 func (p projectGetPermissionConstantsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO: figure out how we want to do this on the db
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
-	return nil, nil, nil
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+	res.ServerMessage = response{
+		Status: unimplemented,
+		Tag:    p.Tag,
+		Data:   struct{}{}}
+	return res, nil, nil
 }
 
 // Project.GrantPermissions
@@ -270,7 +277,15 @@ type projectGetOnlineClientsRequest struct {
 func (p projectGetOnlineClientsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO: implement on redis (and actually implement redis)
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
-	return nil, nil, nil
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+	res.ServerMessage = response{
+		Status: unimplemented,
+		Tag:    p.Tag,
+		Data:   struct{}{}}
+	return res, nil, nil
 }
 
 func (p *projectGetOnlineClientsRequest) setAbstractRequest(req *abstractRequest) {
@@ -467,7 +482,15 @@ func (p projectSubscribeRequest) process() (*serverMessageWrapper, *serverMessag
 	// NOTE: we don't have scope to either the websocket or rabbit
 
 	fmt.Printf("Recieved project subscribe request from %s\n", p.SenderID)
-	return nil, nil, nil
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+	res.ServerMessage = response{
+		Status: unimplemented,
+		Tag:    p.Tag,
+		Data:   struct{}{}}
+	return res, nil, nil
 }
 
 func (p *projectSubscribeRequest) setAbstractRequest(req *abstractRequest) {

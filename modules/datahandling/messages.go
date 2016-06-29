@@ -97,4 +97,5 @@ const partialfail int = 499
 
 // server failure
 const servfail int = 500
+const unimplemented = 501
 const servpartialfail int = 599

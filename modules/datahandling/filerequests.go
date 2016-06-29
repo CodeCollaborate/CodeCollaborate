@@ -54,6 +54,7 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO
+
 	fmt.Printf("Recieved file create request from %s\n", f.SenderID)
 	return nil, nil, nil
 }
