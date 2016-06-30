@@ -86,7 +86,11 @@ func cbInsertNewFile(file cbFile) error {
 
 // CBInsertNewFile inserts a new document with the given arguments
 func CBInsertNewFile(fileID int64, version int64, changes []string) error {
-	return cbInsertNewFile(cbFile{FileID: fileID, Version: version, Changes: changes})
+	return cbInsertNewFile(cbFile{
+		FileID:  fileID,
+		Version: version,
+		Changes: changes,
+	})
 }
 
 // CBDeleteFile deletes the document with FileID == fileID from couchbase

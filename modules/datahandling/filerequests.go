@@ -2,9 +2,13 @@ package datahandling
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
 var fileRequestsSetup = false
+var newFileVersion int
 
 // initProjectRequests populates the requestMap from requestmap.go with the appropriate constructors for the project methods
 func initFileRequests() {
@@ -53,10 +57,60 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
 
-	fmt.Printf("Recieved file create request from %s\n", f.SenderID)
-	return nil, nil, nil
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	fileID, err := dbfs.MySQLFileCreate(f.SenderID, f.Name, f.RelativePath, f.ProjectID)
+	if err != nil {
+		res.ServerMessage = response{
+			Status: fail,
+			Tag:    f.Tag,
+			Data:   struct{}{}}
+
+		return res, nil, nil
+	}
+
+	err = dbfs.CBInsertNewFile(fileID, newFileVersion, make([]string, 0))
+
+	if err != nil {
+		res.ServerMessage = response{
+			Status: servfail,
+			Tag:    f.Tag,
+			Data:   struct{}{}}
+		not = nil
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    f.Tag,
+			Data: struct {
+				FileID int64
+			}{
+				fileID,
+			}}
+		not.ServerMessage = notification{
+			Resource: f.Resource,
+			Method:   f.Method,
+			Data: struct {
+				FileID       int64
+				ProjectID    int64
+				Name         string
+				RelativePath string
+				Version      int64
+			}{
+				fileID,
+				f.ProjectID,
+				f.Name,
+				f.RelativePath,
+				newFileVersion,
+			}}
+	}
+
+	return res, not, nil
 }
 
 // File.Rename
@@ -71,9 +125,40 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileRenameRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
-	fmt.Printf("Recieved file rename request from %s\n", f.SenderID)
-	return nil, nil, nil
+	// TODO: check if permission high enough on project
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	err := dbfs.MySQLFileRename(f.FileID, f.NewName)
+	if err != nil {
+		res.ServerMessage = response{
+			Status: fail,
+			Tag:    f.Tag,
+			Data:   struct{}{}}
+		not = nil
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    f.Tag,
+			Data:   struct{}{}}
+		not.ServerMessage = notification{
+			Resource: f.Resource,
+			Method:   f.Method,
+			Data: struct {
+				FileID  int64
+				NewPath string
+			}{
+				f.FileID,
+				f.NewName,
+			}}
+	}
+
+	return res, not, nil
 }
 
 // File.Move
@@ -88,9 +173,40 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileMoveRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
-	fmt.Printf("Recieved file move request from %s\n", f.SenderID)
-	return nil, nil, nil
+	// TODO: check if permission high enough on project
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	err := dbfs.MySQLFileMove(f.FileID, f.NewPath)
+	if err != nil {
+		res.ServerMessage = response{
+			Status: fail,
+			Tag:    f.Tag,
+			Data:   struct{}{}}
+		not = nil
+	} else {
+		res.ServerMessage = response{
+			Status: success,
+			Tag:    f.Tag,
+			Data:   struct{}{}}
+		not.ServerMessage = notification{
+			Resource: f.Resource,
+			Method:   f.Method,
+			Data: struct {
+				FileID  int64
+				NewPath string
+			}{
+				f.FileID,
+				f.NewPath,
+			}}
+	}
+
+	return res, not, nil
 }
 
 // File.Delete
