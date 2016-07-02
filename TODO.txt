@@ -1,18 +1,30 @@
 intergoprocdandling todos:
+	user authentication
 	check if permission high enough on project before taking some actions
-		project.RevokePermissions
+		Project.RevokePermissions
 		Project.GrantPermissions
 		Project.Rename
-	user authentication / registration
+		File.Create
+		File.Rename
+		File.Move
+		File.Delete
+		File.Change
+		File.Pull
 	figure out how to close ws connection on malicious request
-	un-hardcode '10' as the owner constant in the stored proc
-	figure out how to subscribe the sending go routine to more/less rabbit sockets
-	decide on change to MySQLProjectLookup
+	figure out how to subscribe websockets to more/less rabbit sockets
+	finish dbfs.FileDelete() (ie: learn how to delete a file on the OS)
+	file.change request:
+		decide if file version stays
+		change to increment inside cb.bucket.MutateIn call
+		have it return version in response
+
+	optional:
+		un-hardcode '10' as the owner constant in the stored proc
+		decide on change to MySQLProjectLookup stored proc
 
 
 things to put on redis:
-        temerary storage of project permissions w/ decaying timer
-        web auth tokens? (I think this is a no)
+        temerary storage of project permissions w/ decaying timer?
         permission constants
         online clients
         subscriptions?

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"fmt"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 )
 
@@ -30,6 +32,19 @@ func FileWrite(relpath string, filename string, projectID int64, raw []byte) (st
 	}
 
 	return fileLocation, err
+}
+
+// FileDelete deletes the file with the given metadata from the file system
+// Couple this with dbfs.MySQLFileDelete and dbfs.CBDeleteFile
+func FileDelete(relpath string, filename string, projectID int64) error {
+	relFilePath, err := calculateFilePathPath(relpath, filename, projectID)
+	if err != nil {
+		return err
+	}
+	//err = io.deletefile(relFilePath)
+	// TODO: delete the file on the filesystem
+	fmt.Println("WARNING: not actually deleting the file yet")
+	return err
 }
 
 // FileRead returns the project file from the calculated location on the disk

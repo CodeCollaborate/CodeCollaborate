@@ -57,6 +57,7 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+	// TODO: check if permission high enough on project
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -220,9 +221,56 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
-	fmt.Printf("Recieved file delete request from %s\n", f.SenderID)
-	return nil, nil, nil
+	// TODO: check if permission high enough on project
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	res.ServerMessage = response{
+		Status: fail,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+
+	fileMeta, err := dbfs.MySQLFileGetInfo(f.FileID)
+	if err != nil {
+		return res, nil, nil
+	}
+
+	err = dbfs.MySQLFileDelete(f.FileID)
+	if err != nil {
+		return res, nil, nil
+	}
+
+	err = dbfs.CBDeleteFile(f.FileID)
+	if err != nil {
+		return res, nil, nil
+	}
+
+	fmt.Println("not actually deleting " + fileMeta.Filename + " yet")
+	// TODO: delete from filesystem with
+	//err = dbfs.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	if err != nil {
+		return res, nil, nil
+	}
+
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+	not.ServerMessage = notification{
+		Resource: f.Resource,
+		Method:   f.Method,
+		Data: struct {
+			FileID int64
+		}{
+			f.FileID,
+		}}
+
+	return res, not, nil
 }
 
 // File.Change
@@ -238,7 +286,12 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileChangeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
+	// TODO: check if permission high enough on project
+
+	// TODO: decide if file version stays in request (it shouldn't!!)
+	// TODO: change to increment version inside cb.bucket.MutateIn call
+	// TODO: have it return new version in response
+
 	fmt.Printf("Recieved file change request from %s\n", f.SenderID)
 	return nil, nil, nil
 }
@@ -254,7 +307,42 @@ func (f *filePullRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f filePullRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO
-	fmt.Printf("Recieved file pull request from %s\n", f.SenderID)
-	return nil, nil, nil
+	// TODO: check if permission high enough on project
+
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	res.ServerMessage = response{
+		Status: fail,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+
+	fileMeta, err := dbfs.MySQLFileGetInfo(f.FileID)
+	if err != nil {
+		return res, nil, nil
+	}
+
+	rawFile, err := dbfs.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	if err != nil {
+		return res, nil, nil
+	}
+
+	changes, err := dbfs.CBGetFileChanges(f.FileID)
+	if err != nil {
+		return res, nil, nil
+	}
+
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    f.Tag,
+		Data: struct {
+			FileBytes []byte
+			Changes   []string
+		}{
+			rawFile,
+			changes,
+		}}
+
+	return res, nil, nil
 }
