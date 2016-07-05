@@ -251,8 +251,7 @@ func (f fileDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 	}
 
 	fmt.Println("not actually deleting " + fileMeta.Filename + " yet")
-	// TODO: delete from filesystem with
-	//err = dbfs.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	err = dbfs.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
 		return res, nil, nil
 	}
@@ -275,9 +274,9 @@ func (f fileDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 
 // File.Change
 type fileChangeRequest struct {
-	FileID      int64
-	Changes     []string
-	FileVersion int64
+	FileID          int64
+	Changes         []string
+	BaseFileVersion int64
 	abstractRequest
 }
 
@@ -288,7 +287,6 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileChangeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO: check if permission high enough on project
 
-	// TODO: decide if file version stays in request (it shouldn't!!)
 	// TODO: change to increment version inside cb.bucket.MutateIn call
 	// TODO: have it return new version in response
 

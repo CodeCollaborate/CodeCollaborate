@@ -41,10 +41,7 @@ func FileDelete(relpath string, filename string, projectID int64) error {
 	if err != nil {
 		return err
 	}
-	//err = io.deletefile(relFilePath)
-	// TODO: delete the file on the filesystem
-	fmt.Println("WARNING: not actually deleting the file yet")
-	return err
+	return os.Remove(relFilePath)
 }
 
 // FileRead returns the project file from the calculated location on the disk

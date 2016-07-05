@@ -86,13 +86,11 @@ func (message notification) serverMessageType() string {
 const success int = 200
 const accepted int = 202
 
-// meh
-
 // failure
 const fail int = 400
 const unauthorized int = 401
 const notFound int = 404
-const conflict int = 409
+const fileVersionOutOfDate int = 409 // (409 = conflict)
 const partialfail int = 499
 
 // server failure

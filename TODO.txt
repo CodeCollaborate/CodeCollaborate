@@ -1,26 +1,30 @@
-intergoprocdandling todos:
-	user authentication
-	check if permission high enough on project before taking some actions
-		Project.RevokePermissions
-		Project.GrantPermissions
-		Project.Rename
-		File.Create
-		File.Rename
-		File.Move
-		File.Delete
-		File.Change
-		File.Pull
-	figure out how to close ws connection on malicious request
-	figure out how to subscribe websockets to more/less rabbit sockets
-	finish dbfs.FileDelete() (ie: learn how to delete a file on the OS)
-	file.change request:
-		decide if file version stays
-		change to increment inside cb.bucket.MutateIn call
-		have it return version in response
+TODOs for intergoprocdandling:
+    immediate:
+        TODO: figure out how to subscribe websockets to more/less rabbit sockets
+        TODO: finish dbfs.FileDelete() (ie: learn how to delete a file on the OS)
+
+    normal:
+        TODO: file.change request:
+            change to increment inside cb.bucket.MutateIn call
+            have it return version in response
+        TODO: check if permission high enough on project before making these actions
+            Project.RevokePermissions
+            Project.GrantPermissions
+            Project.Rename
+            File.Create
+            File.Rename
+            File.Move
+            File.Delete
+            File.Change
+            File.Pull
+
+	non-immediate (but required):
+	    TODO: figure out how to close ws connection on malicious request
+	    TODO: user authentication
 
 	optional:
-		un-hardcode '10' as the owner constant in the stored proc
-		decide on change to MySQLProjectLookup stored proc
+		TODO: un-hardcode '10' as the owner constant in the stored proc
+		TODO: decide on change to MySQLProjectLookup stored proc
 
 
 things to put on redis:
