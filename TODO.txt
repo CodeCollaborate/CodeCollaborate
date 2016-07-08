@@ -4,9 +4,6 @@ TODOs for intergoprocdandling:
             (required for projectSubscribeRequest)
 
     normal:
-        TODO: file.change request:
-            change to increment inside cb.bucket.MutateIn call
-            have it return version in response
         TODO: check if permission high enough on project before making these actions
             Project.RevokePermissions
             Project.GrantPermissions

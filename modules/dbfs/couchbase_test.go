@@ -173,16 +173,24 @@ func TestCBGetFileChanges(t *testing.T) {
 }
 
 func TestCBAppendFileChange(t *testing.T) {
-	configSetup()
-	CBDeleteFile(1)
-	CBInsertNewFile(1, 2, []string{"hey there", "sup"})
+	var originalFileVersion int64 = 2
+	var fileID int64 = 1
 
-	err := CBAppendFileChange(1, 3, "yooooo")
+	configSetup()
+	CBDeleteFile(fileID)
+	CBInsertNewFile(fileID, originalFileVersion, []string{"hey there", "sup"})
+
+	version, err := CBAppendFileChange(fileID, originalFileVersion, "yooooo")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	changes, err := CBGetFileChanges(1)
+	// new version
+	if version != originalFileVersion+1 {
+		t.Fatal("version did not update properly")
+	}
+
+	changes, err := CBGetFileChanges(fileID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,10 +208,10 @@ func TestCBAppendFileChange(t *testing.T) {
 		t.Fatal("resultant changes are not correct")
 	}
 
-	ver, err := CBGetFileVersion(1)
+	ver, err := CBGetFileVersion(fileID)
 	if ver != 3 {
 		t.Fatal("wrong file version")
 	}
 
-	CBDeleteFile(1)
+	CBDeleteFile(fileID)
 }

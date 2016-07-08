@@ -138,10 +138,10 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-func CBAppendFileChange(fileID int64, baseVersion int64, change string) error {
+func CBAppendFileChange(fileID int64, baseVersion int64, change string) (int64, error) {
 	cb, err := openCouchBase()
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// optimistic locking operation
@@ -159,7 +159,7 @@ func CBAppendFileChange(fileID int64, baseVersion int64, change string) error {
 			ArrayAppend("changes", change, false).
 			Counter("version", 1, false).
 			Execute()
-		return err
+		return version + 1, err
 	}
-	return ErrNoDbChange
+	return -1, ErrNoDbChange
 }
