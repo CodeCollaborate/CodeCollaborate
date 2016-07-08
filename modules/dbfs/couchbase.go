@@ -138,7 +138,8 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-func CBAppendFileChange(fileID int64, baseVersion int64, change string) (int64, error) {
+func CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
+	// TODO: verify changes are valid changes
 	cb, err := openCouchBase()
 	if err != nil {
 		return -1, err
@@ -155,10 +156,13 @@ func CBAppendFileChange(fileID int64, baseVersion int64, change string) (int64, 
 	// check to make sure the patch is being applied to the most recent revision
 	if baseVersion == version {
 		// use the cas to make sure the document hasn't changed
-		_, err = cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), cas, 0).
-			ArrayAppend("changes", change, false).
-			Counter("version", 1, false).
-			Execute()
+		builder := cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), cas, 0)
+		for _, change := range changes {
+			builder = builder.ArrayAppend("changes", change, false)
+		}
+
+		builder = builder.Counter("version", 1, false)
+		_, err = builder.Execute()
 		return version + 1, err
 	}
 	return -1, ErrNoDbChange

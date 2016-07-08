@@ -178,9 +178,11 @@ func TestCBAppendFileChange(t *testing.T) {
 
 	configSetup()
 	CBDeleteFile(fileID)
+
+	// although these are not valid patches, this is purely a test of the logic, not of the patching
 	CBInsertNewFile(fileID, originalFileVersion, []string{"hey there", "sup"})
 
-	version, err := CBAppendFileChange(fileID, originalFileVersion, "yooooo")
+	version, err := CBAppendFileChange(fileID, originalFileVersion, []string{"yooooo"})
 	if err != nil {
 		t.Fatal(err)
 	}

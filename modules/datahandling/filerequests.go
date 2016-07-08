@@ -287,11 +287,50 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileChangeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
 	// TODO: check if permission high enough on project
 
-	// TODO: change to increment version inside cb.bucket.MutateIn call
-	// TODO: have it return new version in response
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
 
-	fmt.Printf("Recieved file change request from %s\n", f.SenderID)
-	return nil, nil, nil
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	res.ServerMessage = response{
+		Status: fail,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+
+	// TODO: verify changes are valid changes
+	version, err := dbfs.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
+	if err != nil {
+		return res, nil, err
+	}
+
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    f.Tag,
+		Data: struct {
+			FileVersion int64
+		}{
+			version,
+		}}
+
+	not.ServerMessage = notification{
+		Resource: f.Resource,
+		Method:   f.Method,
+		Data: struct {
+			FileID          int64
+			BaseFileVersion int64
+			FileVersion     int64
+			Changes         []string
+		}{
+			f.FileID,
+			f.BaseFileVersion,
+			version,
+			f.Changes,
+		}}
+
+	return res, not, nil
 }
 
 // File.Pull

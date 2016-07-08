@@ -18,6 +18,7 @@ TODOs for intergoprocdandling:
 	non-immediate (but required):
 	    TODO: figure out how to close ws connection on malicious request
 	    TODO: user authentication
+	    TODO: verify changes for File.Change are valid changes
 
 	optional:
 		TODO: un-hardcode '10' as the owner constant in the stored proc
