@@ -68,7 +68,7 @@ func (f userRegisterRequest) process() (*serverMessageWrapper, *serverMessageWra
 
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
-			res.ServerMessage = response{Status: conflict, Tag: f.Tag}
+			res.ServerMessage = response{Status: notFound, Tag: f.Tag}
 		} else {
 			res.ServerMessage = response{Status: fail, Tag: f.Tag}
 		}

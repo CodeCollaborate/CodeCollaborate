@@ -74,7 +74,6 @@ func CloseCouchbase() error {
 // CBInsertNewFile inserts a new document into couchbase with CBFile.FileID == fileID
 func cbInsertNewFile(file cbFile) error {
 	cb, err := openCouchBase()
-	//defer cb.close()
 
 	if err != nil {
 		return err
@@ -139,14 +138,28 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-func CBAppendFileChange(fileID int64, version int64, change string) error {
+func CBAppendFileChange(fileID int64, baseVersion int64, change string) error {
 	cb, err := openCouchBase()
-	//defer cb.close()
-
 	if err != nil {
 		return err
 	}
 
-	_, err = cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), 0, 0).ArrayAppend("changes", change, false).Replace("version", version).Execute()
-	return err
+	// optimistic locking operation
+	// check the version is accurate and get the object's cas,
+	// then use it in the MutateIn call to verify the document hasn't updated underneath us
+	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileID, 10)).Get("version").Execute()
+	cas := frag.Cas()
+	var version int64
+	frag.Content("version", &version)
+
+	// check to make sure the patch is being applied to the most recent revision
+	if baseVersion == version {
+		// use the cas to make sure the document hasn't changed
+		_, err = cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), cas, 0).
+			ArrayAppend("changes", change, false).
+			Counter("version", 1, false).
+			Execute()
+		return err
+	}
+	return ErrNoDbChange
 }

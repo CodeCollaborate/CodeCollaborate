@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"fmt"
-
 	"github.com/CodeCollaborate/Server/modules/config"
 )
 
@@ -41,7 +39,8 @@ func FileDelete(relpath string, filename string, projectID int64) error {
 	if err != nil {
 		return err
 	}
-	return os.Remove(relFilePath)
+	fileLocation := filepath.Join(relFilePath, filename)
+	return os.Remove(fileLocation)
 }
 
 // FileRead returns the project file from the calculated location on the disk

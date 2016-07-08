@@ -16,7 +16,14 @@ func TestFileWrite(t *testing.T) {
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
 	filepath2 := filepath.Join(projectParentPath, "10", "hi", "myFile2.txt")
 
-	fileText := []byte("hello\nWelcome to my file\n")
+	fileText := []byte("Hello World!\nWelcome to my file\n")
+
+	// in case the test fails before resolving
+	defer os.Remove(projectParentPath)
+	defer os.Remove(filepath.Join(projectParentPath, "10"))
+	defer os.Remove(filepath.Join(projectParentPath, "10", "hi"))
+	defer os.Remove(filepath2)
+	defer os.Remove(filepath1)
 
 	loc, err := FileWrite(".", "myFile1.txt", 10, fileText)
 	if err != nil {
@@ -62,11 +69,6 @@ func TestFileWrite(t *testing.T) {
 		t.Fatal("File was not the same")
 	}
 
-	os.Remove(filepath2)
-	os.Remove(filepath1)
-	os.Remove(filepath.Join(projectParentPath, "10", "hi/"))
-	os.Remove(filepath.Join(projectParentPath, "10"))
-	os.Remove(projectParentPath)
 }
 
 func TestFileRead(t *testing.T) {
@@ -74,7 +76,7 @@ func TestFileRead(t *testing.T) {
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
 
-	fileText := []byte("hello\nWelcome to my file\n")
+	fileText := []byte("Hello World!\nWelcome to my file\n")
 
 	defer os.Remove(projectParentPath)
 	defer os.Remove(filepath.Join(projectParentPath, "10"))
@@ -89,6 +91,32 @@ func TestFileRead(t *testing.T) {
 
 	if !bytes.Equal(fileText, *data) {
 		t.Fatalf("File was not writen or read correctly\nExpected:\n%v\nActual:\n%v", fileText, data)
+	}
+
+}
+
+func TestFileDelete(t *testing.T) {
+	configSetup()
+	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
+	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
+
+	fileText := []byte("Hello World!\nWelcome to my file\n")
+
+	defer os.Remove(projectParentPath)
+	defer os.Remove(filepath.Join(projectParentPath, "10"))
+
+	_, err := FileWrite(".", "myFile1.txt", 10, fileText)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = FileDelete(".", "myFile1.txt", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err = os.Remove(filepath1); !os.IsNotExist(err) {
+		t.Fatal("File should have been deleted, but was not")
 	}
 
 }

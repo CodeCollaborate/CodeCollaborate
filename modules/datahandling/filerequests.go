@@ -8,7 +8,7 @@ import (
 )
 
 var fileRequestsSetup = false
-var newFileVersion int
+var newFileVersion int64
 
 // initProjectRequests populates the requestMap from requestmap.go with the appropriate constructors for the project methods
 func initFileRequests() {
@@ -338,7 +338,7 @@ func (f filePullRequest) process() (*serverMessageWrapper, *serverMessageWrapper
 			FileBytes []byte
 			Changes   []string
 		}{
-			rawFile,
+			*rawFile,
 			changes,
 		}}
 

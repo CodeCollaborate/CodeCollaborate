@@ -477,9 +477,9 @@ type projectSubscribeRequest struct {
 }
 
 func (p projectSubscribeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+	// TODO: figure out how to subscribe websockets to more/less rabbit sockets
 	// SERIOUS ISSUE HERE
-	// TODO: figure out how to subscribe the sending go-routine on rabbit
-	// NOTE: we don't have scope to either the websocket or rabbit
+	// NOTE: we don't have scope here to either the websocket or rabbit
 
 	fmt.Printf("Recieved project subscribe request from %s\n", p.SenderID)
 
