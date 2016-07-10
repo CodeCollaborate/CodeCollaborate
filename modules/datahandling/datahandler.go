@@ -52,6 +52,6 @@ func (dh DataHandler) Handle(wsID uint64, messageType int, message []byte) error
 
 func authenticate(abs abstractRequest) bool {
 	fmt.Println("AUTHENTICATION IS NOT IMPLEMENTED YET")
-	// TODO: implement this
+	// TODO: implement user authentication
 	return true
 }

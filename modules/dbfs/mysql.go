@@ -305,6 +305,7 @@ func MySQLProjectRename(projectID int64, newName string) error {
 }
 
 // MySQLProjectLookup returns the project name and permissions for a project with ProjectID = 'projectID'
+//
 // TODO: decide if looking them up 1 at a time is good or not
 // Looking them up 1 at a time may seem worse, however we're looking up rows based on their primary key
 // so we get the speed benefits of it having a unique index on it
@@ -321,7 +322,7 @@ func MySQLProjectLookup(projectID int64, username string) (name string, permissi
 		return "", permissions, err
 	}
 
-	// TODO: un-hardcode '10' as the owner constant in the stored proc
+	// TODO: un-hardcode '10' as the owner constant in the MySQL ProjectLookup stored proc
 
 	rows, err := mysql.db.Query("CALL project_lookup(?)", projectID)
 	if err != nil {

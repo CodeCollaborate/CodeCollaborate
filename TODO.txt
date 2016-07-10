@@ -2,6 +2,7 @@ TODOs for intergoprocdandling:
     immediate:
         TODO: figure out how to subscribe websockets to more/less rabbit sockets
             (required for projectSubscribeRequest)
+	    TODO: send responses and notifications from datahandling to rabbit
 
     normal:
         TODO: check if permission high enough on project before making these actions
@@ -17,19 +18,17 @@ TODOs for intergoprocdandling:
 
 	non-immediate (but required):
 	    TODO: figure out how to close ws connection on malicious request
-	    TODO: user authentication
+	    TODO: implement user authentication in modules/datahandling/datahandler.go:53
 	    TODO: verify changes for File.Change are valid changes
 
 	optional:
-		TODO: un-hardcode '10' as the owner constant in the stored proc
+		TODO: un-hardcode '10' as the owner constant in the MySQL ProjectLookup stored proc
 		TODO: decide on change to MySQLProjectLookup stored proc
 
 
 things to put on redis:
-        temerary storage of project permissions w/ decaying timer?
         permission constants
         online clients
-        subscriptions?
-
-
-
+        cursors (eventually, not in current feature-set)
+        temporary storage of project permissions w/ decaying timer? (possibly, but not likely)
+        subscriptions? (probably not)

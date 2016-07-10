@@ -316,6 +316,7 @@ func (p projectLookupRequest) process() (*serverMessageWrapper, *serverMessageWr
 	var errOut error
 	i := 0
 	for _, id := range p.ProjectIDs {
+		// TODO: see note at modules/dbfs/mysql.go:307
 		name, permissions, err := dbfs.MySQLProjectLookup(id, p.SenderID)
 		if err != nil {
 			errOut = err
