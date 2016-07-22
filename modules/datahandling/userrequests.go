@@ -49,7 +49,7 @@ func (f *userRegisterRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userRegisterRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (f userRegisterRequest) process() ([](func(dh DataHandler) error), error) {
 
 	newUser := dbfs.UserMeta{
 		Username:  f.Username,
@@ -58,7 +58,7 @@ func (f userRegisterRequest) process() (*serverMessageWrapper, *serverMessageWra
 		Email:     f.Email,
 		Password:  f.Password}
 
-	// TODO: password validation
+	// TODO (non-immediate/required): password validation
 
 	err := dbfs.MySQLUserRegister(newUser)
 
@@ -75,7 +75,7 @@ func (f userRegisterRequest) process() (*serverMessageWrapper, *serverMessageWra
 	} else {
 		res.ServerMessage = response{Status: success, Tag: f.Tag}
 	}
-	return res, nil, err
+	return accumulate(toSenderCont(res)), err
 }
 
 // User.Login
@@ -89,8 +89,8 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLoginRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO implement login logic
+func (f userLoginRequest) process() ([](func(dh DataHandler) error), error) {
+	// TODO (non-immediate/required): implement login logic
 	// ??  lol  wat  do  ??
 	// ?? to verify pass ??
 	// ??  ??   ??   ??  ??
@@ -104,7 +104,7 @@ func (f userLoginRequest) process() (*serverMessageWrapper, *serverMessageWrappe
 		Status: unimplemented,
 		Tag:    f.Tag,
 		Data:   struct{}{}}
-	return res, nil, nil
+	return accumulate(toSenderCont(res)), nil
 }
 
 // User.Lookup
@@ -117,7 +117,7 @@ func (f *userLookupRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLookupRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (f userLookupRequest) process() ([](func(dh DataHandler) error), error) {
 	users := make([]dbfs.UserMeta, len(f.Usernames))
 	index := 0
 	var erro error
@@ -163,7 +163,7 @@ func (f userLookupRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 				}}
 		}
 	}
-	return res, nil, erro
+	return accumulate(toSenderCont(res)), erro
 }
 
 // User.Projects
@@ -175,7 +175,7 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userProjectsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (f userProjectsRequest) process() ([](func(dh DataHandler) error), error) {
 	projects, err := dbfs.MySQLUserProjects(f.SenderID)
 
 	res := new(serverMessageWrapper)
@@ -202,5 +202,5 @@ func (f userProjectsRequest) process() (*serverMessageWrapper, *serverMessageWra
 			}}
 	}
 
-	return res, nil, err
+	return accumulate(toSenderCont(res)), err
 }

@@ -45,7 +45,7 @@ type AMQPSubCfg struct {
 	Keys              []string
 	IsWorkQueue       bool
 	HandleMessageFunc func(AMQPMessage) error
-	Control           *utils.Control
+	Control           *RabbitControl
 }
 
 // QueueName generates the Queue
@@ -58,6 +58,16 @@ type AMQPPubCfg struct {
 	ExchangeName string
 	Messages     chan AMQPMessage
 	Control      *utils.Control
+}
+
+// NewPubConfig creates a new AMQPPubCfg, initialized
+func NewPubConfig(exchangeName string) *AMQPPubCfg {
+	cfg := AMQPPubCfg{
+		ExchangeName: exchangeName,
+		Messages:     make(chan AMQPMessage, 1),
+	}
+	cfg.Control = utils.NewControl()
+	return &cfg
 }
 
 // AMQPMessage represents the information required to send a new message

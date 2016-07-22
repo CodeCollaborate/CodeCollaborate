@@ -29,8 +29,7 @@ func getFullRequest(req *abstractRequest) (request, error) {
 	if authenticate(*req) {
 		return authenticatedRequest(req)
 	}
-
-	return nil, errors.New("Cannot authenticate user")
+	return nil, ErrAuthenticationFailed
 }
 
 // authenticatedRequest returns fully parsed Request from the given authenticated AbstractRequest

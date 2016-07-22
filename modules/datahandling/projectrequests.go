@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"strconv"
+
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
@@ -51,6 +53,10 @@ func initProjectRequests() {
 		return commonJSON(new(projectSubscribeRequest), req)
 	}
 
+	authenticatedRequestMap["Project.Unsubscribe"] = func(req *abstractRequest) (request, error) {
+		return commonJSON(new(projectUnsubscribeRequest), req)
+	}
+
 	authenticatedRequestMap["Project.Delete"] = func(req *abstractRequest) (request, error) {
 		return commonJSON(new(projectDeleteRequest), req)
 	}
@@ -68,7 +74,7 @@ func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectCreateRequest) process() ([](func(dh DataHandler) error), error) {
 	projectID, err := dbfs.MySQLProjectCreate(p.SenderID, p.Name)
 
 	res := new(serverMessageWrapper)
@@ -96,7 +102,7 @@ func (p projectCreateRequest) process() (*serverMessageWrapper, *serverMessageWr
 			}}
 	}
 
-	return res, nil, nil
+	return accumulate(toSenderCont(res)), nil
 }
 
 // Project.Rename
@@ -110,7 +116,7 @@ func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectRenameRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectRenameRequest) process() ([](func(dh DataHandler) error), error) {
 
 	// TODO: check if permission high enough on project
 
@@ -123,6 +129,7 @@ func (p projectRenameRequest) process() (*serverMessageWrapper, *serverMessageWr
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
+	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -145,7 +152,7 @@ func (p projectRenameRequest) process() (*serverMessageWrapper, *serverMessageWr
 			}}
 	}
 
-	return res, not, nil
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
 }
 
 // Project.GetPermissionConstants
@@ -157,7 +164,7 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 	p.abstractRequest = *req
 }
 
-func (p projectGetPermissionConstantsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectGetPermissionConstantsRequest) process() ([](func(dh DataHandler) error), error) {
 	// TODO: figure out how we want to do this on the db
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	res := new(serverMessageWrapper)
@@ -167,7 +174,7 @@ func (p projectGetPermissionConstantsRequest) process() (*serverMessageWrapper, 
 		Status: unimplemented,
 		Tag:    p.Tag,
 		Data:   struct{}{}}
-	return res, nil, nil
+	return accumulate(toSenderCont(res)), nil
 }
 
 // Project.GrantPermissions
@@ -178,7 +185,7 @@ type projectGrantPermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectGrantPermissionsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectGrantPermissionsRequest) process() ([](func(dh DataHandler) error), error) {
 	// TODO: check if permission high enough on project
 
 	err := dbfs.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
@@ -190,6 +197,7 @@ func (p projectGrantPermissionsRequest) process() (*serverMessageWrapper, *serve
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
+	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -214,7 +222,7 @@ func (p projectGrantPermissionsRequest) process() (*serverMessageWrapper, *serve
 			}}
 	}
 
-	return res, not, nil
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -228,7 +236,7 @@ type projectRevokePermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectRevokePermissionsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectRevokePermissionsRequest) process() ([](func(dh DataHandler) error), error) {
 	// TODO: check if permission high enough on project
 	err := dbfs.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
@@ -239,6 +247,7 @@ func (p projectRevokePermissionsRequest) process() (*serverMessageWrapper, *serv
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
+	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -261,7 +270,7 @@ func (p projectRevokePermissionsRequest) process() (*serverMessageWrapper, *serv
 			}}
 	}
 
-	return res, not, nil
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -274,7 +283,7 @@ type projectGetOnlineClientsRequest struct {
 	abstractRequest
 }
 
-func (p projectGetOnlineClientsRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectGetOnlineClientsRequest) process() ([](func(dh DataHandler) error), error) {
 	// TODO: implement on redis (and actually implement redis)
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 
@@ -285,7 +294,7 @@ func (p projectGetOnlineClientsRequest) process() (*serverMessageWrapper, *serve
 		Status: unimplemented,
 		Tag:    p.Tag,
 		Data:   struct{}{}}
-	return res, nil, nil
+	return accumulate(toSenderCont(res)), nil
 }
 
 func (p *projectGetOnlineClientsRequest) setAbstractRequest(req *abstractRequest) {
@@ -305,7 +314,7 @@ type projectLookupResult struct {
 	Permissions map[string](dbfs.ProjectPermission)
 }
 
-func (p projectLookupRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectLookupRequest) process() ([](func(dh DataHandler) error), error) {
 	/*
 		We could do
 			data := make([]interface{}, len(p.ProjectIDs))
@@ -367,7 +376,7 @@ func (p projectLookupRequest) process() (*serverMessageWrapper, *serverMessageWr
 	}
 
 	//fmt.Printf("Recieved project lookup request from %s\n", p.SenderID)
-	return res, nil, nil
+	return accumulate(toSenderCont(res)), nil
 }
 
 func (p *projectLookupRequest) setAbstractRequest(req *abstractRequest) {
@@ -390,7 +399,7 @@ type fileLookupResult struct {
 	Version      int64
 }
 
-func (p projectGetFilesRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectGetFilesRequest) process() ([](func(dh DataHandler) error), error) {
 	files, err := dbfs.MySQLProjectGetFiles(p.ProjectID)
 
 	res := new(serverMessageWrapper)
@@ -407,7 +416,7 @@ func (p projectGetFilesRequest) process() (*serverMessageWrapper, *serverMessage
 				make([]fileLookupResult, 0),
 			}}
 
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), nil
 	}
 
 	resultData := make([]fileLookupResult, len(files))
@@ -464,7 +473,7 @@ func (p projectGetFilesRequest) process() (*serverMessageWrapper, *serverMessage
 			}}
 	}
 
-	return res, nil, nil
+	return accumulate(toSenderCont(res)), nil
 }
 
 func (p *projectGetFilesRequest) setAbstractRequest(req *abstractRequest) {
@@ -477,24 +486,67 @@ type projectSubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectSubscribeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: figure out how to subscribe websockets to more/less rabbit sockets
-	// SERIOUS ISSUE HERE
-	// NOTE: we don't have scope here to either the websocket or rabbit
-
-	fmt.Printf("Recieved project subscribe request from %s\n", p.SenderID)
-
+func (p projectSubscribeRequest) process() ([](func(dh DataHandler) error), error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
-	res.ServerMessage = response{
-		Status: unimplemented,
-		Tag:    p.Tag,
-		Data:   struct{}{}}
-	return res, nil, nil
+
+	var subscribeChain = func(dh DataHandler) error {
+		err := chanSubscribe(strconv.FormatInt(p.ProjectID, 10))(dh)
+		if err != nil {
+			res.ServerMessage = response{
+				Status: fail,
+				Tag:    p.Tag,
+				Data:   struct{}{}}
+		} else {
+			res.ServerMessage = response{
+				Status: success,
+				Tag:    p.Tag,
+				Data:   struct{}{}}
+		}
+		toSenderCont(res)(dh) // go ahead and send from the end of the first continuation
+		return err
+	}
+
+	return accumulate(subscribeChain), nil
 }
 
 func (p *projectSubscribeRequest) setAbstractRequest(req *abstractRequest) {
+	p.abstractRequest = *req
+}
+
+// Project.Unsubscribe
+type projectUnsubscribeRequest struct {
+	ProjectID int64
+	abstractRequest
+}
+
+func (p projectUnsubscribeRequest) process() ([](func(dh DataHandler) error), error) {
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	var unsubscribeChain = func(dh DataHandler) error {
+		err := chanUnsubscribe(strconv.FormatInt(p.ProjectID, 10))(dh)
+		if err != nil {
+			res.ServerMessage = response{
+				Status: fail,
+				Tag:    p.Tag,
+				Data:   struct{}{}}
+		} else {
+			res.ServerMessage = response{
+				Status: success,
+				Tag:    p.Tag,
+				Data:   struct{}{}}
+		}
+		toSenderCont(res)(dh) // go ahead and send from the end of the first continuation
+		return err
+	}
+
+	return accumulate(unsubscribeChain), nil
+}
+
+func (p *projectUnsubscribeRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
@@ -504,7 +556,7 @@ type projectDeleteRequest struct {
 	abstractRequest
 }
 
-func (p projectDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
+func (p projectDeleteRequest) process() ([](func(dh DataHandler) error), error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -512,6 +564,7 @@ func (p projectDeleteRequest) process() (*serverMessageWrapper, *serverMessageWr
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
+	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	err := dbfs.MySQLProjectDelete(p.ProjectID, p.SenderID)
 	if err != nil {
@@ -543,7 +596,7 @@ func (p projectDeleteRequest) process() (*serverMessageWrapper, *serverMessageWr
 			}}
 	}
 
-	return res, not, nil
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {

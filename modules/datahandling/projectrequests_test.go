@@ -1,11 +1,8 @@
 package datahandling
 
 import (
-	"encoding/json"
 	"log"
 	"testing"
-
-	"reflect"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 )
@@ -31,31 +28,29 @@ func configSetup() {
 	}
 }
 
+//TODO (testing/required): testing... lots of testing
+
+// TODO (testing/required): switch dbfs to use a dbfs object which owns the database methods and implements an interface so that we can mock the interface for testing
+
 func TestProjectLookupRequest_Process(t *testing.T) {
 	configSetup()
-	req := *new(abstractRequest)
+	req := *new(projectLookupRequest)
 
 	req.SenderID = "loganga"
 	req.Resource = "Project"
 	req.Method = "Lookup"
 	req.SenderToken = "supersecure"
+	req.ProjectIDs = []int64{12345, 38292}
 
-	req.Data = json.RawMessage("{\"ProjectIds\": [12345, 38292]}")
+	//dbfs.MySQLProjectLookup = func() {}
 
-	newRequest, err := getFullRequest(&req)
+	continuations, err := req.process()
+
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reflect.TypeOf(newRequest).String() != "*datahandling.projectLookupRequest" {
-		t.Fatal("wrong request type")
-	}
 
-	response, notification, err2 := newRequest.process()
-	if err2 != nil {
-		t.Fatal(err2)
-	}
-
-	if response == nil || notification != nil {
+	if len(continuations) != 1 {
 		t.Fatal("did not properly process")
 	}
 }

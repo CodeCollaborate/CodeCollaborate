@@ -1,10 +1,11 @@
 TODOs for intergoprocdandling:
-    immediate:
-        TODO: figure out how to subscribe websockets to more/less rabbit sockets
-            (required for projectSubscribeRequest)
-	    TODO: send responses and notifications from datahandling to rabbit
+    immediate/required:
 
-    normal:
+    testing/required:
+        TODO: testing... lots of testing
+        TODO: switch dbfs to use a dbfs object which owns the database methods and implements an interface so that we can mock the interface for testing
+
+    normal/required:
         TODO: check if permission high enough on project before making these actions
             Project.RevokePermissions
             Project.GrantPermissions
@@ -15,15 +16,21 @@ TODOs for intergoprocdandling:
             File.Delete
             File.Change
             File.Pull
+	    TODO: inform the client if they're not authenticated
 
-	non-immediate (but required):
-	    TODO: figure out how to close ws connection on malicious request
+	non-immediate/required:
 	    TODO: implement user authentication in modules/datahandling/datahandler.go:53
-	    TODO: verify changes for File.Change are valid changes
+	    TODO: verify changes in request for File.Change are valid changes
 
 	optional:
 		TODO: un-hardcode '10' as the owner constant in the MySQL ProjectLookup stored proc
-		TODO: decide on change to MySQLProjectLookup stored proc
+	    TODO: close ws connection on malicious request
+
+
+Decisions:
+    TODO: decide if we want 1 publisher per connection (modules/handlers/wsmanager.go:66) or 1 publisher for the whole server (move that to runner)
+    TODO: decide on change to MySQLProjectLookup stored proc
+    TODO: decide on action at rabbit publish error: retry with count?
 
 
 things to put on redis:

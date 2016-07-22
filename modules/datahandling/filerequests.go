@@ -1,8 +1,9 @@
 package datahandling
 
 import (
-	"fmt"
 	"time"
+
+	"strconv"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
@@ -56,8 +57,8 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: check if permission high enough on project
+func (f fileCreateRequest) process() ([](func(dh DataHandler) error), error) {
+	// TODO (normal/required): check if permission high enough on project
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -65,6 +66,7 @@ func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
+	not.RoutingKey = strconv.FormatInt(f.ProjectID, 10)
 
 	fileID, err := dbfs.MySQLFileCreate(f.SenderID, f.Name, f.RelativePath, f.ProjectID)
 	if err != nil {
@@ -72,8 +74,7 @@ func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 			Status: fail,
 			Tag:    f.Tag,
 			Data:   struct{}{}}
-
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), nil
 	}
 
 	err = dbfs.CBInsertNewFile(fileID, newFileVersion, make([]string, 0))
@@ -83,35 +84,33 @@ func (f fileCreateRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 			Status: servfail,
 			Tag:    f.Tag,
 			Data:   struct{}{}}
-		not = nil
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    f.Tag,
-			Data: struct {
-				FileID int64
-			}{
-				fileID,
-			}}
-		not.ServerMessage = notification{
-			Resource: f.Resource,
-			Method:   f.Method,
-			Data: struct {
-				FileID       int64
-				ProjectID    int64
-				Name         string
-				RelativePath string
-				Version      int64
-			}{
-				fileID,
-				f.ProjectID,
-				f.Name,
-				f.RelativePath,
-				newFileVersion,
-			}}
+		return accumulate(toSenderCont(res)), nil
 	}
-
-	return res, not, nil
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    f.Tag,
+		Data: struct {
+			FileID int64
+		}{
+			fileID,
+		}}
+	not.ServerMessage = notification{
+		Resource: f.Resource,
+		Method:   f.Method,
+		Data: struct {
+			FileID       int64
+			ProjectID    int64
+			Name         string
+			RelativePath string
+			Version      int64
+		}{
+			fileID,
+			f.ProjectID,
+			f.Name,
+			f.RelativePath,
+			newFileVersion,
+		}}
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
 }
 
 // File.Rename
@@ -125,103 +124,7 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileRenameRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: check if permission high enough on project
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
-
-	err := dbfs.MySQLFileRename(f.FileID, f.NewName)
-	if err != nil {
-		res.ServerMessage = response{
-			Status: fail,
-			Tag:    f.Tag,
-			Data:   struct{}{}}
-		not = nil
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    f.Tag,
-			Data:   struct{}{}}
-		not.ServerMessage = notification{
-			Resource: f.Resource,
-			Method:   f.Method,
-			Data: struct {
-				FileID  int64
-				NewPath string
-			}{
-				f.FileID,
-				f.NewName,
-			}}
-	}
-
-	return res, not, nil
-}
-
-// File.Move
-type fileMoveRequest struct {
-	FileID  int64
-	NewPath string
-	abstractRequest
-}
-
-func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
-	f.abstractRequest = *req
-}
-
-func (f fileMoveRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: check if permission high enough on project
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
-
-	err := dbfs.MySQLFileMove(f.FileID, f.NewPath)
-	if err != nil {
-		res.ServerMessage = response{
-			Status: fail,
-			Tag:    f.Tag,
-			Data:   struct{}{}}
-		not = nil
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    f.Tag,
-			Data:   struct{}{}}
-		not.ServerMessage = notification{
-			Resource: f.Resource,
-			Method:   f.Method,
-			Data: struct {
-				FileID  int64
-				NewPath string
-			}{
-				f.FileID,
-				f.NewPath,
-			}}
-	}
-
-	return res, not, nil
-}
-
-// File.Delete
-type fileDeleteRequest struct {
-	FileID int64
-	abstractRequest
-}
-
-func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
-	f.abstractRequest = *req
-}
-
-func (f fileDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: check if permission high enough on project
+func (f fileRenameRequest) process() ([](func(dh DataHandler) error), error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -237,23 +140,133 @@ func (f fileDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 
 	fileMeta, err := dbfs.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), nil
 	}
+
+	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
+	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
+
+	err = dbfs.MySQLFileRename(f.FileID, f.NewName)
+	if err != nil {
+		return accumulate(toSenderCont(res)), nil
+	}
+
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+	not.ServerMessage = notification{
+		Resource: f.Resource,
+		Method:   f.Method,
+		Data: struct {
+			FileID  int64
+			NewPath string
+		}{
+			f.FileID,
+			f.NewName,
+		}}
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
+}
+
+// File.Move
+type fileMoveRequest struct {
+	FileID  int64
+	NewPath string
+	abstractRequest
+}
+
+func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
+}
+
+func (f fileMoveRequest) process() ([](func(dh DataHandler) error), error) {
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	res.ServerMessage = response{
+		Status: fail,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+
+	fileMeta, err := dbfs.MySQLFileGetInfo(f.FileID)
+	if err != nil {
+		return accumulate(toSenderCont(res)), nil
+	}
+
+	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
+	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
+
+	err = dbfs.MySQLFileMove(f.FileID, f.NewPath)
+	if err != nil {
+		return accumulate(toSenderCont(res)), nil
+	}
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+	not.ServerMessage = notification{
+		Resource: f.Resource,
+		Method:   f.Method,
+		Data: struct {
+			FileID  int64
+			NewPath string
+		}{
+			f.FileID,
+			f.NewPath,
+		}}
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
+}
+
+// File.Delete
+type fileDeleteRequest struct {
+	FileID int64
+	abstractRequest
+}
+
+func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
+}
+
+func (f fileDeleteRequest) process() ([](func(dh DataHandler) error), error) {
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().UnixNano()
+	res.Type = "Responce"
+
+	not := new(serverMessageWrapper)
+	not.Timestamp = res.Timestamp
+	not.Type = "Notification"
+
+	res.ServerMessage = response{
+		Status: fail,
+		Tag:    f.Tag,
+		Data:   struct{}{}}
+
+	fileMeta, err := dbfs.MySQLFileGetInfo(f.FileID)
+	if err != nil {
+		return accumulate(toSenderCont(res)), err
+	}
+
+	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
+	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
 	err = dbfs.MySQLFileDelete(f.FileID)
 	if err != nil {
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), err
 	}
 
 	err = dbfs.CBDeleteFile(f.FileID)
 	if err != nil {
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), err
 	}
 
-	fmt.Println("not actually deleting " + fileMeta.Filename + " yet")
 	err = dbfs.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), err
 	}
 
 	res.ServerMessage = response{
@@ -268,8 +281,7 @@ func (f fileDeleteRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 		}{
 			f.FileID,
 		}}
-
-	return res, not, nil
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
 }
 
 // File.Change
@@ -284,9 +296,7 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileChangeRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: check if permission high enough on project
-
+func (f fileChangeRequest) process() ([](func(dh DataHandler) error), error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -300,10 +310,18 @@ func (f fileChangeRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 		Tag:    f.Tag,
 		Data:   struct{}{}}
 
-	// TODO: verify changes are valid changes
+	fileMeta, err := dbfs.MySQLFileGetInfo(f.FileID)
+	if err != nil {
+		return accumulate(toSenderCont(res)), err
+	}
+
+	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
+	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
+
+	// TODO (normal/required): verify changes are valid changes
 	version, err := dbfs.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
 	if err != nil {
-		return res, nil, err
+		return accumulate(toSenderCont(res)), err
 	}
 
 	res.ServerMessage = response{
@@ -330,7 +348,7 @@ func (f fileChangeRequest) process() (*serverMessageWrapper, *serverMessageWrapp
 			f.Changes,
 		}}
 
-	return res, not, nil
+	return accumulate(toSenderCont(res), toChanCont(not)), nil
 }
 
 // File.Pull
@@ -343,8 +361,8 @@ func (f *filePullRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f filePullRequest) process() (*serverMessageWrapper, *serverMessageWrapper, error) {
-	// TODO: check if permission high enough on project
+func (f filePullRequest) process() ([](func(dh DataHandler) error), error) {
+	// TODO (normal/required): check if permission high enough on project
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -357,17 +375,17 @@ func (f filePullRequest) process() (*serverMessageWrapper, *serverMessageWrapper
 
 	fileMeta, err := dbfs.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), err
 	}
 
 	rawFile, err := dbfs.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), err
 	}
 
 	changes, err := dbfs.CBGetFileChanges(f.FileID)
 	if err != nil {
-		return res, nil, nil
+		return accumulate(toSenderCont(res)), err
 	}
 
 	res.ServerMessage = response{
@@ -381,5 +399,5 @@ func (f filePullRequest) process() (*serverMessageWrapper, *serverMessageWrapper
 			changes,
 		}}
 
-	return res, nil, nil
+	return accumulate(toSenderCont(res)), nil
 }

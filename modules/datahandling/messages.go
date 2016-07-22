@@ -3,6 +3,8 @@ package datahandling
 import (
 	"encoding/json"
 
+	"errors"
+
 	"github.com/CodeCollaborate/Server/utils"
 )
 
@@ -13,7 +15,7 @@ import (
 // Request should be implemented by all request models.
 // Provides standard interface for calling the processing
 type request interface {
-	process() (response *serverMessageWrapper, notification *serverMessageWrapper, err error)
+	process() (continuations [](func(dh DataHandler) error), err error)
 	setAbstractRequest(absReq *abstractRequest)
 }
 
@@ -50,6 +52,7 @@ func commonJSON(req request, absReq *abstractRequest) (request, error) {
 type serverMessageWrapper struct {
 	Type          string
 	Timestamp     int64
+	RoutingKey    string
 	ServerMessage serverMessage
 }
 
@@ -97,3 +100,10 @@ const partialfail int = 499
 const servfail int = 500
 const unimplemented = 501
 const servpartialfail int = 599
+
+/**
+ * Errors
+ */
+
+// ErrAuthenticationFailed is thrown when the user does not have the proper access to run a request
+var ErrAuthenticationFailed = errors.New("No entries were correctly altered")

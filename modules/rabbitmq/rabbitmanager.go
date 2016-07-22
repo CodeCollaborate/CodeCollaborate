@@ -171,8 +171,10 @@ func getNewDialer(timeout uint16) func(network, addr string) (net.Conn, error) {
 // remember to defer the closing of the RabbitMQ Channel.
 func RunSubscriber(cfg *AMQPSubCfg) error {
 	if cfg.Control == nil {
-		cfg.Control = utils.NewControl()
+		cfg.Control = NewControl()
 	}
+	defer close(cfg.Control.Exit)
+	defer close(cfg.Control.Subscription)
 
 	ch, err := GetChannel()
 	if err != nil {
@@ -225,6 +227,27 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 		select {
 		case <-cfg.Control.Exit:
 			return nil
+		case subscription := <-cfg.Control.Subscription:
+			if subscription.IsSubscribe {
+				err = ch.QueueBind(
+					cfg.QueueName(),       // queue name
+					subscription.GetKey(), // routing key
+					cfg.ExchangeName,      // exchange
+					false,                 // no-wait
+					nil,                   // arguments
+				)
+			} else {
+				err = ch.QueueUnbind(
+					cfg.QueueName(),
+					subscription.GetKey(),
+					cfg.ExchangeName,
+					nil,
+				)
+			}
+			if err != nil {
+				utils.LogOnError(err, "error subscribing/unsubscribing from rabbit")
+				cfg.Control.Exit <- true
+			}
 		case msg := <-msgs:
 			message := AMQPMessage{
 				Headers:     msg.Headers,
@@ -234,7 +257,9 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 				Persistent:  (msg.DeliveryMode == 2),
 			}
 			err := cfg.HandleMessageFunc(message)
-			utils.LogOnError(err, "Failed to handle message")
+			if err != nil {
+				utils.LogOnError(err, "Failed to handle message")
+			}
 		}
 	}
 }
@@ -245,12 +270,16 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 	if cfg.Control == nil {
 		cfg.Control = utils.NewControl()
 	}
+	defer close(cfg.Control.Exit)
+	defer close(cfg.Messages)
 
 	ch, err := GetChannel()
 	if err != nil {
 		utils.LogOnError(err, "Failed to get RabbitMQ Channel")
-		return err
+		// panic so we shut down the subscriber too
+		panic(err)
 	}
+	defer ch.Close()
 
 	// Signal that this Subscriber is ready
 	cfg.Control.Ready.Done()
@@ -276,7 +305,11 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 					DeliveryMode: deliveryMode, // 0, 1 for transient, 2 for persistent
 					Body:         []byte(message.Message),
 				})
-			utils.LogOnError(err, "Failed to publish a message")
+
+			if err != nil {
+				utils.LogOnError(err, "Failed to publish a message")
+				// TODO (non-immediate/required): decide on action at publish error: retry with count?
+			}
 		}
 	}
 }

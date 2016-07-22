@@ -134,6 +134,10 @@ func TestSendMessage(t *testing.T) {
 
 	queueID := uint64(0)
 	routingKey := fmt.Sprintf("%s-%d", hostname, queueID)
+	timeout := make(chan bool, 1)
+	defer close(timeout)
+	doneTesting := make(chan bool, 1)
+	defer close(doneTesting)
 
 	TestMessage := AMQPMessage{
 		Headers: map[string]interface{}{
@@ -149,7 +153,7 @@ func TestSendMessage(t *testing.T) {
 
 	publisherMessages := make(chan AMQPMessage, 1)
 	publisherMessages <- TestMessage
-	subscriberControl := utils.NewControl()
+	subscriberControl := NewControl()
 	publisherControl := utils.NewControl()
 
 	var wg sync.WaitGroup
@@ -168,6 +172,7 @@ func TestSendMessage(t *testing.T) {
 				if !reflect.DeepEqual(msg, TestMessage) {
 					t.Fatal("Sent message does not equal received message")
 				}
+				doneTesting <- true
 				return nil
 			},
 			Control: subscriberControl,
@@ -184,4 +189,13 @@ func TestSendMessage(t *testing.T) {
 		})
 	}()
 	wg.Wait()
+
+	go timeo(timeout)
+	select {
+	case <-doneTesting:
+		// success
+	case <-timeout:
+		t.Fatal("control sygnal timed out")
+	}
+
 }

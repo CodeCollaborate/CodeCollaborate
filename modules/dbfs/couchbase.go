@@ -139,7 +139,7 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
 func CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
-	// TODO: verify changes are valid changes
+	// TODO (non-immediate/required): verify changes are valid changes
 	cb, err := openCouchBase()
 	if err != nil {
 		return -1, err
