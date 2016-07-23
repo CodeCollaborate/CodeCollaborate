@@ -9,6 +9,7 @@ import (
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
@@ -78,6 +79,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		MessageChan:      pubCfg.Messages,
 		SubscriptionChan: sendingRoutineControl.Subscription,
 		WebsocketID:      wsID,
+		Db:               dbfs.Dbfs,
 	}
 
 	for {

@@ -5,6 +5,7 @@ import (
 
 	"errors"
 
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/utils"
 )
 
@@ -15,7 +16,7 @@ import (
 // Request should be implemented by all request models.
 // Provides standard interface for calling the processing
 type request interface {
-	process() (continuations [](func(dh DataHandler) error), err error)
+	process(db dbfs.DBFS) (continuations [](func(dh DataHandler) error), err error)
 	setAbstractRequest(absReq *abstractRequest)
 }
 

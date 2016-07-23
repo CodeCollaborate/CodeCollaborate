@@ -74,8 +74,8 @@ func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectCreateRequest) process() ([](func(dh DataHandler) error), error) {
-	projectID, err := dbfs.MySQLProjectCreate(p.SenderID, p.Name)
+func (p projectCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+	projectID, err := db.MySQLProjectCreate(p.SenderID, p.Name)
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -116,11 +116,11 @@ func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectRenameRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectRenameRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 
 	// TODO: check if permission high enough on project
 
-	err := dbfs.MySQLProjectRename(p.ProjectID, p.NewName)
+	err := db.MySQLProjectRename(p.ProjectID, p.NewName)
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -164,8 +164,8 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 	p.abstractRequest = *req
 }
 
-func (p projectGetPermissionConstantsRequest) process() ([](func(dh DataHandler) error), error) {
-	// TODO: figure out how we want to do this on the db
+func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -185,10 +185,10 @@ type projectGrantPermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectGrantPermissionsRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	// TODO: check if permission high enough on project
 
-	err := dbfs.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
+	err := db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -236,9 +236,9 @@ type projectRevokePermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectRevokePermissionsRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	// TODO: check if permission high enough on project
-	err := dbfs.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
+	err := db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -283,7 +283,7 @@ type projectGetOnlineClientsRequest struct {
 	abstractRequest
 }
 
-func (p projectGetOnlineClientsRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	// TODO: implement on redis (and actually implement redis)
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 
@@ -314,7 +314,7 @@ type projectLookupResult struct {
 	Permissions map[string](dbfs.ProjectPermission)
 }
 
-func (p projectLookupRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	/*
 		We could do
 			data := make([]interface{}, len(p.ProjectIDs))
@@ -326,7 +326,7 @@ func (p projectLookupRequest) process() ([](func(dh DataHandler) error), error) 
 	i := 0
 	for _, id := range p.ProjectIDs {
 		// TODO: see note at modules/dbfs/mysql.go:307
-		name, permissions, err := dbfs.MySQLProjectLookup(id, p.SenderID)
+		name, permissions, err := db.MySQLProjectLookup(id, p.SenderID)
 		if err != nil {
 			errOut = err
 		} else {
@@ -399,8 +399,8 @@ type fileLookupResult struct {
 	Version      int64
 }
 
-func (p projectGetFilesRequest) process() ([](func(dh DataHandler) error), error) {
-	files, err := dbfs.MySQLProjectGetFiles(p.ProjectID)
+func (p projectGetFilesRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+	files, err := db.MySQLProjectGetFiles(p.ProjectID)
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -424,7 +424,7 @@ func (p projectGetFilesRequest) process() ([](func(dh DataHandler) error), error
 	i := 0
 	var errOut error
 	for _, file := range files {
-		version, err := dbfs.CBGetFileVersion(file.FileID)
+		version, err := db.CBGetFileVersion(file.FileID)
 		if err != nil {
 			errOut = err
 		} else {
@@ -486,7 +486,7 @@ type projectSubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectSubscribeRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectSubscribeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -521,7 +521,7 @@ type projectUnsubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectUnsubscribeRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -556,7 +556,7 @@ type projectDeleteRequest struct {
 	abstractRequest
 }
 
-func (p projectDeleteRequest) process() ([](func(dh DataHandler) error), error) {
+func (p projectDeleteRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -566,7 +566,7 @@ func (p projectDeleteRequest) process() ([](func(dh DataHandler) error), error) 
 	not.Type = "Notification"
 	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
-	err := dbfs.MySQLProjectDelete(p.ProjectID, p.SenderID)
+	err := db.MySQLProjectDelete(p.ProjectID, p.SenderID)
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
 			res.ServerMessage = response{

@@ -30,12 +30,13 @@ func configSetup() {
 
 func TestOpenCouchBase(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
-	cb, err := openCouchBase()
+	cb, err := di.openCouchBase()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer CloseCouchbase()
+	defer di.CloseCouchbase()
 
 	_, err = cb.bucket.Upsert("testingDocumentPleaseIgnore", "mydoc", 0)
 	if err != nil {
@@ -61,15 +62,17 @@ func TestOpenCouchBase(t *testing.T) {
 
 func TestCloseCouchbase(t *testing.T) {
 	configSetup()
-	_, err := openCouchBase()
+	di := new(DatabaseImpl)
+
+	_, err := di.openCouchBase()
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = CloseCouchbase()
+	err = di.CloseCouchbase()
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = CloseCouchbase()
+	err = di.CloseCouchbase()
 	if err != ErrDbNotInitialized {
 		t.Fatal("Wrong error recieved")
 	}
@@ -77,66 +80,71 @@ func TestCloseCouchbase(t *testing.T) {
 
 func TestCBInsertNewFile(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	// ensure it doesn't actually exist
-	CBDeleteFile(1)
+	di.CBDeleteFile(1)
 
 	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}}
-	err := cbInsertNewFile(f)
+	err := di.cbInsertNewFile(f)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = cbInsertNewFile(f)
+	err = di.cbInsertNewFile(f)
 	if err == nil {
 		t.Fatal("Insert should have failed when inserting into an existing key")
 	}
 
 	//cleanup
-	CBDeleteFile(1)
+	di.CBDeleteFile(1)
 }
 
 func TestCBInsertNewFileByDetails(t *testing.T) {
 	configSetup()
-	CBDeleteFile(1)
+	di := new(DatabaseImpl)
 
-	err := CBInsertNewFile(1, 2, []string{"hey there", "sup"})
+	di.CBDeleteFile(1)
+
+	err := di.CBInsertNewFile(1, 2, []string{"hey there", "sup"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = CBInsertNewFile(1, 2, []string{"wow"})
+	err = di.CBInsertNewFile(1, 2, []string{"wow"})
 	if err == nil {
 		t.Fatal("Insert should have failed when inserting into an existing key")
 	}
 
 	// cleanup
-	CBDeleteFile(1)
+	di.CBDeleteFile(1)
 }
 
 func TestCBDeleteFile(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}}
-	cbInsertNewFile(f)
+	di.cbInsertNewFile(f)
 
-	err := CBDeleteFile(1)
+	err := di.CBDeleteFile(1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = CBDeleteFile(1)
+	err = di.CBDeleteFile(1)
 	if err == nil {
 		t.Fatal("Delete should have failed here")
 	}
 }
 
 func TestCBGetFileVersion(t *testing.T) {
-	// setup
 	configSetup()
-	CBDeleteFile(1)
-	CBInsertNewFile(1, 2, []string{"hey there", "sup"})
+	di := new(DatabaseImpl)
 
-	ver, err := CBGetFileVersion(1)
+	di.CBDeleteFile(1)
+	di.CBInsertNewFile(1, 2, []string{"hey there", "sup"})
+
+	ver, err := di.CBGetFileVersion(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,16 +153,18 @@ func TestCBGetFileVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	CBDeleteFile(1)
+	di.CBDeleteFile(1)
 }
 
 func TestCBGetFileChanges(t *testing.T) {
 	// setup
 	configSetup()
-	CBDeleteFile(1)
-	CBInsertNewFile(1, 2, []string{"hey there", "sup"})
+	di := new(DatabaseImpl)
 
-	changes, err := CBGetFileChanges(1)
+	di.CBDeleteFile(1)
+	di.CBInsertNewFile(1, 2, []string{"hey there", "sup"})
+
+	changes, err := di.CBGetFileChanges(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,20 +179,21 @@ func TestCBGetFileChanges(t *testing.T) {
 		t.Fatal("resultant changes are not correct")
 	}
 
-	CBDeleteFile(1)
+	di.CBDeleteFile(1)
 }
 
 func TestCBAppendFileChange(t *testing.T) {
 	var originalFileVersion int64 = 2
 	var fileID int64 = 1
-
 	configSetup()
-	CBDeleteFile(fileID)
+	di := new(DatabaseImpl)
+
+	di.CBDeleteFile(fileID)
 
 	// although these are not valid patches, this is purely a test of the logic, not of the patching
-	CBInsertNewFile(fileID, originalFileVersion, []string{"hey there", "sup"})
+	di.CBInsertNewFile(fileID, originalFileVersion, []string{"hey there", "sup"})
 
-	version, err := CBAppendFileChange(fileID, originalFileVersion, []string{"yooooo"})
+	version, err := di.CBAppendFileChange(fileID, originalFileVersion, []string{"yooooo"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +203,7 @@ func TestCBAppendFileChange(t *testing.T) {
 		t.Fatal("version did not update properly")
 	}
 
-	changes, err := CBGetFileChanges(fileID)
+	changes, err := di.CBGetFileChanges(fileID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,10 +221,10 @@ func TestCBAppendFileChange(t *testing.T) {
 		t.Fatal("resultant changes are not correct")
 	}
 
-	ver, err := CBGetFileVersion(fileID)
+	ver, err := di.CBGetFileVersion(fileID)
 	if ver != 3 {
 		t.Fatal("wrong file version")
 	}
 
-	CBDeleteFile(fileID)
+	di.CBDeleteFile(fileID)
 }

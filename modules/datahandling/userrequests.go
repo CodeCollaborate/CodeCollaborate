@@ -49,7 +49,7 @@ func (f *userRegisterRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userRegisterRequest) process() ([](func(dh DataHandler) error), error) {
+func (f userRegisterRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 
 	newUser := dbfs.UserMeta{
 		Username:  f.Username,
@@ -60,7 +60,7 @@ func (f userRegisterRequest) process() ([](func(dh DataHandler) error), error) {
 
 	// TODO (non-immediate/required): password validation
 
-	err := dbfs.MySQLUserRegister(newUser)
+	err := db.MySQLUserRegister(newUser)
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -89,7 +89,7 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLoginRequest) process() ([](func(dh DataHandler) error), error) {
+func (f userLoginRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	// TODO (non-immediate/required): implement login logic
 	// ??  lol  wat  do  ??
 	// ?? to verify pass ??
@@ -117,12 +117,12 @@ func (f *userLookupRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLookupRequest) process() ([](func(dh DataHandler) error), error) {
+func (f userLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
 	users := make([]dbfs.UserMeta, len(f.Usernames))
 	index := 0
 	var erro error
 	for _, username := range f.Usernames {
-		usr, err := dbfs.MySQLUserLookup(username)
+		usr, err := db.MySQLUserLookup(username)
 		if err != nil {
 			erro = err
 		} else {
@@ -175,8 +175,8 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userProjectsRequest) process() ([](func(dh DataHandler) error), error) {
-	projects, err := dbfs.MySQLUserProjects(f.SenderID)
+func (f userProjectsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+	projects, err := db.MySQLUserProjects(f.SenderID)
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()

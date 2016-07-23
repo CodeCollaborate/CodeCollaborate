@@ -12,6 +12,8 @@ import (
 
 func TestFileWrite(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
+
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
 	filepath2 := filepath.Join(projectParentPath, "10", "hi", "myFile2.txt")
@@ -25,14 +27,14 @@ func TestFileWrite(t *testing.T) {
 	defer os.Remove(filepath2)
 	defer os.Remove(filepath1)
 
-	loc, err := FileWrite(".", "myFile1.txt", 10, fileText)
+	loc, err := di.FileWrite(".", "myFile1.txt", 10, fileText)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if loc != filepath1 {
 		t.Fatalf("wrong file location\nexpected:\n%v\nactual:\n%v", filepath1, loc)
 	}
-	loc, err = FileWrite("./hi/", "myFile2.txt", 10, fileText)
+	loc, err = di.FileWrite("./hi/", "myFile2.txt", 10, fileText)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,17 +43,17 @@ func TestFileWrite(t *testing.T) {
 	}
 
 	// Test a bad path
-	_, err = FileWrite("..", "myFile.txt", 10, fileText)
+	_, err = di.FileWrite("..", "myFile.txt", 10, fileText)
 	if err != ErrMaliciousRequest {
 		t.Fatal("Expected failure to write to bad location")
 	}
 	// Test a worse but hidden path
-	_, err = FileWrite("fake/../../../", "myFile.txt", 10, fileText)
+	_, err = di.FileWrite("fake/../../../", "myFile.txt", 10, fileText)
 	if err != ErrMaliciousRequest {
 		t.Fatal("Expected failure to write to bad location")
 	}
 	// Test with a bad filename
-	_, err = FileWrite(".", "../myFile.txt", 10, fileText)
+	_, err = di.FileWrite(".", "../myFile.txt", 10, fileText)
 	if err != ErrMaliciousRequest {
 		t.Fatal("Expected failure to write to bad location")
 	}
@@ -73,6 +75,8 @@ func TestFileWrite(t *testing.T) {
 
 func TestFileRead(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
+
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
 
@@ -82,12 +86,12 @@ func TestFileRead(t *testing.T) {
 	defer os.Remove(filepath.Join(projectParentPath, "10"))
 	defer os.Remove(filepath1)
 
-	_, err := FileWrite(".", "myFile1.txt", 10, fileText)
+	_, err := di.FileWrite(".", "myFile1.txt", 10, fileText)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	data, err := FileRead(".", "myFile1.txt", 10)
+	data, err := di.FileRead(".", "myFile1.txt", 10)
 
 	if !bytes.Equal(fileText, *data) {
 		t.Fatalf("File was not writen or read correctly\nExpected:\n%v\nActual:\n%v", fileText, data)
@@ -97,6 +101,8 @@ func TestFileRead(t *testing.T) {
 
 func TestFileDelete(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
+
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
 
@@ -105,12 +111,12 @@ func TestFileDelete(t *testing.T) {
 	defer os.Remove(projectParentPath)
 	defer os.Remove(filepath.Join(projectParentPath, "10"))
 
-	_, err := FileWrite(".", "myFile1.txt", 10, fileText)
+	_, err := di.FileWrite(".", "myFile1.txt", 10, fileText)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = FileDelete(".", "myFile1.txt", 10)
+	err = di.FileDelete(".", "myFile1.txt", 10)
 	if err != nil {
 		t.Fatal(err)
 	}

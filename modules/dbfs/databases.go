@@ -1,49 +1,49 @@
 package dbfs
 
-import (
-	"errors"
-	"time"
-)
+// Dbfs is the globally used dbfs object for the server
+var Dbfs DBFS
 
-// ErrNoDbChange : No rows or values in the DB were changed, which was an unexpected result
-var ErrNoDbChange = errors.New("No entries were correctly altered")
+// DBFS is the interface which maps all of the necessary database and file system functions
+type DBFS interface {
+	// couchbase
 
-// ErrDbNotInitialized : active db connection does not exist
-var ErrDbNotInitialized = errors.New("The database was not propperly initialized before execution")
+	CloseCouchbase() error
+	CBInsertNewFile(fileID int64, version int64, changes []string) error
+	CBDeleteFile(fileID int64) error
+	CBGetFileVersion(fileID int64) (int64, error)
+	CBGetFileChanges(fileID int64) ([]string, error)
+	CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error)
 
-// ErrMaliciousRequest : The request attempted to directly tamper with our filesystemp / database
-var ErrMaliciousRequest = errors.New("The request attempted to directly tamper with our filesystemp / database")
+	// mysql
 
-// ProjectPermission is the type which represents the permission relationship on projects
-type ProjectPermission struct {
-	Username        string
-	PermissionLevel int
-	GrantedBy       string
-	GrantedDate     time.Time
+	CloseMySQL() error
+	MySQLUserRegister(user UserMeta) error
+	MySQLUserGetPass(username string) (password string, err error)
+	MySQLUserDelete(username string, pass string) error
+	MySQLUserLookup(username string) (user UserMeta, err error)
+	MySQLUserProjects(username string) (projects []ProjectMeta, err error)
+	MySQLProjectCreate(username string, projectName string) (projectID int64, err error)
+	MySQLProjectDelete(projectID int64, senderID string) error
+	MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error)
+	MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error
+	MySQLProjectRevokePermission(projectID int64, revokeUsername string, revokedByUsername string) error
+	MySQLProjectRename(projectID int64, newName string) error
+	MySQLProjectLookup(projectID int64, username string) (name string, permissions map[string]ProjectPermission, err error)
+	MySQLFileCreate(username string, filename string, relativePath string, projectID int64) (fileID int64, err error)
+	MySQLFileDelete(fileID int64) error
+	MySQLFileMove(fileID int64, newPath string) error
+	MySQLFileRename(fileID int64, newName string) error
+	MySQLFileGetInfo(fileID int64) (FileMeta, error)
+
+	// filesystem
+
+	FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error)
+	FileDelete(relpath string, filename string, projectID int64) error
+	FileRead(relpath string, filename string, projectID int64) (*[]byte, error)
 }
 
-// ProjectMeta is the type which represents a row in the MySQL `Project` table
-type ProjectMeta struct {
-	ProjectID       int64
-	ProjectName     string
-	PermissionLevel int
-}
-
-// FileMeta is the type that contains all the metadata about a file
-type FileMeta struct {
-	FileID       int64
-	Creator      string
-	CreationDate time.Time
-	RelativePath string
-	ProjectID    int64
-	Filename     string
-}
-
-// UserMeta is the type that contains all the metadata about a user
-type UserMeta struct {
-	Username  string
-	Password  string
-	Email     string
-	FirstName string
-	LastName  string
+// DatabaseImpl is the concrete implementation of the DBFS interface
+type DatabaseImpl struct {
+	couchbaseDB *couchbaseConn
+	mysqldb     *mysqlConn
 }

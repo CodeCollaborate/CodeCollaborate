@@ -17,48 +17,49 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 )
 
-var mysqldb *mysqlConn
-
 type mysqlConn struct {
 	config config.ConnCfg
 	db     *sql.DB
 }
 
-func getMySQLConn() (*mysqlConn, error) {
-	if mysqldb != nil && mysqldb.db != nil {
-		err := mysqldb.db.Ping()
+func (di DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
+	if di.mysqldb != nil && di.mysqldb.db != nil {
+		err := di.mysqldb.db.Ping()
 		if err == nil {
-			return mysqldb, nil
+			return di.mysqldb, nil
 		}
 	}
 
-	if mysqldb == nil || mysqldb.config == (config.ConnCfg{}) {
-		mysqldb = new(mysqlConn)
+	if di.mysqldb == nil || di.mysqldb.config == (config.ConnCfg{}) {
+		di.mysqldb = new(mysqlConn)
 		configMap := config.GetConfig()
-		mysqldb.config = configMap.ConnectionConfig["MySQL"]
+		di.mysqldb.config = configMap.ConnectionConfig["MySQL"]
 	}
 
-	if mysqldb.config.Schema == "" {
-		mysqldb.config.Schema = "cc"
+	if di.mysqldb.config.Schema == "" {
+		di.mysqldb.config.Schema = "cc"
 	}
 
-	connString := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?timeout=%vs&parseTime=true", mysqldb.config.Username, mysqldb.config.Password, mysqldb.config.Host, int(mysqldb.config.Port), mysqldb.config.Schema, int(mysqldb.config.Timeout))
+	connString := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?timeout=%vs&parseTime=true",
+		di.mysqldb.config.Username,
+		di.mysqldb.config.Password,
+		di.mysqldb.config.Host,
+		int(di.mysqldb.config.Port),
+		di.mysqldb.config.Schema,
+		int(di.mysqldb.config.Timeout))
 	db, err := sql.Open("mysql", connString)
-	if err != nil {
-		utils.LogOnError(err, "Unable to connect to MySQL")
-		return mysqldb, err
-	}
 
-	mysqldb.db = db
-	return mysqldb, nil
+	di.mysqldb.db = db
+	utils.LogOnError(err, "Unable to connect to MySQL")
+	return di.mysqldb, err
 }
 
 // CloseMySQL closes the MySQL db connection
 // YOU PROBABLY DON'T NEED TO RUN THIS EVER
-func CloseMySQL() error {
-	if mysqldb != nil && mysqldb.db != nil {
-		err := mysqldb.db.Close()
-		mysqldb = nil
+func (di DatabaseImpl) CloseMySQL() error {
+	if di.mysqldb != nil && di.mysqldb.db != nil {
+		err := di.mysqldb.db.Close()
+		di.mysqldb = nil
 		return err
 	}
 	return ErrDbNotInitialized
@@ -69,8 +70,8 @@ STORED PROCEDURES
 */
 
 // MySQLUserRegister registers a new user in MySQL
-func MySQLUserRegister(user UserMeta) error {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLUserRegister(user UserMeta) error {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -89,8 +90,8 @@ func MySQLUserRegister(user UserMeta) error {
 }
 
 // MySQLUserGetPass is used to get the key and hash of a stored password to verify that a value is correct
-func MySQLUserGetPass(username string) (password string, err error) {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLUserGetPass(username string) (password string, err error) {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return "", err
 	}
@@ -111,9 +112,9 @@ func MySQLUserGetPass(username string) (password string, err error) {
 }
 
 // MySQLUserDelete deletes a user from MySQL
-// unexported b/c not part of the official API
-func mySQLUserDelete(username string, pass string) error {
-	mysql, err := getMySQLConn()
+// technically not part of the official API
+func (di DatabaseImpl) MySQLUserDelete(username string, pass string) error {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -134,8 +135,8 @@ func mySQLUserDelete(username string, pass string) error {
 }
 
 // MySQLUserLookup returns user information about a user with the username 'username'
-func MySQLUserLookup(username string) (user UserMeta, err error) {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLUserLookup(username string) (user UserMeta, err error) {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return user, err
 	}
@@ -156,8 +157,8 @@ func MySQLUserLookup(username string) (user UserMeta, err error) {
 }
 
 // MySQLUserProjects returns the projectID, the project name, and the permission level the user `username` has on that project
-func MySQLUserProjects(username string) (projects []ProjectMeta, err error) {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLUserProjects(username string) (projects []ProjectMeta, err error) {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +181,8 @@ func MySQLUserProjects(username string) (projects []ProjectMeta, err error) {
 }
 
 // MySQLProjectCreate create a new project in MySQL
-func MySQLProjectCreate(username string, projectName string) (projectID int64, err error) {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLProjectCreate(username string, projectName string) (projectID int64, err error) {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return -1, err
 	}
@@ -201,8 +202,8 @@ func MySQLProjectCreate(username string, projectName string) (projectID int64, e
 }
 
 // MySQLProjectDelete deletes a project from MySQL
-func MySQLProjectDelete(projectID int64, senderID string) error {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLProjectDelete(projectID int64, senderID string) error {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -220,8 +221,8 @@ func MySQLProjectDelete(projectID int64, senderID string) error {
 }
 
 // MySQLProjectGetFiles returns the Files from the project with projectID = projectID
-func MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error) {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error) {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return nil, err
 	}
@@ -244,8 +245,8 @@ func MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error) {
 }
 
 // MySQLProjectGrantPermission gives the user `grantUsername` the permision `permissionLevel` on project `projectID`
-func MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -263,9 +264,9 @@ func MySQLProjectGrantPermission(projectID int64, grantUsername string, permissi
 }
 
 // MySQLProjectRevokePermission removes revokeUsername's permissions from the project
-// DOES NOT WORK FOR OWNER
-func MySQLProjectRevokePermission(projectID int64, revokeUsername string, revokedByUsername string) error {
-	mysql, err := getMySQLConn()
+// DOES NOT WORK FOR OWNER (which is kinda a good thing)
+func (di DatabaseImpl) MySQLProjectRevokePermission(projectID int64, revokeUsername string, revokedByUsername string) error {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -283,8 +284,8 @@ func MySQLProjectRevokePermission(projectID int64, revokeUsername string, revoke
 }
 
 // MySQLProjectRename allows for you to rename projects
-func MySQLProjectRename(projectID int64, newName string) error {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLProjectRename(projectID int64, newName string) error {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -313,9 +314,9 @@ func MySQLProjectRename(projectID int64, newName string) error {
 // 		more issues when there are a variable number of ID's because MySQL doesn't have arrays
 //
 // http://stackoverflow.com/a/8150183 <- preferred if we switch b/c FIND_IN_SET doesn't use indexes
-func MySQLProjectLookup(projectID int64, username string) (name string, permissions map[string]ProjectPermission, err error) {
+func (di DatabaseImpl) MySQLProjectLookup(projectID int64, username string) (name string, permissions map[string]ProjectPermission, err error) {
 	permissions = make(map[string](ProjectPermission))
-	mysql, err := getMySQLConn()
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return "", permissions, err
 	}
@@ -350,7 +351,7 @@ func MySQLProjectLookup(projectID int64, username string) (name string, permissi
 }
 
 // MySQLFileCreate create a new file in MySQL
-func MySQLFileCreate(username string, filename string, relativePath string, projectID int64) (fileID int64, err error) {
+func (di DatabaseImpl) MySQLFileCreate(username string, filename string, relativePath string, projectID int64) (fileID int64, err error) {
 	if strings.Contains(filename, filePathSeparator) {
 		return -1, ErrMaliciousRequest
 	}
@@ -360,7 +361,7 @@ func MySQLFileCreate(username string, filename string, relativePath string, proj
 		return -1, ErrMaliciousRequest
 	}
 
-	mysql, err := getMySQLConn()
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return -1, err
 	}
@@ -381,8 +382,8 @@ func MySQLFileCreate(username string, filename string, relativePath string, proj
 
 // MySQLFileDelete deletes a file from the MySQL database
 // this does not delete the actual file
-func MySQLFileDelete(fileID int64) error {
-	mysql, err := getMySQLConn()
+func (di DatabaseImpl) MySQLFileDelete(fileID int64) error {
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -400,13 +401,13 @@ func MySQLFileDelete(fileID int64) error {
 }
 
 // MySQLFileMove updates MySQL with the  new path of the file with FileID == 'fileID'
-func MySQLFileMove(fileID int64, newPath string) error {
+func (di DatabaseImpl) MySQLFileMove(fileID int64, newPath string) error {
 	newPathClean := filepath.Clean(newPath)
 	if strings.HasPrefix(newPathClean, "..") {
 		return ErrMaliciousRequest
 	}
 
-	mysql, err := getMySQLConn()
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -424,12 +425,12 @@ func MySQLFileMove(fileID int64, newPath string) error {
 }
 
 // MySQLFileRename updates MySQL with the new name of the file with FileID == 'fileID'
-func MySQLFileRename(fileID int64, newName string) error {
+func (di DatabaseImpl) MySQLFileRename(fileID int64, newName string) error {
 	if strings.Contains(newName, filePathSeparator) {
 		return ErrMaliciousRequest
 	}
 
-	mysql, err := getMySQLConn()
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
@@ -447,9 +448,9 @@ func MySQLFileRename(fileID int64, newName string) error {
 }
 
 // MySQLFileGetInfo returns the meta data about the given file
-func MySQLFileGetInfo(fileID int64) (FileMeta, error) {
+func (di DatabaseImpl) MySQLFileGetInfo(fileID int64) (FileMeta, error) {
 	file := FileMeta{}
-	mysql, err := getMySQLConn()
+	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return file, err
 	}

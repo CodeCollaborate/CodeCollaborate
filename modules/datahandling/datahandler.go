@@ -7,6 +7,7 @@ import (
 
 	"strconv"
 
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 )
@@ -20,6 +21,7 @@ type DataHandler struct {
 	MessageChan      chan<- rabbitmq.AMQPMessage
 	SubscriptionChan chan<- rabbitmq.Subscription
 	WebsocketID      uint64
+	Db               dbfs.DBFS
 }
 
 // Handle takes the WebSocket Id, MessageType and message in byte-array form,
@@ -46,7 +48,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 		}
 	}
 
-	callbacks, err := fullRequest.process()
+	callbacks, err := fullRequest.process(dh.Db)
 	if err != nil {
 		utils.LogOnError(err, "Failed to handle process request")
 	}

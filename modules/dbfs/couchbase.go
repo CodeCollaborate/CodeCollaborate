@@ -8,8 +8,6 @@ import (
 	"gopkg.in/couchbaselabs/gocb.v1"
 )
 
-var couchbaseDB *couchbaseConn
-
 type couchbaseConn struct {
 	config config.ConnCfg
 	bucket *gocb.Bucket
@@ -21,49 +19,49 @@ type cbFile struct {
 	Changes []string `json:"changes"`
 }
 
-func openCouchBase() (*couchbaseConn, error) {
-	if couchbaseDB != nil && couchbaseDB.bucket != nil {
-		return couchbaseDB, nil
+func (di DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
+	if di.couchbaseDB != nil && di.couchbaseDB.bucket != nil {
+		return di.couchbaseDB, nil
 	}
 
-	if couchbaseDB == nil || couchbaseDB.config == (config.ConnCfg{}) {
-		couchbaseDB = new(couchbaseConn)
+	if di.couchbaseDB == nil || di.couchbaseDB.config == (config.ConnCfg{}) {
+		di.couchbaseDB = new(couchbaseConn)
 		configMap := config.GetConfig()
-		couchbaseDB.config = configMap.ConnectionConfig["Couchbase"]
+		di.couchbaseDB.config = configMap.ConnectionConfig["Couchbase"]
 	}
 
 	var documentsCluster *gocb.Cluster
 	var err error
 
-	if strings.HasPrefix(couchbaseDB.config.Host, "couchbase://") {
-		documentsCluster, err = gocb.Connect(couchbaseDB.config.Host + ":" + strconv.Itoa(int(couchbaseDB.config.Port)))
+	if strings.HasPrefix(di.couchbaseDB.config.Host, "couchbase://") {
+		documentsCluster, err = gocb.Connect(di.couchbaseDB.config.Host + ":" + strconv.Itoa(int(di.couchbaseDB.config.Port)))
 	} else {
-		documentsCluster, err = gocb.Connect("couchbase://" + couchbaseDB.config.Host + ":" + strconv.Itoa(int(couchbaseDB.config.Port)))
+		documentsCluster, err = gocb.Connect("couchbase://" + di.couchbaseDB.config.Host + ":" + strconv.Itoa(int(di.couchbaseDB.config.Port)))
 	}
 
 	if err != nil {
-		return couchbaseDB, err
+		return di.couchbaseDB, err
 	}
 
-	if couchbaseDB.config.Schema == "" {
-		couchbaseDB.config.Schema = "documents"
+	if di.couchbaseDB.config.Schema == "" {
+		di.couchbaseDB.config.Schema = "documents"
 	}
 
-	myBucket, err := documentsCluster.OpenBucket(couchbaseDB.config.Schema, couchbaseDB.config.Password)
+	myBucket, err := documentsCluster.OpenBucket(di.couchbaseDB.config.Schema, di.couchbaseDB.config.Password)
 	if err != nil {
-		return couchbaseDB, err
+		return di.couchbaseDB, err
 	}
-	couchbaseDB.bucket = myBucket
+	di.couchbaseDB.bucket = myBucket
 
-	return couchbaseDB, nil
+	return di.couchbaseDB, nil
 }
 
 // CloseCouchbase closes the CouchBase db connection
 // YOU PROBABLY DON'T NEED TO RUN THIS EVER
-func CloseCouchbase() error {
-	if couchbaseDB != nil && couchbaseDB.bucket != nil {
-		couchbaseDB.bucket.Close()
-		couchbaseDB = nil
+func (di DatabaseImpl) CloseCouchbase() error {
+	if di.couchbaseDB != nil && di.couchbaseDB.bucket != nil {
+		di.couchbaseDB.bucket.Close()
+		di.couchbaseDB = nil
 	} else {
 		return ErrDbNotInitialized
 	}
@@ -72,8 +70,8 @@ func CloseCouchbase() error {
 }
 
 // CBInsertNewFile inserts a new document into couchbase with CBFile.FileID == fileID
-func cbInsertNewFile(file cbFile) error {
-	cb, err := openCouchBase()
+func (di DatabaseImpl) cbInsertNewFile(file cbFile) error {
+	cb, err := di.openCouchBase()
 
 	if err != nil {
 		return err
@@ -84,8 +82,8 @@ func cbInsertNewFile(file cbFile) error {
 }
 
 // CBInsertNewFile inserts a new document with the given arguments
-func CBInsertNewFile(fileID int64, version int64, changes []string) error {
-	return cbInsertNewFile(cbFile{
+func (di DatabaseImpl) CBInsertNewFile(fileID int64, version int64, changes []string) error {
+	return di.cbInsertNewFile(cbFile{
 		FileID:  fileID,
 		Version: version,
 		Changes: changes,
@@ -93,8 +91,8 @@ func CBInsertNewFile(fileID int64, version int64, changes []string) error {
 }
 
 // CBDeleteFile deletes the document with FileID == fileID from couchbase
-func CBDeleteFile(fileID int64) error {
-	cb, err := openCouchBase()
+func (di DatabaseImpl) CBDeleteFile(fileID int64) error {
+	cb, err := di.openCouchBase()
 	if err != nil {
 		return err
 	}
@@ -103,8 +101,8 @@ func CBDeleteFile(fileID int64) error {
 }
 
 // CBGetFileVersion returns the current version of the file for the given FileID
-func CBGetFileVersion(fileID int64) (int64, error) {
-	cb, err := openCouchBase()
+func (di DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
+	cb, err := di.openCouchBase()
 	if err != nil {
 		return -1, err
 	}
@@ -120,8 +118,8 @@ func CBGetFileVersion(fileID int64) (int64, error) {
 }
 
 // CBGetFileChanges returns the array of file changes for the given fileID
-func CBGetFileChanges(fileID int64) ([]string, error) {
-	cb, err := openCouchBase()
+func (di DatabaseImpl) CBGetFileChanges(fileID int64) ([]string, error) {
+	cb, err := di.openCouchBase()
 	if err != nil {
 		return []string{}, err
 	}
@@ -138,9 +136,9 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-func CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
+func (di DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
 	// TODO (non-immediate/required): verify changes are valid changes
-	cb, err := openCouchBase()
+	cb, err := di.openCouchBase()
 	if err != nil {
 		return -1, err
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
 func configSetup() {
@@ -42,9 +43,9 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 	req.SenderToken = "supersecure"
 	req.ProjectIDs = []int64{12345, 38292}
 
-	//dbfs.MySQLProjectLookup = func() {}
+	db := new(dbfs.DatabaseImpl) // TODO: MOCK ME
 
-	continuations, err := req.process()
+	continuations, err := req.process(db)
 
 	if err != nil {
 		t.Fatal(err)
