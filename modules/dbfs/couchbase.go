@@ -19,7 +19,7 @@ type cbFile struct {
 	Changes []string `json:"changes"`
 }
 
-func (di DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
+func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
 	if di.couchbaseDB != nil && di.couchbaseDB.bucket != nil {
 		return di.couchbaseDB, nil
 	}
@@ -58,7 +58,7 @@ func (di DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
 
 // CloseCouchbase closes the CouchBase db connection
 // YOU PROBABLY DON'T NEED TO RUN THIS EVER
-func (di DatabaseImpl) CloseCouchbase() error {
+func (di *DatabaseImpl) CloseCouchbase() error {
 	if di.couchbaseDB != nil && di.couchbaseDB.bucket != nil {
 		di.couchbaseDB.bucket.Close()
 		di.couchbaseDB = nil
@@ -70,7 +70,7 @@ func (di DatabaseImpl) CloseCouchbase() error {
 }
 
 // CBInsertNewFile inserts a new document into couchbase with CBFile.FileID == fileID
-func (di DatabaseImpl) cbInsertNewFile(file cbFile) error {
+func (di *DatabaseImpl) cbInsertNewFile(file cbFile) error {
 	cb, err := di.openCouchBase()
 
 	if err != nil {
@@ -82,7 +82,7 @@ func (di DatabaseImpl) cbInsertNewFile(file cbFile) error {
 }
 
 // CBInsertNewFile inserts a new document with the given arguments
-func (di DatabaseImpl) CBInsertNewFile(fileID int64, version int64, changes []string) error {
+func (di *DatabaseImpl) CBInsertNewFile(fileID int64, version int64, changes []string) error {
 	return di.cbInsertNewFile(cbFile{
 		FileID:  fileID,
 		Version: version,
@@ -91,7 +91,7 @@ func (di DatabaseImpl) CBInsertNewFile(fileID int64, version int64, changes []st
 }
 
 // CBDeleteFile deletes the document with FileID == fileID from couchbase
-func (di DatabaseImpl) CBDeleteFile(fileID int64) error {
+func (di *DatabaseImpl) CBDeleteFile(fileID int64) error {
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (di DatabaseImpl) CBDeleteFile(fileID int64) error {
 }
 
 // CBGetFileVersion returns the current version of the file for the given FileID
-func (di DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
+func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return -1, err
@@ -118,7 +118,7 @@ func (di DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 }
 
 // CBGetFileChanges returns the array of file changes for the given fileID
-func (di DatabaseImpl) CBGetFileChanges(fileID int64) ([]string, error) {
+func (di *DatabaseImpl) CBGetFileChanges(fileID int64) ([]string, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return []string{}, err
@@ -136,7 +136,7 @@ func (di DatabaseImpl) CBGetFileChanges(fileID int64) ([]string, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-func (di DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
+func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
 	// TODO (non-immediate/required): verify changes are valid changes
 	cb, err := di.openCouchBase()
 	if err != nil {

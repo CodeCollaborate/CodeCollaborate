@@ -14,7 +14,7 @@ var filePathSeparator = strconv.QuoteRune(os.PathSeparator)[1:2]
 
 // FileWrite writes the file with the given bytes to a calculated path, and
 // returns that path so it can be put in MySQL
-func (di DatabaseImpl) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
+func (di *DatabaseImpl) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
 	relFilePath, err := calculateFilePathPath(relpath, filename, projectID)
 	if err != nil {
 		return "", err
@@ -34,7 +34,7 @@ func (di DatabaseImpl) FileWrite(relpath string, filename string, projectID int6
 
 // FileDelete deletes the file with the given metadata from the file system
 // Couple this with dbfs.MySQLFileDelete and dbfs.CBDeleteFile
-func (di DatabaseImpl) FileDelete(relpath string, filename string, projectID int64) error {
+func (di *DatabaseImpl) FileDelete(relpath string, filename string, projectID int64) error {
 	relFilePath, err := calculateFilePathPath(relpath, filename, projectID)
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func (di DatabaseImpl) FileDelete(relpath string, filename string, projectID int
 }
 
 // FileRead returns the project file from the calculated location on the disk
-func (di DatabaseImpl) FileRead(relpath string, filename string, projectID int64) (*[]byte, error) {
+func (di *DatabaseImpl) FileRead(relpath string, filename string, projectID int64) (*[]byte, error) {
 	relFilePath, err := calculateFilePathPath(relpath, filename, projectID)
 	if err != nil {
 		return new([]byte), err

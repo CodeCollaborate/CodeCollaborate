@@ -64,8 +64,8 @@ func TestCloseCouchbase(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
-	_, err := di.openCouchBase()
-	if err != nil {
+	db, err := di.openCouchBase()
+	if err != nil || db == nil {
 		t.Fatal(err)
 	}
 	err = di.CloseCouchbase()
