@@ -1,4 +1,4 @@
-# CodeCollaborate [![Build Status](https://travis-ci.org/CodeCollaborate/Server.svg)](https://travis-ci.org/CodeCollaborate/Server)
+# CodeCollaborate [![Build Status](https://travis-ci.org/CodeCollaborate/Server.svg?branch=test)](https://travis-ci.org/CodeCollaborate/Server)
 
 ##Overview
 CodeCollaborate is a real-time document synchronization service designed to allow software developers to work seamlessly in groups by removing wasted time spent sharing and updating code, allowing developers to focus on building groundbreaking software.
