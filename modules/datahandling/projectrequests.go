@@ -338,7 +338,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 		}
 	}
 	// shrink to cut off remainder left by errors
-	resultData = resultData[:i+1]
+	resultData = resultData[:i]
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -440,7 +440,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) e
 		}
 	}
 	// shrink to cut off remainder left by errors
-	resultData = resultData[:i+1]
+	resultData = resultData[:i]
 
 	if errOut != nil {
 		if len(resultData) == 0 {

@@ -131,7 +131,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 		}
 	}
 	// shrink as needed
-	users = users[:index+1]
+	users = users[:index]
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
