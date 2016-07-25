@@ -1,9 +1,9 @@
 TODOs for intergoprocdandling:
     immediate/required:
+        TODO: update dbfs/databases.go with the documentation from the databasesImpl methods
 
     testing/required:
         TODO: testing... lots of testing
-        TODO: switch dbfs to use a dbfs object which owns the database methods and implements an interface so that we can mock the interface for testing
 
     normal/required:
         TODO: check if permission high enough on project before making these actions

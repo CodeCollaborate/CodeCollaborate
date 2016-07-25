@@ -244,7 +244,7 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 	return files, nil
 }
 
-// MySQLProjectGrantPermission gives the user `grantUsername` the permision `permissionLevel` on project `projectID`
+// MySQLProjectGrantPermission gives the user `grantUsername` the permission `permissionLevel` on project `projectID`
 func (di *DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error {
 	mysql, err := di.getMySQLConn()
 	if err != nil {
