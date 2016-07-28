@@ -1,6 +1,5 @@
 TODOs for intergoprocdandling:
     immediate/required:
-        TODO: update dbfs/databases.go with the documentation from the databasesImpl methods
 
     testing/required:
         TODO: testing... lots of testing
@@ -30,8 +29,11 @@ TODOs for intergoprocdandling:
 
 Decisions:
     TODO: decide if we want 1 publisher per connection (modules/handlers/wsmanager.go:66) or 1 publisher for the whole server (move that to runner)
+    answer: yes
     TODO: decide on change to MySQLProjectLookup stored proc
+    answer: (probably) no change
     TODO: decide on action at rabbit publish error: retry with count?
+    answer: _____
 
 
 things to put on redis:

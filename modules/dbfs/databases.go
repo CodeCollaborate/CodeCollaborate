@@ -5,7 +5,6 @@ var Dbfs DBFS
 
 // DBFS is the interface which maps all of the necessary database and file system functions
 type DBFS interface {
-	// TODO: update dbfs/databases.go with the documentation from the databasesImpl methods
 	// couchbase
 
 	// CloseCouchbase closes the CouchBase db connection
@@ -22,7 +21,7 @@ type DBFS interface {
 	// CBAppendFileChange mutates the file document with the new change and sets the new version number
 	CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error)
 
-	// mysql
+	// MySQL
 
 	// CloseMySQL closes the MySQL db connection
 	// YOU PROBABLY DON'T NEED TO RUN THIS EVER
