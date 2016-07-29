@@ -60,6 +60,6 @@ func TestNewControl(t *testing.T) {
 }
 
 func timeo(timeout chan bool) {
-	time.Sleep(1 * time.Second)
+	time.Sleep(5 * time.Second)
 	timeout <- true
 }

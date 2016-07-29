@@ -195,7 +195,97 @@ func TestSendMessage(t *testing.T) {
 	case <-doneTesting:
 		// success
 	case <-timeout:
-		t.Fatal("control sygnal timed out")
+		t.Fatal("control signal timed out")
+	}
+
+}
+
+func TestSubscription(t *testing.T) {
+	channelQueue = nil
+
+	err := SetupRabbitExchange(
+		&AMQPConnCfg{
+			ConnCfg: getRabbitMQConfig(t),
+			Exchanges: []AMQPExchCfg{
+				testExchange,
+			},
+		},
+	)
+	if err != nil {
+		t.Fatal("Failed to connect to Rabbit Exchange: Timed out")
+	}
+
+	queueID := uint64(0)
+	subscription_channel := "gene's project"
+
+	//routingKey := fmt.Sprintf("%s-%d", hostname, subscription_channel)
+	timeout := make(chan bool, 1)
+	defer close(timeout)
+	doneTesting := make(chan bool, 1)
+	defer close(doneTesting)
+
+	TestMessage := AMQPMessage{
+		Headers: map[string]interface{}{
+			"Header1": "Value1",
+			"Header2": "Value2",
+			"Header3": "Value3",
+		},
+		RoutingKey:  subscription_channel,
+		ContentType: "ContentType1",
+		Persistent:  false,
+		Message:     []byte("TestMessage1"),
+	}
+
+	publisherMessages := make(chan AMQPMessage, 1)
+	subscriberControl := NewControl()
+	publisherControl := utils.NewControl()
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		wg.Done()
+		RunSubscriber(&AMQPSubCfg{
+			ExchangeName: testExchange.ExchangeName,
+			QueueID:      queueID,
+			Keys:         []string{},
+			IsWorkQueue:  false,
+			HandleMessageFunc: func(msg AMQPMessage) error {
+				subscriberControl.Exit <- true
+				publisherControl.Exit <- true
+				if !reflect.DeepEqual(msg, TestMessage) {
+					t.Fatal("Sent message does not equal received message")
+				}
+				doneTesting <- true
+				return nil
+			},
+			Control: subscriberControl,
+		})
+	}()
+
+	subscriberControl.Subscription <- Subscription{
+		Channel:     subscription_channel,
+		IsSubscribe: true,
+	}
+	subscriberControl.Ready.Wait()
+
+	go func() {
+		wg.Done()
+		RunPublisher(&AMQPPubCfg{
+			ExchangeName: testExchange.ExchangeName,
+			Messages:     publisherMessages,
+			Control:      publisherControl,
+		})
+	}()
+	wg.Wait()
+
+	publisherMessages <- TestMessage
+
+	go timeo(timeout)
+	select {
+	case <-doneTesting:
+	// success
+	case <-timeout:
+		t.Fatal("control signal timed out")
 	}
 
 }

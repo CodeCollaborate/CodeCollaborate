@@ -212,7 +212,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 		cfg.QueueName(), // queue
 		"",              // consumer
 		true,            // auto ack
-		true,            // exclusive
+		false,           // exclusive
 		false,           // no local
 		false,           // no wait
 		nil,             // args

@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
-	"github.com/CodeCollaborate/Server/utils"
 )
 
 /**
@@ -35,7 +34,6 @@ type abstractRequest struct {
 func createAbstractRequest(jsony []byte) (req *abstractRequest, err error) {
 	err = json.Unmarshal(jsony, &req)
 	if err != nil {
-		utils.LogOnError(err, "Failed to parse json")
 		return nil, err
 	}
 	return req, err

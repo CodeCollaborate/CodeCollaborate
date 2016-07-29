@@ -18,7 +18,8 @@ import (
  * Runner.go starts the server. It initializes processes and begins listening for websocket requests.
  */
 
-var addr = flag.String("addr", "0.0.0.0:80", "http service address")
+// changed from "0.0.0.0:80" because you need to be root to bind to that port
+var addr = flag.String("addr", "0.0.0.0:8000", "http service address")
 
 func main() {
 

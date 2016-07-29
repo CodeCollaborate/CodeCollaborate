@@ -56,8 +56,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	// Run WSSendingHandler in a separate GoRoutine
 	sendingRoutineControl := rabbitmq.NewControl()
 
-	// TODO (normal/required): decide if we want 1 publisher per connection (this)
-	// or 1 publisher for the whole server (move this to runner)
+	// we (probably) want to have 1 publisher per connection
 	pubCfg := rabbitmq.NewPubConfig(config.ServerConfig.Name)
 
 	defer func() {

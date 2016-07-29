@@ -12,7 +12,7 @@ func TestCreateValidAbstractRequest(t *testing.T) {
 			"\"SenderID\":\"loganga\", " +
 			"\"SenderToken\":\"test\", " +
 			"\"Timestamp\":1460839273, " +
-			"\"Data\":{\"ProjectIds\": [{\"ProjectId\" :12345}]}}")
+			"\"Data\":{\"ProjectIds\": [ 12345 ]}}")
 	req, err := createAbstractRequest(testJSON)
 	if err != nil {
 		t.Fatal(err)
@@ -37,6 +37,13 @@ func TestCreateValidAbstractRequest(t *testing.T) {
 	}
 	if req.Data == nil {
 		t.Fail()
+	}
+	fullreq, err := getFullRequest(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fullreq == nil {
+		t.Fatal("Could not parse full request")
 	}
 }
 
