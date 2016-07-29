@@ -42,7 +42,8 @@ script:
 
 deploy:
   on:
-    tags: true
+    tags: false
+# turn off for now b/c this is failing
   provider: releases
   api_key:
     secure: Y/ubm6Zxk81JOVj0HCUCygz9jIkskUQ7GAqUDMumbplsuITOjDg4uQlArmcFKjVSpP7xT/U+QBGDlK7h7urjv9lyS5Kys02gPx0ay6gEkJmmXKwcz6Zs28RNcxKI/UolHRTOZ9yt/ZyGnKqXR+ZnEyxAbEbyJKotA2BFm4V11+APIue0ndQENJLM2DZzOMpVdMyvOvsTL28Rc5NdKB5OGmf4x48xasH0HBtXQ6b7hfqd9eJUgaQhZkDpn8gyqAYEzrkmI56PWqIkNocWiBXp8apkXkfFzHFoWAL+ZRLSa9LKR+8WMTnAjCi5RH/s85bhq4chAAg9lcANPS5sAOiXuWYixo6+YhhGrNfpvW614mqWAzKdzul6iRZohQ0x3Bpbff/FP4Qzcj1TNNCMd9RVA7j0BY8ss4A/uzmJ9sKp7k3DCoKppQYyeOCQTj4FYPpPN3/RAgXrXfbOKzRJHJHfx/0pl5TgWS+/EZ7rL0GDdiX+64JYgv8DHo7bQdhPjF8Dt/klbNCfFqw/ErjLs8oFVFuUWDjj6BK8VWna3+XDx6Rb88RTinPUpF/J3VqUZFPtj5l00zLEOC7GEDJU8+elprQ5jpSUySST3+KOr5NTWQRNge9F6BI1S7F4YzC49KmFjF9B8KnRMCFTBmYB+vRhFfG2DMW1rWRdZspDILEMD/g=
