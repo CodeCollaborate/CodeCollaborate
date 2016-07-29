@@ -216,9 +216,8 @@ func TestSubscription(t *testing.T) {
 	}
 
 	queueID := uint64(0)
-	subscription_channel := "gene's project"
+	subscriptionChannel := "gene's project"
 
-	//routingKey := fmt.Sprintf("%s-%d", hostname, subscription_channel)
 	timeout := make(chan bool, 1)
 	defer close(timeout)
 	doneTesting := make(chan bool, 1)
@@ -230,7 +229,7 @@ func TestSubscription(t *testing.T) {
 			"Header2": "Value2",
 			"Header3": "Value3",
 		},
-		RoutingKey:  subscription_channel,
+		RoutingKey:  subscriptionChannel,
 		ContentType: "ContentType1",
 		Persistent:  false,
 		Message:     []byte("TestMessage1"),
@@ -263,7 +262,7 @@ func TestSubscription(t *testing.T) {
 	}()
 
 	subscriberControl.Subscription <- Subscription{
-		Channel:     subscription_channel,
+		Channel:     subscriptionChannel,
 		IsSubscribe: true,
 	}
 	subscriberControl.Ready.Wait()
