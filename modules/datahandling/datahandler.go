@@ -48,13 +48,13 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 		}
 	}
 
-	callbacks, err := fullRequest.process(dh.Db)
+	closures, err := fullRequest.process(dh.Db)
 	if err != nil {
 		utils.LogOnError(err, "Failed to handle process request")
 	}
 
 	var erro error
-	for _, call := range callbacks {
+	for _, call := range closures {
 		err = call(dh)
 		if err != nil {
 			utils.LogOnError(err, "Failed to complete continuation")

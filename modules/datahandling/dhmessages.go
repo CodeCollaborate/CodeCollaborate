@@ -9,7 +9,7 @@ import (
 )
 
 /**
- * describes the structs and itnerfaces used in the data handling
+ * describes the structs and interfaces which describe messages used in the data handling
  */
 
 // Request should be implemented by all request models.

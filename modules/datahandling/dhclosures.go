@@ -42,6 +42,7 @@ func chanUnsubscribe(key string) func(dh DataHandler) error {
  *
  */
 
+// simple helper to clean up some of the syntax when creating multiple closures
 func accumulate(calls ...(func(dh DataHandler) error)) [](func(dh DataHandler) error) {
 	return calls
 }
