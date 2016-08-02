@@ -48,8 +48,15 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		di.mysqldb.config.Schema,
 		int(di.mysqldb.config.Timeout))
 	db, err := sql.Open("mysql", connString)
+	if err == nil {
+		if err = db.Ping(); err != nil {
+			di.mysqldb = nil
+			err = ErrDbNotInitialized
+		} else {
+			di.mysqldb.db = db
+		}
+	}
 
-	di.mysqldb.db = db
 	utils.LogOnError(err, "Unable to connect to MySQL")
 	return di.mysqldb, err
 }
