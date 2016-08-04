@@ -49,7 +49,7 @@ func (f *userRegisterRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userRegisterRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	newUser := dbfs.UserMeta{
 		Username:  f.Username,
@@ -75,7 +75,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) erro
 	} else {
 		res.ServerMessage = response{Status: success, Tag: f.Tag}
 	}
-	return accumulate(toSenderCont(res)), err
+	return accumulate(toSenderClos{msg: res}), err
 }
 
 // User.Login
@@ -89,7 +89,7 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLoginRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (non-immediate/required): implement login logic
 	// ??  lol  wat  do  ??
 	// ?? to verify pass ??
@@ -104,7 +104,7 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error),
 		Status: unimplemented,
 		Tag:    f.Tag,
 		Data:   struct{}{}}
-	return accumulate(toSenderCont(res)), nil
+	return accumulate(toSenderClos{msg: res}), nil
 }
 
 // User.Lookup
@@ -117,7 +117,7 @@ func (f *userLookupRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	users := make([]dbfs.UserMeta, len(f.Usernames))
 	index := 0
 	var erro error
@@ -150,7 +150,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 				Data: struct {
 					Users []dbfs.UserMeta
 				}{
-					users,
+					Users: users,
 				}}
 		} else {
 			res.ServerMessage = response{
@@ -159,11 +159,11 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 				Data: struct {
 					Users []dbfs.UserMeta
 				}{
-					users,
+					Users: users,
 				}}
 		}
 	}
-	return accumulate(toSenderCont(res)), erro
+	return accumulate(toSenderClos{msg: res}), erro
 }
 
 // User.Projects
@@ -175,7 +175,7 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userProjectsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projects, err := db.MySQLUserProjects(f.SenderID)
 
 	res := new(serverMessageWrapper)
@@ -189,7 +189,7 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) erro
 			Data: struct {
 				Projects []dbfs.ProjectMeta
 			}{
-				projects,
+				Projects: projects,
 			}}
 	} else {
 		res.ServerMessage = response{
@@ -198,9 +198,9 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) erro
 			Data: struct {
 				Projects []dbfs.ProjectMeta
 			}{
-				projects,
+				Projects: projects,
 			}}
 	}
 
-	return accumulate(toSenderCont(res)), err
+	return accumulate(toSenderClos{msg: res}), err
 }

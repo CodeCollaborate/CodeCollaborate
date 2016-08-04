@@ -303,7 +303,7 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 					Headers:      message.Headers,
 					ContentType:  message.ContentType,
 					DeliveryMode: deliveryMode, // 0, 1 for transient, 2 for persistent
-					Body:         []byte(message.Message),
+					Body:         message.Message,
 				})
 
 			if err != nil {

@@ -15,7 +15,7 @@ import (
 // Request should be implemented by all request models.
 // Provides standard interface for calling the processing
 type request interface {
-	process(db dbfs.DBFS) (continuations [](func(dh DataHandler) error), err error)
+	process(db dbfs.DBFS) (continuations []dhClosure, err error)
 	setAbstractRequest(absReq *abstractRequest)
 }
 
@@ -46,8 +46,9 @@ func commonJSON(req request, absReq *abstractRequest) (request, error) {
 	return req, err
 }
 
-// ServerMessageWrapper provides interfaces of messages sent from the server
 // This section provides the struct definitions of server replies
+
+// ServerMessageWrapper provides interfaces of messages sent from the server
 type serverMessageWrapper struct {
 	Type          string
 	Timestamp     int64

@@ -93,6 +93,9 @@ func (dm *DatabaseMock) CloseMySQL() error {
 
 // MySQLUserRegister is a mock of the real implementation
 func (dm *DatabaseMock) MySQLUserRegister(user UserMeta) error {
+	if _, ok := dm.Users[user.Username]; ok {
+		return ErrNoDbChange
+	}
 	dm.Users[user.Username] = user
 	dm.FunctionCallCount++
 	return nil

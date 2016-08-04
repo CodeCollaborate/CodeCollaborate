@@ -54,8 +54,8 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	}
 
 	var erro error
-	for _, call := range closures {
-		err = call(dh)
+	for _, closure := range closures {
+		err = closure.call(dh)
 		if err != nil {
 			utils.LogOnError(err, "Failed to complete continuation")
 			erro = err

@@ -74,7 +74,7 @@ func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projectID, err := db.MySQLProjectCreate(p.SenderID, p.Name)
 
 	res := new(serverMessageWrapper)
@@ -89,7 +89,7 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 		res.ServerMessage = response{
 			Status: servfail,
 			Tag:    p.Tag,
-			Data:   struct{ ProjectID int64 }{-1},
+			Data:   struct{ ProjectID int64 }{ProjectID: -1},
 		}
 	} else {
 		res.ServerMessage = response{
@@ -98,11 +98,11 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 			Data: struct {
 				ProjectID int64
 			}{
-				projectID,
+				ProjectID: projectID,
 			}}
 	}
 
-	return accumulate(toSenderCont(res)), nil
+	return accumulate(toSenderClos{msg: res}), nil
 }
 
 // Project.Rename
@@ -116,7 +116,7 @@ func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectRenameRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	// TODO: check if permission high enough on project
 
@@ -148,11 +148,11 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 			Data: struct {
 				NewName string
 			}{
-				p.NewName,
+				NewName: p.NewName,
 			}}
 	}
 
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 // Project.GetPermissionConstants
@@ -164,7 +164,7 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 	p.abstractRequest = *req
 }
 
-func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	res := new(serverMessageWrapper)
@@ -174,7 +174,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([](func(dh 
 		Status: unimplemented,
 		Tag:    p.Tag,
 		Data:   struct{}{}}
-	return accumulate(toSenderCont(res)), nil
+	return accumulate(toSenderClos{msg: res}), nil
 }
 
 // Project.GrantPermissions
@@ -185,7 +185,7 @@ type projectGrantPermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO: check if permission high enough on project
 
 	err := db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
@@ -217,12 +217,12 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([](func(dh DataHa
 				GrantUsername   string
 				PermissionLevel int
 			}{
-				p.GrantUsername,
-				p.PermissionLevel,
+				GrantUsername:   p.GrantUsername,
+				PermissionLevel: p.PermissionLevel,
 			}}
 	}
 
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -236,7 +236,7 @@ type projectRevokePermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO: check if permission high enough on project
 	err := db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
@@ -266,11 +266,11 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([](func(dh DataH
 			Data: struct {
 				RevokeUsername string
 			}{
-				p.RevokeUsername,
+				RevokeUsername: p.RevokeUsername,
 			}}
 	}
 
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -283,7 +283,7 @@ type projectGetOnlineClientsRequest struct {
 	abstractRequest
 }
 
-func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO: implement on redis (and actually implement redis)
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 
@@ -294,7 +294,7 @@ func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([](func(dh DataHa
 		Status: unimplemented,
 		Tag:    p.Tag,
 		Data:   struct{}{}}
-	return accumulate(toSenderCont(res)), nil
+	return accumulate(toSenderClos{msg: res}), nil
 }
 
 func (p *projectGetOnlineClientsRequest) setAbstractRequest(req *abstractRequest) {
@@ -314,7 +314,7 @@ type projectLookupResult struct {
 	Permissions map[string](dbfs.ProjectPermission)
 }
 
-func (p projectLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	/*
 		We could do
 			data := make([]interface{}, len(p.ProjectIDs))
@@ -352,7 +352,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 				Data: struct {
 					Projects []projectLookupResult
 				}{
-					resultData,
+					Projects: resultData,
 				}}
 		} else {
 			res.ServerMessage = response{
@@ -361,7 +361,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 				Data: struct {
 					Projects []projectLookupResult
 				}{
-					resultData,
+					Projects: resultData,
 				}}
 		}
 	} else {
@@ -371,12 +371,12 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 			Data: struct {
 				Projects []projectLookupResult
 			}{
-				resultData,
+				Projects: resultData,
 			}}
 	}
 
 	//fmt.Printf("Recieved project lookup request from %s\n", p.SenderID)
-	return accumulate(toSenderCont(res)), nil
+	return accumulate(toSenderClos{msg: res}), nil
 }
 
 func (p *projectLookupRequest) setAbstractRequest(req *abstractRequest) {
@@ -399,7 +399,7 @@ type fileLookupResult struct {
 	Version      int64
 }
 
-func (p projectGetFilesRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	files, err := db.MySQLProjectGetFiles(p.ProjectID)
 
 	res := new(serverMessageWrapper)
@@ -413,10 +413,10 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) e
 			Data: struct {
 				Files []fileLookupResult
 			}{
-				make([]fileLookupResult, 0),
+				Files: make([]fileLookupResult, 0),
 			}}
 
-		return accumulate(toSenderCont(res)), nil
+		return accumulate(toSenderClos{msg: res}), nil
 	}
 
 	resultData := make([]fileLookupResult, len(files))
@@ -450,7 +450,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) e
 				Data: struct {
 					Files []fileLookupResult
 				}{
-					resultData,
+					Files: resultData,
 				}}
 		} else {
 			res.ServerMessage = response{
@@ -459,7 +459,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) e
 				Data: struct {
 					Files []fileLookupResult
 				}{
-					resultData,
+					Files: resultData,
 				}}
 		}
 	} else {
@@ -469,11 +469,11 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) e
 			Data: struct {
 				Files []fileLookupResult
 			}{
-				resultData,
+				Files: resultData,
 			}}
 	}
 
-	return accumulate(toSenderCont(res)), nil
+	return accumulate(toSenderClos{msg: res}), nil
 }
 
 func (p *projectGetFilesRequest) setAbstractRequest(req *abstractRequest) {
@@ -486,29 +486,12 @@ type projectSubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectSubscribeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
-
-	var subscribeChain = func(dh DataHandler) error {
-		err := chanSubscribe(strconv.FormatInt(p.ProjectID, 10))(dh)
-		if err != nil {
-			res.ServerMessage = response{
-				Status: fail,
-				Tag:    p.Tag,
-				Data:   struct{}{}}
-		} else {
-			res.ServerMessage = response{
-				Status: success,
-				Tag:    p.Tag,
-				Data:   struct{}{}}
-		}
-		toSenderCont(res)(dh) // go ahead and send from the end of the first continuation
-		return err
+func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	subscribeClos := chanSubscribeClos{
+		key: strconv.FormatInt(p.ProjectID, 10),
+		tag: p.Tag,
 	}
-
-	return accumulate(subscribeChain), nil
+	return accumulate(subscribeClos), nil
 }
 
 func (p *projectSubscribeRequest) setAbstractRequest(req *abstractRequest) {
@@ -521,29 +504,12 @@ type projectUnsubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
-
-	var unsubscribeChain = func(dh DataHandler) error {
-		err := chanUnsubscribe(strconv.FormatInt(p.ProjectID, 10))(dh)
-		if err != nil {
-			res.ServerMessage = response{
-				Status: fail,
-				Tag:    p.Tag,
-				Data:   struct{}{}}
-		} else {
-			res.ServerMessage = response{
-				Status: success,
-				Tag:    p.Tag,
-				Data:   struct{}{}}
-		}
-		toSenderCont(res)(dh) // go ahead and send from the end of the first continuation
-		return err
+func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	unsubscribeClos := chanUnsubscribeClos{
+		key: strconv.FormatInt(p.ProjectID, 10),
+		tag: p.Tag,
 	}
-
-	return accumulate(unsubscribeChain), nil
+	return accumulate(unsubscribeClos), nil
 }
 
 func (p *projectUnsubscribeRequest) setAbstractRequest(req *abstractRequest) {
@@ -556,7 +522,7 @@ type projectDeleteRequest struct {
 	abstractRequest
 }
 
-func (p projectDeleteRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -592,11 +558,11 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) err
 			Data: struct {
 				DeletedProjectID int64
 			}{
-				p.ProjectID,
+				DeletedProjectID: p.ProjectID,
 			}}
 	}
 
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {

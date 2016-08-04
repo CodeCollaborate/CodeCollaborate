@@ -57,7 +57,7 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
@@ -74,7 +74,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 			Status: fail,
 			Tag:    f.Tag,
 			Data:   struct{}{}}
-		return accumulate(toSenderCont(res)), nil
+		return accumulate(toSenderClos{msg: res}), nil
 	}
 
 	err = db.CBInsertNewFile(fileID, newFileVersion, make([]string, 0))
@@ -84,7 +84,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 			Status: servfail,
 			Tag:    f.Tag,
 			Data:   struct{}{}}
-		return accumulate(toSenderCont(res)), nil
+		return accumulate(toSenderClos{msg: res}), nil
 	}
 	res.ServerMessage = response{
 		Status: success,
@@ -92,7 +92,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 		Data: struct {
 			FileID int64
 		}{
-			fileID,
+			FileID: fileID,
 		}}
 	not.ServerMessage = notification{
 		Resource: f.Resource,
@@ -104,13 +104,13 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 			RelativePath string
 			Version      int64
 		}{
-			fileID,
-			f.ProjectID,
-			f.Name,
-			f.RelativePath,
-			newFileVersion,
+			FileID:       fileID,
+			ProjectID:    f.ProjectID,
+			Name:         f.Name,
+			RelativePath: f.RelativePath,
+			Version:      newFileVersion,
 		}}
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 // File.Rename
@@ -124,7 +124,7 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileRenameRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -140,7 +140,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), nil
+		return accumulate(toSenderClos{msg: res}), nil
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -148,7 +148,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 
 	err = db.MySQLFileRename(f.FileID, f.NewName)
 	if err != nil {
-		return accumulate(toSenderCont(res)), nil
+		return accumulate(toSenderClos{msg: res}), nil
 	}
 
 	res.ServerMessage = response{
@@ -162,10 +162,10 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 			FileID  int64
 			NewPath string
 		}{
-			f.FileID,
-			f.NewName,
+			FileID:  f.FileID,
+			NewPath: f.NewName,
 		}}
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 // File.Move
@@ -179,7 +179,7 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileMoveRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -195,7 +195,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), 
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), nil
+		return accumulate(toSenderClos{msg: res}), nil
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -203,7 +203,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), 
 
 	err = db.MySQLFileMove(f.FileID, f.NewPath)
 	if err != nil {
-		return accumulate(toSenderCont(res)), nil
+		return accumulate(toSenderClos{msg: res}), nil
 	}
 	res.ServerMessage = response{
 		Status: success,
@@ -216,10 +216,10 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), 
 			FileID  int64
 			NewPath string
 		}{
-			f.FileID,
-			f.NewPath,
+			FileID:  f.FileID,
+			NewPath: f.NewPath,
 		}}
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 // File.Delete
@@ -232,7 +232,7 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileDeleteRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -248,7 +248,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -256,17 +256,17 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 
 	err = db.MySQLFileDelete(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	err = db.CBDeleteFile(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	res.ServerMessage = response{
@@ -279,9 +279,9 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 		Data: struct {
 			FileID int64
 		}{
-			f.FileID,
+			FileID: f.FileID,
 		}}
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 // File.Change
@@ -296,7 +296,7 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileChangeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -312,7 +312,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -321,7 +321,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 	// TODO (normal/required): verify changes are valid changes
 	version, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	res.ServerMessage = response{
@@ -330,7 +330,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 		Data: struct {
 			FileVersion int64
 		}{
-			version,
+			FileVersion: version,
 		}}
 
 	not.ServerMessage = notification{
@@ -342,13 +342,13 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error)
 			FileVersion     int64
 			Changes         []string
 		}{
-			f.FileID,
-			f.BaseFileVersion,
-			version,
-			f.Changes,
+			FileID:          f.FileID,
+			BaseFileVersion: f.BaseFileVersion,
+			FileVersion:     version,
+			Changes:         f.Changes,
 		}}
 
-	return accumulate(toSenderCont(res), toChanCont(not)), nil
+	return accumulate(toSenderClos{msg: res}, toChannelClos{msg: not}), nil
 }
 
 // File.Pull
@@ -361,7 +361,7 @@ func (f *filePullRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f filePullRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), error) {
+func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project
 
 	res := new(serverMessageWrapper)
@@ -375,17 +375,17 @@ func (f filePullRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), 
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	rawFile, err := db.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	changes, err := db.CBGetFileChanges(f.FileID)
 	if err != nil {
-		return accumulate(toSenderCont(res)), err
+		return accumulate(toSenderClos{msg: res}), err
 	}
 
 	res.ServerMessage = response{
@@ -395,9 +395,9 @@ func (f filePullRequest) process(db dbfs.DBFS) ([](func(dh DataHandler) error), 
 			FileBytes []byte
 			Changes   []string
 		}{
-			*rawFile,
-			changes,
+			FileBytes: *rawFile,
+			Changes:   changes,
 		}}
 
-	return accumulate(toSenderCont(res)), nil
+	return accumulate(toSenderClos{msg: res}), nil
 }
