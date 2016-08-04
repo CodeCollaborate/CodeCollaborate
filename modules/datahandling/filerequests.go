@@ -321,6 +321,12 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): verify changes are valid changes
 	version, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
 	if err != nil {
+		if err == dbfs.ErrVersionOutOfDate {
+			res.ServerMessage = response{
+				Status: versionOutOfDate,
+				Tag:    f.Tag,
+				Data:   struct{}{}}
+		}
 		return accumulate(toSenderClos{msg: res}), err
 	}
 

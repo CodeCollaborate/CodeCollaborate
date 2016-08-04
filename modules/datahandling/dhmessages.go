@@ -93,7 +93,7 @@ const accepted int = 202
 const fail int = 400
 const unauthorized int = 401
 const notFound int = 404
-const fileVersionOutOfDate int = 409 // (409 = conflict)
+const versionOutOfDate int = 409 // (409 = conflict)
 const partialfail int = 499
 
 // server failure

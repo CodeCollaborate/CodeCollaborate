@@ -8,7 +8,10 @@ import (
 // ErrNoDbChange : No rows or values in the DB were changed, which was an unexpected result
 var ErrNoDbChange = errors.New("No entries were correctly altered")
 
-// ErrDbNotInitialized : active db connection does not exist
+// ErrVersionOutOfDate : The request attempted to mutate an out of date resource
+var ErrVersionOutOfDate = errors.New("The request attempted to modify an out of date resource")
+
+// ErrDbNotInitialized : Active db connection does not exist
 var ErrDbNotInitialized = errors.New("The database was not propperly initialized before execution")
 
 // ErrMaliciousRequest : The request attempted to directly tamper with our filesystemp / database

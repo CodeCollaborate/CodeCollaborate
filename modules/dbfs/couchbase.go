@@ -152,16 +152,20 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	frag.Content("version", &version)
 
 	// check to make sure the patch is being applied to the most recent revision
-	if baseVersion == version {
-		// use the cas to make sure the document hasn't changed
-		builder := cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), cas, 0)
-		for _, change := range changes {
-			builder = builder.ArrayAppend("changes", change, false)
-		}
-
-		builder = builder.Counter("version", 1, false)
-		_, err = builder.Execute()
-		return version + 1, err
+	if baseVersion != version {
+		return -1, ErrVersionOutOfDate
 	}
-	return -1, ErrNoDbChange
+
+	// use the cas to make sure the document hasn't changed
+	builder := cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), cas, 0)
+	for _, change := range changes {
+		builder = builder.ArrayAppend("changes", change, false)
+	}
+
+	builder = builder.Counter("version", 1, false)
+	_, err = builder.Execute()
+	if err != nil {
+		return version, err
+	}
+	return version + 1, err
 }
