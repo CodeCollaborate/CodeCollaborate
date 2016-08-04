@@ -15,16 +15,15 @@ TODOs for intergoprocdandling:
             File.Delete
             File.Change
             File.Pull
-	    TODO: inform the client if they're not authenticated
 
-	non-immediate/required:
-	    TODO: implement user authentication in modules/datahandling/datahandler.go:53
-	    TODO: verify changes in request for File.Change are valid changes
-	    TODO: figure out how we want to do projectGetPermissionConstantsRequest
+    non-immediate/required:
+        TODO: implement user authentication in modules/datahandling/datahandler.go:53
+        TODO: verify changes in request for File.Change are valid changes
+        TODO: figure out how we want to do projectGetPermissionConstantsRequest
 
-	optional:
-		TODO: un-hardcode '10' as the owner constant in the MySQL ProjectLookup stored proc
-	    TODO: close ws connection on malicious request
+    optional:
+        TODO: un-hardcode '10' as the owner constant in the MySQL ProjectLookup stored proc
+        TODO: close ws connection on malicious request
 
 
 Decisions:
