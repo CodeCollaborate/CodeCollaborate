@@ -7,6 +7,8 @@ import (
 
 	"strconv"
 
+	"time"
+
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
@@ -38,31 +40,41 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	// automatically determines if the request is authenticated or not
 	fullRequest, err := getFullRequest(req)
 
+	var closures []dhClosure
+
 	if err != nil {
+		res := new(serverMessageWrapper)
+		res.Timestamp = time.Now().UnixNano()
+		res.Type = "Responce"
 		if err == ErrAuthenticationFailed {
 			utils.LogOnError(err, "User not logged in")
-			// TODO (normal/required): inform the client they're not authenticated
+			res.ServerMessage = response{
+				Status: unauthorized,
+				Tag:    req.Tag,
+				Data:   struct{}{}}
 		} else {
 			utils.LogOnError(err, "Failed to construct full request")
-			return err
+			res.ServerMessage = response{
+				Status: unimplemented,
+				Tag:    req.Tag,
+				Data:   struct{}{}}
 		}
-	}
-
-	closures, err := fullRequest.process(dh.Db)
-	if err != nil {
-		utils.LogOnError(err, "Failed to handle process request")
-	}
-
-	var erro error
-	for _, closure := range closures {
-		err = closure.call(dh)
+		closures = []dhClosure{toSenderClos{msg: res}}
+	} else {
+		closures, err = fullRequest.process(dh.Db)
 		if err != nil {
-			utils.LogOnError(err, "Failed to complete continuation")
-			erro = err
+			utils.LogOnError(err, "Failed to handle process request")
 		}
 	}
 
-	return erro
+	for _, closure := range closures {
+		erro := closure.call(dh)
+		if erro != nil {
+			utils.LogOnError(erro, "Failed to complete continuation")
+		}
+	}
+
+	return err
 }
 
 func authenticate(abs abstractRequest) bool {
