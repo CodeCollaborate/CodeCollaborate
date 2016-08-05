@@ -10,28 +10,28 @@ type dhClosure interface {
 	call(dh DataHandler) error
 }
 
-type toSenderClos struct {
+type toSenderClosure struct {
 	msg *serverMessageWrapper
 }
 
-func (cont toSenderClos) call(dh DataHandler) error {
+func (cont toSenderClosure) call(dh DataHandler) error {
 	return dh.sendToSender(cont.msg)
 }
 
-type toChannelClos struct {
+type toChannelClosure struct {
 	msg *serverMessageWrapper
 }
 
-func (cont toChannelClos) call(dh DataHandler) error {
+func (cont toChannelClosure) call(dh DataHandler) error {
 	return dh.sendToChannel(cont.msg)
 }
 
-type chanSubscribeClos struct {
+type chanSubscribeClosure struct {
 	key string
 	tag int64
 }
 
-func (cont chanSubscribeClos) call(dh DataHandler) error {
+func (cont chanSubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -53,17 +53,17 @@ func (cont chanSubscribeClos) call(dh DataHandler) error {
 		Tag:    cont.tag,
 		Data:   struct{}{}}
 	//}
-	err := toSenderClos{msg: res}.call(dh) // go ahead and send from here
+	err := toSenderClosure{msg: res}.call(dh) // go ahead and send from here
 	return err
 
 }
 
-type chanUnsubscribeClos struct {
+type chanUnsubscribeClosure struct {
 	key string
 	tag int64
 }
 
-func (cont chanUnsubscribeClos) call(dh DataHandler) error {
+func (cont chanUnsubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Responce"
@@ -85,7 +85,7 @@ func (cont chanUnsubscribeClos) call(dh DataHandler) error {
 		Tag:    cont.tag,
 		Data:   struct{}{}}
 	//}
-	err := toSenderClos{msg: res}.call(dh) // go ahead and send from here
+	err := toSenderClosure{msg: res}.call(dh) // go ahead and send from here
 	return err
 }
 

@@ -54,11 +54,11 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 
 	// are we notifying the right people
 	if len(continuations) != 1 ||
-		reflect.TypeOf(continuations[0]).String() != "datahandling.toSenderClos" {
+		reflect.TypeOf(continuations[0]).String() != "datahandling.toSenderClosure" {
 		t.Fatal("did not properly process")
 	}
 	// did the server return success status
-	cont := continuations[0].(toSenderClos).msg.ServerMessage.(response).Status
+	cont := continuations[0].(toSenderClosure).msg.ServerMessage.(response).Status
 	if cont != success {
 		t.Fatalf("Process function responded with status: %d", cont)
 	}
@@ -103,10 +103,10 @@ func TestUserLookupRequest_Process(t *testing.T) {
 
 	// are we notifying the right people
 	if len(continuations) != 1 ||
-		reflect.TypeOf(continuations[0]).String() != "datahandling.toSenderClos" {
+		reflect.TypeOf(continuations[0]).String() != "datahandling.toSenderClosure" {
 		t.Fatal("did not properly process")
 	}
-	response := continuations[0].(toSenderClos).msg.ServerMessage.(response)
+	response := continuations[0].(toSenderClosure).msg.ServerMessage.(response)
 	// did the server return success status
 	if response.Status != success {
 		t.Fatalf("Process function responded with status: %d", response.Status)
@@ -114,6 +114,95 @@ func TestUserLookupRequest_Process(t *testing.T) {
 	// is the data actually correct
 	users := reflect.ValueOf(response.Data).FieldByName("Users").Interface().([]dbfs.UserMeta)
 	if len(users) != 1 && users[0] != meta {
+		t.Fatal("Incorrect user was returned")
+	}
+}
+
+func TestUserProjectsRequest_Process(t *testing.T) {
+	configSetup()
+	req := *new(userProjectsRequest)
+	setBaseFields(&req)
+
+	req.Resource = "User"
+	req.Method = "Projects"
+
+	db := dbfs.NewDBMock()
+	gene := dbfs.UserMeta{
+		FirstName: "Gene",
+		LastName:  "Logan",
+		Email:     "loganga@codecollaborate.com",
+		Password:  "correct horse battery staple",
+		Username:  "loganga",
+	}
+	db.MySQLUserRegister(gene)
+
+	notgene := dbfs.UserMeta{
+		FirstName: "Not",
+		LastName:  "Gene",
+		Email:     "notloganga@codecollaborate.com",
+		Password:  "incorrect horse battery staple",
+		Username:  "notloganga",
+	}
+	db.MySQLUserRegister(notgene)
+
+	db.MySQLProjectCreate("loganga", "my project")
+	genesproject := db.Projects["loganga"][0]
+
+	db.MySQLProjectCreate("notloganga", "not his project")
+	notgenesproject := db.Projects["notloganga"][0]
+
+	db.FunctionCallCount = 0
+
+	closures, err := req.process(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// didn't call extra db functions
+	if db.FunctionCallCount != 1 {
+		t.Fatalf("did not call correct number of db functions, called %d # of arguments", db.FunctionCallCount)
+	}
+
+	// are we notifying the right people
+	if len(closures) != 1 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
+		t.Fatal("did not properly process")
+	}
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	// did the server return success status
+	if resp.Status != success {
+		t.Fatalf("Process function responded with status: %d", resp.Status)
+	}
+	// is the data actually correct
+	projects := reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]dbfs.ProjectMeta)
+	if len(projects) != 1 && projects[0] != genesproject {
+		t.Fatal("Incorrect user was returned")
+	}
+
+	// add gene to a new project and see if the process function updates as expected
+	db.MySQLProjectGrantPermission(notgenesproject.ProjectID, "loganga", 5, "notloganga")
+	db.FunctionCallCount = 0
+
+	closures, err = req.process(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// are we notifying the right people
+	if len(closures) != 1 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
+		t.Fatal("did not properly process")
+	}
+
+	resp = closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	// did the server return success status
+	if resp.Status != success {
+		t.Fatalf("Process function responded with status: %d", resp.Status)
+	}
+	// is the data actually correct
+	projects = reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]dbfs.ProjectMeta)
+	if len(projects) != 2 && projects[0] != genesproject && projects[1] != notgenesproject {
 		t.Fatal("Incorrect user was returned")
 	}
 }

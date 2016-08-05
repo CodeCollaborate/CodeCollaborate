@@ -59,7 +59,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 				Tag:    req.Tag,
 				Data:   struct{}{}}
 		}
-		closures = []dhClosure{toSenderClos{msg: res}}
+		closures = []dhClosure{toSenderClosure{msg: res}}
 	} else {
 		closures, err = fullRequest.process(dh.Db)
 		if err != nil {
