@@ -5,21 +5,7 @@ import (
 	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
-	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
-
-func setBaseFields(req request) {
-	req.setAbstractRequest(&abstractRequest{
-		SenderID:    "loganga",
-		SenderToken: "supersecure",
-	})
-}
-
-var datahanly = DataHandler{
-	MessageChan:      make(chan rabbitmq.AMQPMessage, 1),
-	SubscriptionChan: make(chan rabbitmq.Subscription, 1),
-	WebsocketID:      1,
-}
 
 func TestUserRegisterRequest_Process(t *testing.T) {
 	configSetup()
