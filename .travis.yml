@@ -3,47 +3,38 @@ dist: trusty
 language: go
 go:
 - 1.6
+notifications:
+  slack:
+    secure: d8fs3gYp5UnTeN6kpvS4exVHqhu/j2SKnyZ8ypgci2ji5vgHzPXwfZVNQXe+/gINVOnonQklQsQhf2O88gsVaGuGgY75ivVfzBNMa7QLN8QiLbW4KRNqI3IyFmxOjl/Fy3XZuqlSDJSoYoxLbRp3IHraz1uOhAPpAFLRuFNrTGfzSZjQre0czaHkRQ2V4xRMj4W5j22W7K0tRcs+J/5SsR8OWq6kv4p6+jSQE8aJwYBJIpwZcbDRXNb/u3UicxNxzGVdS+eMJp2tlnf2w6h988yrTWm9aeMLBaGXNHmRusqd/sNrMsLk+vh1of02UGJd5t142y50djFeVpEA/ztAr/En7rPqIZlhlyPGDrToa/Gv49LNX5OvXDm2oKE4Br+dwl3hm0fuACDGtfROz5jyli1SUtMXEssh1jHsxWMXSW5grKrIoYAZV2hoKCxUSniHpkiKkG68rlrqz43l1TUcrFMsrd8hkxhl/79Y1NCCV8bNrR8pWdL/PFrCwNsfp+IqIgoZ97cRQkFWIyV5d/eXZZ/azT1PsOaGpmzPy5aD0k28kjPCg6HApf8+lNZ+amHedYdRJ6Ttz2q50MbUO29P5g2kpuoKEtas0EQpgL1Pq8dyU6l7f7Zorkz2efiYg5Tah9WlAcxFfXyQgwBWBtP4XQTZs9YYY8ORZjDtClLjMm0=
 services:
-  - mysql
-  - rabbitmq
-
+- mysql
+- rabbitmq
 branches:
   only:
   - prod
   - test
-# Currently, run on all branches.
-  - /.*/
-# Also run on v<major>.<minor> tags
-#  - /v\d+\.\d+\.\d+.*/
-
+  - "/.*/"
 before_install:
 - sudo apt-get -qq update
 - sudo apt-get install -y mysql-server
 - travisScripts/InstallCouchBase.sh
-
 install:
 - cp ./config/defaults/* ./config
 - go get golang.org/x/tools/cmd/goimports
 - go get github.com/golang/lint/golint
-- ./GetDependencies.sh
+- "./GetDependencies.sh"
 - cat ./config/mysqlTestingSetup.sql | mysql -uroot
 - cat ./config/mysqlTestingSchemaSetup.sql | mysql -uroot
-#- mysql -e "SHOW DATABASES" -uroot
-
 script:
-# Run checks & tests
 - travisScripts/CheckFormatting.sh
-- ./RunTests.sh
-# Build on different architectures and OS-es
+- "./RunTests.sh"
 - GOOS=windows GOARCH=386 go build -o bin/server_windows_x86.exe
 - GOOS=linux GOARCH=386 go build -o bin/server_linux_x86
 - GOOS=windows GOARCH=amd64 go build -o bin/server_windows_amd64.exe
 - GOOS=linux GOARCH=amd64 go build -o bin/server_linux_amd64
-
 deploy:
   on:
     tags: false
-# turn off for now b/c this is failing
   provider: releases
   api_key:
     secure: Y/ubm6Zxk81JOVj0HCUCygz9jIkskUQ7GAqUDMumbplsuITOjDg4uQlArmcFKjVSpP7xT/U+QBGDlK7h7urjv9lyS5Kys02gPx0ay6gEkJmmXKwcz6Zs28RNcxKI/UolHRTOZ9yt/ZyGnKqXR+ZnEyxAbEbyJKotA2BFm4V11+APIue0ndQENJLM2DZzOMpVdMyvOvsTL28Rc5NdKB5OGmf4x48xasH0HBtXQ6b7hfqd9eJUgaQhZkDpn8gyqAYEzrkmI56PWqIkNocWiBXp8apkXkfFzHFoWAL+ZRLSa9LKR+8WMTnAjCi5RH/s85bhq4chAAg9lcANPS5sAOiXuWYixo6+YhhGrNfpvW614mqWAzKdzul6iRZohQ0x3Bpbff/FP4Qzcj1TNNCMd9RVA7j0BY8ss4A/uzmJ9sKp7k3DCoKppQYyeOCQTj4FYPpPN3/RAgXrXfbOKzRJHJHfx/0pl5TgWS+/EZ7rL0GDdiX+64JYgv8DHo7bQdhPjF8Dt/klbNCfFqw/ErjLs8oFVFuUWDjj6BK8VWna3+XDx6Rb88RTinPUpF/J3VqUZFPtj5l00zLEOC7GEDJU8+elprQ5jpSUySST3+KOr5NTWQRNge9F6BI1S7F4YzC49KmFjF9B8KnRMCFTBmYB+vRhFfG2DMW1rWRdZspDILEMD/g=
