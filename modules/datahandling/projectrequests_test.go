@@ -46,8 +46,6 @@ var datahanly = DataHandler{
 	WebsocketID:      1,
 }
 
-// TODO (testing/required): testing... lots of testing
-
 func TestProjectCreateRequest_Process(t *testing.T) {
 	configSetup()
 	req := *new(projectCreateRequest)
