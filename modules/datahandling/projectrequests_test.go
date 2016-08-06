@@ -78,7 +78,7 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 1 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
@@ -144,7 +144,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
 		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
@@ -210,7 +210,7 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
 		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
@@ -280,7 +280,7 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
 		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
@@ -342,7 +342,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 1 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
@@ -403,7 +403,7 @@ func TestProjectGetFilesRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 1 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
@@ -442,7 +442,7 @@ func TestProjectSubscribe_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 1 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.chanSubscribeClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	sub := closures[0].(chanSubscribeClosure)
@@ -471,7 +471,7 @@ func TestProjectUnsubscribe_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 1 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.chanUnsubscribeClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	sub := closures[0].(chanUnsubscribeClosure)
@@ -518,7 +518,7 @@ func TestProjectDeleteRequest_process(t *testing.T) {
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
 		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)

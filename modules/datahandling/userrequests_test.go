@@ -24,7 +24,7 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 	db := dbfs.NewDBMock()
 	datahanly.Db = db
 
-	continuations, err := req.process(db)
+	closures, err := req.process(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,17 +39,17 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 	}
 
 	// are we notifying the right people
-	if len(continuations) != 1 ||
-		reflect.TypeOf(continuations[0]).String() != "datahandling.toSenderClosure" {
-		t.Fatal("did not properly process")
+	if len(closures) != 1 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 	// did the server return success status
-	cont := continuations[0].(toSenderClosure).msg.ServerMessage.(response).Status
+	cont := closures[0].(toSenderClosure).msg.ServerMessage.(response).Status
 	if cont != success {
 		t.Fatalf("Process function responded with status: %d", cont)
 	}
 
-	continuations, err = req.process(db)
+	closures, err = req.process(db)
 	if err == nil {
 		t.Fatal("Should have failed to register user that already exists")
 	}
@@ -77,7 +77,7 @@ func TestUserLookupRequest_Process(t *testing.T) {
 	}
 	db.Users["loganga"] = meta
 
-	continuations, err := req.process(db)
+	closures, err := req.process(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,11 +88,11 @@ func TestUserLookupRequest_Process(t *testing.T) {
 	}
 
 	// are we notifying the right people
-	if len(continuations) != 1 ||
-		reflect.TypeOf(continuations[0]).String() != "datahandling.toSenderClosure" {
-		t.Fatal("did not properly process")
+	if len(closures) != 1 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
-	response := continuations[0].(toSenderClosure).msg.ServerMessage.(response)
+	response := closures[0].(toSenderClosure).msg.ServerMessage.(response)
 	// did the server return success status
 	if response.Status != success {
 		t.Fatalf("Process function responded with status: %d", response.Status)
@@ -152,7 +152,7 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 1 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
@@ -178,7 +178,7 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 1 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
-		t.Fatal("did not properly process")
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp = closures[0].(toSenderClosure).msg.ServerMessage.(response)

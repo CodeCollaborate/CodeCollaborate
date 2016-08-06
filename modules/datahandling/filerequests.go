@@ -139,7 +139,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), nil
+		return accumulate(toSenderClosure{msg: res}), err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -147,7 +147,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err = db.MySQLFileRename(f.FileID, f.NewName)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), nil
+		return accumulate(toSenderClosure{msg: res}), err
 	}
 
 	res.ServerMessage = response{
@@ -159,9 +159,9 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data: struct {
-			NewPath string
+			NewName string
 		}{
-			NewPath: f.NewName,
+			NewName: f.NewName,
 		}}
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
 }

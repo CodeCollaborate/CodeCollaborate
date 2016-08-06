@@ -324,6 +324,7 @@ func (dm *DatabaseMock) MySQLFileRename(fileID int64, newName string) error {
 		for _, file := range files {
 			if file.FileID == fileID {
 				file.Filename = newName
+				return nil
 			}
 		}
 
