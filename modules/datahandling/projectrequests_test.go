@@ -162,6 +162,148 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 
 }
 
+// projectGetPermissionConstantsRequest.process is unimplemented
+
+func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
+	configSetup()
+	req := *new(projectGrantPermissionsRequest)
+	setBaseFields(&req)
+
+	req.Resource = "Project"
+	req.Method = "GrantPermissions"
+	req.GrantUsername = "notloganga"
+	req.PermissionLevel = 5
+
+	db := dbfs.NewDBMock()
+	genemeta := dbfs.UserMeta{
+		FirstName: "Gene",
+		LastName:  "Logan",
+		Email:     "loganga@codecollaborate.com",
+		Password:  "correct horse battery staple",
+		Username:  "loganga",
+	}
+	notgenemeta := dbfs.UserMeta{
+		FirstName: "Notgene",
+		LastName:  "NotLogan",
+		Email:     "notloganga@codecollaborate.com",
+		Password:  "incorrect horse battery staple",
+		Username:  "notloganga",
+	}
+	db.Users["loganga"] = genemeta
+	db.Users["notloganga"] = notgenemeta
+
+	projectID, err := db.MySQLProjectCreate("loganga", "new stuff")
+
+	db.FunctionCallCount = 0
+	req.ProjectID = projectID
+
+	closures, err := req.process(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// didn't call extra db functions
+	if db.FunctionCallCount != 1 {
+		t.Fatal("did not call correct number of db functions")
+	}
+
+	// are we notifying the right people
+	if len(closures) != 2 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
+		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		t.Fatal("did not properly process")
+	}
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	not := closures[1].(toChannelClosure).msg.ServerMessage.(notification)
+	// did the server return success status
+	if resp.Status != success {
+		t.Fatalf("Process function responded with status: %d", resp.Status)
+	}
+
+	// is the data actually correct
+	username := reflect.ValueOf(not.Data).FieldByName("GrantUsername").Interface().(string)
+	if username != req.GrantUsername {
+		t.Fatalf("Incorrect username was returned, expected %v, recieved %v", req.GrantUsername, username)
+	}
+
+	// did the user actually get added
+	if len(db.Projects[req.GrantUsername]) != 1 || db.Projects[req.GrantUsername][0].PermissionLevel != req.PermissionLevel {
+		t.Fatal("Database was not properly modified")
+	}
+
+}
+
+func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
+	configSetup()
+	req := *new(projectRevokePermissionsRequest)
+	setBaseFields(&req)
+
+	req.Resource = "Project"
+	req.Method = "RevokePermissions"
+	req.RevokeUsername = "notloganga"
+
+	db := dbfs.NewDBMock()
+	genemeta := dbfs.UserMeta{
+		FirstName: "Gene",
+		LastName:  "Logan",
+		Email:     "loganga@codecollaborate.com",
+		Password:  "correct horse battery staple",
+		Username:  "loganga",
+	}
+	notgenemeta := dbfs.UserMeta{
+		FirstName: "Notgene",
+		LastName:  "NotLogan",
+		Email:     "notloganga@codecollaborate.com",
+		Password:  "incorrect horse battery staple",
+		Username:  "notloganga",
+	}
+	db.Users["loganga"] = genemeta
+	db.Users["notloganga"] = notgenemeta
+
+	projectID, err := db.MySQLProjectCreate("loganga", "new stuff")
+	db.MySQLProjectGrantPermission(projectID, notgenemeta.Username, 5, genemeta.Username)
+
+	db.FunctionCallCount = 0
+	req.ProjectID = projectID
+
+	closures, err := req.process(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// didn't call extra db functions
+	if db.FunctionCallCount != 1 {
+		t.Fatal("did not call correct number of db functions")
+	}
+
+	// are we notifying the right people
+	if len(closures) != 2 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
+		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		t.Fatal("did not properly process")
+	}
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	not := closures[1].(toChannelClosure).msg.ServerMessage.(notification)
+	// did the server return success status
+	if resp.Status != success {
+		t.Fatalf("Process function responded with status: %d", resp.Status)
+	}
+
+	// is the data actually correct
+	username := reflect.ValueOf(not.Data).FieldByName("RevokeUsername").Interface().(string)
+	if username != req.RevokeUsername {
+		t.Fatalf("Incorrect username was returned, expected %v, recieved %v", req.RevokeUsername, username)
+	}
+
+	// did the user actually get removed
+	if len(db.Projects[req.RevokeUsername]) != 0 {
+		t.Fatal("Database was not properly modified")
+	}
+
+}
+
 func TestProjectLookupRequest_Process(t *testing.T) {
 	configSetup()
 	req := *new(projectLookupRequest)

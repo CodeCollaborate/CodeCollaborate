@@ -205,24 +205,25 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			Status: servfail,
 			Tag:    p.Tag,
 			Data:   struct{}{}}
-		not = nil
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    p.Tag,
-			Data:   struct{}{}}
-		not.ServerMessage = notification{
-			Resource:   p.Resource,
-			Method:     p.Method,
-			ResourceID: p.ProjectID,
-			Data: struct {
-				GrantUsername   string
-				PermissionLevel int
-			}{
-				GrantUsername:   p.GrantUsername,
-				PermissionLevel: p.PermissionLevel,
-			}}
+
+		return accumulate(toSenderClosure{msg: res}), err
 	}
+
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    p.Tag,
+		Data:   struct{}{}}
+	not.ServerMessage = notification{
+		Resource:   p.Resource,
+		Method:     p.Method,
+		ResourceID: p.ProjectID,
+		Data: struct {
+			GrantUsername   string
+			PermissionLevel int
+		}{
+			GrantUsername:   p.GrantUsername,
+			PermissionLevel: p.PermissionLevel,
+		}}
 
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
 }
@@ -256,22 +257,23 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			Status: servfail,
 			Tag:    p.Tag,
 			Data:   struct{}{}}
-		not = nil
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    p.Tag,
-			Data:   struct{}{}}
-		not.ServerMessage = notification{
-			Resource:   p.Resource,
-			Method:     p.Method,
-			ResourceID: p.ProjectID,
-			Data: struct {
-				RevokeUsername string
-			}{
-				RevokeUsername: p.RevokeUsername,
-			}}
+
+		return accumulate(toSenderClosure{msg: res}), err
 	}
+
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    p.Tag,
+		Data:   struct{}{}}
+	not.ServerMessage = notification{
+		Resource:   p.Resource,
+		Method:     p.Method,
+		ResourceID: p.ProjectID,
+		Data: struct {
+			RevokeUsername string
+		}{
+			RevokeUsername: p.RevokeUsername,
+		}}
 
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
 }
@@ -378,7 +380,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			}}
 	}
 
-	//fmt.Printf("Recieved project lookup request from %s\n", p.SenderID)
+	//fmt.Printf("Received project lookup request from %s\n", p.SenderID)
 	return accumulate(toSenderClosure{msg: res}), nil
 }
 
@@ -548,19 +550,19 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Tag:    p.Tag,
 				Data:   struct{}{}}
 		}
-		not = nil
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    p.Tag,
-			Data:   struct{}{}}
 
-		not.ServerMessage = notification{
-			Resource:   p.Resource,
-			Method:     p.Method,
-			ResourceID: p.ProjectID,
-			Data:       struct{}{}}
+		return accumulate(toSenderClosure{msg: res}), err
 	}
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    p.Tag,
+		Data:   struct{}{}}
+
+	not.ServerMessage = notification{
+		Resource:   p.Resource,
+		Method:     p.Method,
+		ResourceID: p.ProjectID,
+		Data:       struct{}{}}
 
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
 }
