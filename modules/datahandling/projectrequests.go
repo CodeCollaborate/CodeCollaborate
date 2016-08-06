@@ -314,7 +314,7 @@ type projectLookupRequest struct {
 
 // this request returns a slice of results for the projects we found, so we need the object that goes in that slice
 type projectLookupResult struct {
-	FileID      int64
+	ProjectID   int64
 	Name        string
 	Permissions map[string](dbfs.ProjectPermission)
 }
@@ -336,7 +336,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			errOut = err
 		} else {
 			resultData[i] = projectLookupResult{
-				FileID:      id,
+				ProjectID:   id,
 				Name:        name,
 				Permissions: permissions}
 			i++

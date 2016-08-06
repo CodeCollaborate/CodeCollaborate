@@ -248,6 +248,7 @@ func (dm *DatabaseMock) MySQLProjectRename(projectID int64, newName string) erro
 // MySQLProjectLookup is a mock of the real implementation
 func (dm *DatabaseMock) MySQLProjectLookup(projectID int64, username string) (name string, permissions map[string]ProjectPermission, err error) {
 	dm.FunctionCallCount++
+	permissions = make(map[string]ProjectPermission)
 	for user, projects := range dm.Projects {
 		for _, project := range projects {
 			if project.ProjectID == projectID {
