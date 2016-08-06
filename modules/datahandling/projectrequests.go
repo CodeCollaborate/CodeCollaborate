@@ -136,21 +136,22 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Status: servfail,
 			Tag:    p.Tag,
 			Data:   struct{}{}}
-		not = nil // don't send anything
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    p.Tag,
-			Data:   struct{}{}}
-		not.ServerMessage = notification{
-			Resource: p.Resource,
-			Method:   p.Method,
-			Data: struct {
-				NewName string
-			}{
-				NewName: p.NewName,
-			}}
+
+		return accumulate(toSenderClosure{msg: res}), err
 	}
+	res.ServerMessage = response{
+		Status: success,
+		Tag:    p.Tag,
+		Data:   struct{}{}}
+	not.ServerMessage = notification{
+		Resource:   p.Resource,
+		Method:     p.Method,
+		ResourceID: p.ProjectID,
+		Data: struct {
+			NewName string
+		}{
+			NewName: p.NewName,
+		}}
 
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
 }
@@ -211,8 +212,9 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			Tag:    p.Tag,
 			Data:   struct{}{}}
 		not.ServerMessage = notification{
-			Resource: p.Resource,
-			Method:   p.Method,
+			Resource:   p.Resource,
+			Method:     p.Method,
+			ResourceID: p.ProjectID,
 			Data: struct {
 				GrantUsername   string
 				PermissionLevel int
@@ -261,8 +263,9 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			Tag:    p.Tag,
 			Data:   struct{}{}}
 		not.ServerMessage = notification{
-			Resource: p.Resource,
-			Method:   p.Method,
+			Resource:   p.Resource,
+			Method:     p.Method,
+			ResourceID: p.ProjectID,
 			Data: struct {
 				RevokeUsername string
 			}{
@@ -553,13 +556,10 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Data:   struct{}{}}
 
 		not.ServerMessage = notification{
-			Resource: p.Resource,
-			Method:   p.Method,
-			Data: struct {
-				DeletedProjectID int64
-			}{
-				DeletedProjectID: p.ProjectID,
-			}}
+			Resource:   p.Resource,
+			Method:     p.Method,
+			ResourceID: p.ProjectID,
+			Data:       struct{}{}}
 	}
 
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil

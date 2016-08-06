@@ -93,6 +93,73 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 		t.Fatal("Incorrect projectID was returned")
 	}
 
+	if len(db.Projects["loganga"]) != 1 {
+		t.Fatal("did not actually add project")
+	}
+
+	project := db.Projects["loganga"][0]
+	if project.ProjectName != "new stuff" || project.ProjectID != projectID {
+		t.Fatal("wrong project added somehow")
+	}
+
+}
+
+func TestProjectRenameRequest_Process(t *testing.T) {
+	configSetup()
+	req := *new(projectRenameRequest)
+	setBaseFields(&req)
+
+	req.Resource = "Project"
+	req.Method = "Rename"
+	req.ProjectID = 1
+	req.NewName = "newer stuff"
+
+	db := dbfs.NewDBMock()
+	usermeta := dbfs.UserMeta{
+		FirstName: "Gene",
+		LastName:  "Logan",
+		Email:     "loganga@codecollaborate.com",
+		Password:  "correct horse battery staple",
+		Username:  "loganga",
+	}
+	db.Users["loganga"] = usermeta
+	projectmeta := dbfs.ProjectMeta{
+		ProjectID:       req.ProjectID,
+		ProjectName:     "new stuff",
+		PermissionLevel: 10,
+	}
+	db.Projects["loganga"] = []dbfs.ProjectMeta{projectmeta}
+	db.ProjectIDCounter = 2
+
+	closures, err := req.process(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// didn't call extra db functions
+	if db.FunctionCallCount != 1 {
+		t.Fatal("did not call correct number of db functions")
+	}
+
+	// are we notifying the right people
+	if len(closures) != 2 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
+		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		t.Fatal("did not properly process")
+	}
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	not := closures[1].(toChannelClosure).msg.ServerMessage.(notification)
+	// did the server return success status
+	if resp.Status != success {
+		t.Fatalf("Process function responded with status: %d", resp.Status)
+	}
+
+	// is the data actually correct
+	if not.ResourceID != db.ProjectIDCounter-1 {
+		t.Fatalf("Incorrect projectID was returned, expected %d, recieved %d", db.ProjectIDCounter-1, not.ResourceID)
+	}
+
 }
 
 func TestProjectLookupRequest_Process(t *testing.T) {

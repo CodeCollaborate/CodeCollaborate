@@ -95,17 +95,16 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			FileID: fileID,
 		}}
 	not.ServerMessage = notification{
-		Resource: f.Resource,
-		Method:   f.Method,
+		Resource:   f.Resource,
+		Method:     f.Method,
+		ResourceID: f.ProjectID,
 		Data: struct {
 			FileID       int64
-			ProjectID    int64
 			Name         string
 			RelativePath string
 			Version      int64
 		}{
 			FileID:       fileID,
-			ProjectID:    f.ProjectID,
 			Name:         f.Name,
 			RelativePath: f.RelativePath,
 			Version:      newFileVersion,
@@ -156,13 +155,12 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Tag:    f.Tag,
 		Data:   struct{}{}}
 	not.ServerMessage = notification{
-		Resource: f.Resource,
-		Method:   f.Method,
+		Resource:   f.Resource,
+		Method:     f.Method,
+		ResourceID: f.FileID,
 		Data: struct {
-			FileID  int64
 			NewPath string
 		}{
-			FileID:  f.FileID,
 			NewPath: f.NewName,
 		}}
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
@@ -210,13 +208,12 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Tag:    f.Tag,
 		Data:   struct{}{}}
 	not.ServerMessage = notification{
-		Resource: f.Resource,
-		Method:   f.Method,
+		Resource:   f.Resource,
+		Method:     f.Method,
+		ResourceID: f.FileID,
 		Data: struct {
-			FileID  int64
 			NewPath string
 		}{
-			FileID:  f.FileID,
 			NewPath: f.NewPath,
 		}}
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
@@ -274,13 +271,10 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Tag:    f.Tag,
 		Data:   struct{}{}}
 	not.ServerMessage = notification{
-		Resource: f.Resource,
-		Method:   f.Method,
-		Data: struct {
-			FileID int64
-		}{
-			FileID: f.FileID,
-		}}
+		Resource:   f.Resource,
+		Method:     f.Method,
+		ResourceID: f.FileID,
+		Data:       struct{}{}}
 	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
 }
 
@@ -340,15 +334,14 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}}
 
 	not.ServerMessage = notification{
-		Resource: f.Resource,
-		Method:   f.Method,
+		Resource:   f.Resource,
+		Method:     f.Method,
+		ResourceID: f.FileID,
 		Data: struct {
-			FileID          int64
 			BaseFileVersion int64
 			FileVersion     int64
 			Changes         []string
 		}{
-			FileID:          f.FileID,
 			BaseFileVersion: f.BaseFileVersion,
 			FileVersion:     version,
 			Changes:         f.Changes,

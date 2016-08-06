@@ -136,7 +136,11 @@ func TestMySQLUserProjects(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
+
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 
 	projects, err := di.MySQLUserProjects("jshap70")
@@ -165,7 +169,10 @@ func TestMySQLProjectCreate(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	if err != nil {
@@ -201,7 +208,10 @@ func TestMySQLProjectDelete(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	if err != nil {
@@ -240,7 +250,10 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
@@ -280,7 +293,11 @@ func TestMySQLProjectGrantPermission(t *testing.T) {
 		FirstName: "Austin",
 		LastName:  "Fahsl"}
 
-	di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userJoel)
+	if erro != nil {
+		t.Fatal(erro)
+	}
+
 	di.MySQLUserRegister(userAustin)
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
@@ -334,7 +351,11 @@ func TestMySQLProjectLookup(t *testing.T) {
 		FirstName: "Austin",
 		LastName:  "Fahsl"}
 
-	di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userJoel)
+	if erro != nil {
+		t.Fatal(erro)
+	}
+
 	di.MySQLUserRegister(userAustin)
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
@@ -388,7 +409,11 @@ func TestMySQLProjectRevokePermission(t *testing.T) {
 		FirstName: "Austin",
 		LastName:  "Fahsl"}
 
-	di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userJoel)
+	if erro != nil {
+		t.Fatal(erro)
+	}
+
 	di.MySQLUserRegister(userAustin)
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
@@ -427,7 +452,10 @@ func TestMySQLProjectRename(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 
@@ -456,7 +484,10 @@ func TestMySQLFileCreate(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, err := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
@@ -489,7 +520,10 @@ func TestMySQLFileDelete(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
@@ -518,7 +552,10 @@ func TestMySQLFileMove(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
@@ -551,7 +588,10 @@ func TestMySQLRenameFile(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
@@ -584,7 +624,10 @@ func TestMySQLFileGetInfo(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)

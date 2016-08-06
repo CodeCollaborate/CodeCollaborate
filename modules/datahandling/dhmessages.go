@@ -73,9 +73,10 @@ func (message response) serverMessageType() string {
 
 // Notification is the type which is the unprompted server messages to clients
 type notification struct {
-	Resource string
-	Method   string
-	Data     interface{}
+	Resource   string
+	Method     string
+	ResourceID int64
+	Data       interface{}
 }
 
 func (message notification) serverMessageType() string {
