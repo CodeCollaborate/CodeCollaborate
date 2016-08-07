@@ -368,5 +368,8 @@ func (dm *DatabaseMock) FileDelete(relpath string, filename string, projectID in
 // FileRead is a mock of the real implementation
 func (dm *DatabaseMock) FileRead(relpath string, filename string, projectID int64) (*[]byte, error) {
 	dm.FunctionCallCount++
+	if dm.File == nil {
+		dm.File = &[]byte{}
+	}
 	return dm.File, nil
 }

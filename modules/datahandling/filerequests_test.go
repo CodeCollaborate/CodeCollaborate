@@ -369,3 +369,57 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 }
+
+func TestFilePullRequest_Process(t *testing.T) {
+	configSetup()
+	req := *new(filePullRequest)
+	setBaseFields(&req)
+
+	db := dbfs.NewDBMock()
+	meta := dbfs.UserMeta{
+		FirstName: "Gene",
+		LastName:  "Logan",
+		Email:     "loganga@codecollaborate.com",
+		Password:  "correct horse battery staple",
+		Username:  "loganga",
+	}
+	db.MySQLUserRegister(meta)
+	projectid, err := db.MySQLProjectCreate("loganga", "hi")
+	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
+	changes := []string{"hi"}
+	db.CBAppendFileChange(fileid, 1, changes)
+
+	req.Resource = "File"
+	req.Method = "Pull"
+	req.FileID = fileid
+
+	db.FunctionCallCount = 0
+
+	closures, err := req.process(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// didn't call extra db functions
+	if db.FunctionCallCount != 3 {
+		t.Fatal("did not call correct number of db functions")
+	}
+
+	// are we notifying the right people
+	if len(closures) != 1 ||
+		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
+		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
+	}
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	// did the server return success status
+	if resp.Status != success {
+		t.Fatalf("Process function responded with status: %d", resp.Status)
+	}
+
+	// is the data actually correct
+	fileChanges := reflect.ValueOf(resp.Data).FieldByName("Changes").Interface().([]string)
+	if changes[0] != fileChanges[0] {
+		t.Fatalf("wrong file changes, expected: %v, got: %v", changes, fileChanges)
+	}
+}
