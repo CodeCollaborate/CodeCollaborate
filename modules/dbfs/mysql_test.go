@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func TestOpenMySQLConn(t *testing.T) {
+func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -24,7 +24,7 @@ func TestOpenMySQLConn(t *testing.T) {
 
 }
 
-func TestCloseMySQL(t *testing.T) {
+func TestDatabaseImpl_CloseMySQL(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -42,7 +42,7 @@ func TestCloseMySQL(t *testing.T) {
 	}
 }
 
-func TestMySQLUserRegister(t *testing.T) {
+func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -65,7 +65,7 @@ func TestMySQLUserRegister(t *testing.T) {
 	}
 }
 
-func TestMySQLUserGetPass(t *testing.T) {
+func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
@@ -93,7 +93,7 @@ func TestMySQLUserGetPass(t *testing.T) {
 	err = di.MySQLUserDelete("jshap70", "secret")
 }
 
-func TestMySQLUserLookup(t *testing.T) {
+func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
@@ -124,7 +124,7 @@ func TestMySQLUserLookup(t *testing.T) {
 	}
 }
 
-func TestMySQLUserProjects(t *testing.T) {
+func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
@@ -158,7 +158,7 @@ func TestMySQLUserProjects(t *testing.T) {
 	}
 }
 
-func TestMySQLProjectCreate(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -197,7 +197,7 @@ func TestMySQLProjectCreate(t *testing.T) {
 	}
 }
 
-func TestMySQLProjectDelete(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -239,7 +239,7 @@ func TestMySQLProjectDelete(t *testing.T) {
 	}
 }
 
-func TestMySQLProjectGetFiles(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -275,7 +275,7 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 	}
 }
 
-func TestMySQLProjectGrantPermission(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -333,7 +333,7 @@ func TestMySQLProjectGrantPermission(t *testing.T) {
 	}
 }
 
-func TestMySQLProjectLookup(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -391,7 +391,7 @@ func TestMySQLProjectLookup(t *testing.T) {
 	}
 }
 
-func TestMySQLProjectRevokePermission(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -439,7 +439,7 @@ func TestMySQLProjectRevokePermission(t *testing.T) {
 	}
 }
 
-func TestMySQLProjectRename(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -473,7 +473,7 @@ func TestMySQLProjectRename(t *testing.T) {
 	}
 }
 
-func TestMySQLFileCreate(t *testing.T) {
+func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -509,7 +509,7 @@ func TestMySQLFileCreate(t *testing.T) {
 	}
 }
 
-func TestMySQLFileDelete(t *testing.T) {
+func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -541,7 +541,7 @@ func TestMySQLFileDelete(t *testing.T) {
 	}
 }
 
-func TestMySQLFileMove(t *testing.T) {
+func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -577,7 +577,7 @@ func TestMySQLFileMove(t *testing.T) {
 	}
 }
 
-func TestMySQLRenameFile(t *testing.T) {
+func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -613,7 +613,7 @@ func TestMySQLRenameFile(t *testing.T) {
 	}
 }
 
-func TestMySQLFileGetInfo(t *testing.T) {
+func TestDatabaseImpl_MySQLFileGetInfo(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 

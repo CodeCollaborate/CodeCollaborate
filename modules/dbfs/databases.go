@@ -75,4 +75,6 @@ type DBFS interface {
 	FileDelete(relpath string, filename string, projectID int64) error
 	// FileRead returns the project file from the calculated location on the disk
 	FileRead(relpath string, filename string, projectID int64) (*[]byte, error)
+	// FileMove moves a file form the starting path to the end path
+	FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error
 }

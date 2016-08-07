@@ -10,7 +10,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/config"
 )
 
-func TestFileWrite(t *testing.T) {
+func TestDatabaseImpl_FileWrite(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -73,7 +73,7 @@ func TestFileWrite(t *testing.T) {
 
 }
 
-func TestFileRead(t *testing.T) {
+func TestDatabaseImpl_FileRead(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -99,7 +99,7 @@ func TestFileRead(t *testing.T) {
 
 }
 
-func TestFileDelete(t *testing.T) {
+func TestDatabaseImpl_FileDelete(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -123,6 +123,45 @@ func TestFileDelete(t *testing.T) {
 
 	if err = os.Remove(filepath1); !os.IsNotExist(err) {
 		t.Fatal("File should have been deleted, but was not")
+	}
+
+}
+
+func TestDatabaseImpl_FileMove(t *testing.T) {
+	configSetup()
+	di := new(DatabaseImpl)
+
+	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
+	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
+	filepath2 := filepath.Join(projectParentPath, "10", filepath.Join("newdir", "myFile2.txt"))
+	fileText := []byte("Hello World!\nWelcome to my file\n")
+
+	defer os.Remove(projectParentPath)
+	defer os.Remove(filepath.Join(projectParentPath, "10"))
+	//defer os.Remove(filepath1)
+
+	err := os.MkdirAll(projectParentPath, 0744)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = di.FileWrite(".", "myFile1.txt", 10, fileText)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = di.FileMove(".", "myFile1.txt", "newdir", "myFile2.txt", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.Remove(filepath2)
+	if err != nil {
+		t.Fatal("file was not moved")
+	}
+	err = os.Remove(filepath1)
+	if err == nil {
+		t.Fatal("file was not moved")
 	}
 
 }

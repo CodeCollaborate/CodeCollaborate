@@ -68,6 +68,15 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	not.Type = "Notification"
 	not.RoutingKey = strconv.FormatInt(f.ProjectID, 10)
 
+	_, err := db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
+	if err != nil {
+		res.ServerMessage = response{
+			Status: fail,
+			Tag:    f.Tag,
+			Data:   struct{}{}}
+		return accumulate(toSenderClosure{msg: res}), nil
+	}
+
 	fileID, err := db.MySQLFileCreate(f.SenderID, f.Name, f.RelativePath, f.ProjectID)
 	if err != nil {
 		res.ServerMessage = response{
@@ -150,7 +159,10 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return accumulate(toSenderClosure{msg: res}), err
 	}
 
-	// TODO: actually move the file
+	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, fileMeta.RelativePath, f.NewName, fileMeta.ProjectID)
+	if err != nil {
+		return accumulate(toSenderClosure{msg: res}), err
+	}
 
 	res.ServerMessage = response{
 		Status: success,
@@ -206,7 +218,10 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return accumulate(toSenderClosure{msg: res}), err
 	}
 
-	// TODO: actually move the file
+	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, f.NewPath, fileMeta.Filename, fileMeta.ProjectID)
+	if err != nil {
+		return accumulate(toSenderClosure{msg: res}), err
+	}
 
 	res.ServerMessage = response{
 		Status: success,
@@ -256,17 +271,17 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
+	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	if err != nil {
+		return accumulate(toSenderClosure{msg: res}), err
+	}
+
 	err = db.MySQLFileDelete(f.FileID)
 	if err != nil {
 		return accumulate(toSenderClosure{msg: res}), err
 	}
 
 	err = db.CBDeleteFile(f.FileID)
-	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
-	}
-
-	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
 		return accumulate(toSenderClosure{msg: res}), err
 	}

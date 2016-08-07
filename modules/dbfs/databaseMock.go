@@ -373,3 +373,8 @@ func (dm *DatabaseMock) FileRead(relpath string, filename string, projectID int6
 	}
 	return dm.File, nil
 }
+
+// FileMove moves a file form the starting path to the end path
+func (dm *DatabaseMock) FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error {
+	return nil
+}

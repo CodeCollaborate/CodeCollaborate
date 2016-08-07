@@ -1,9 +1,7 @@
 TODOs for intergoprocdandling:
     immediate/required:
-        TODO: actually move the files from file.move and file.rename (and update the tests)
 
     testing/required:
-        TODO: testing... lots of testing
 
     normal/required:
         TODO: check if permission high enough on project before making these actions

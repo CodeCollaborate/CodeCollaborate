@@ -54,6 +54,28 @@ func (di *DatabaseImpl) FileRead(relpath string, filename string, projectID int6
 	return &fileBytes, err
 }
 
+// FileMove moves a file form the starting path to the end path
+func (di *DatabaseImpl) FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error {
+	startRelFilePath, err := calculateFilePathPath(startRelpath, startFilename, projectID)
+	if err != nil {
+		return err
+	}
+	endRelFilePath, err := calculateFilePathPath(endRelpath, endFilename, projectID)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(endRelFilePath, 0744)
+	if err != nil {
+		return err
+	}
+
+	startFileLocation := filepath.Join(startRelFilePath, startFilename)
+	endFileLocation := filepath.Join(endRelFilePath, endFilename)
+
+	err = os.Rename(startFileLocation, endFileLocation)
+	return err
+}
+
 func calculateFilePathPath(relpath string, filename string, projectID int64) (string, error) {
 	if strings.Contains(filename, filePathSeparator) {
 		return "", ErrMaliciousRequest

@@ -28,7 +28,7 @@ func configSetup() {
 	}
 }
 
-func TestOpenCouchBase(t *testing.T) {
+func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -60,7 +60,7 @@ func TestOpenCouchBase(t *testing.T) {
 
 }
 
-func TestCloseCouchbase(t *testing.T) {
+func TestDatabaseImpl_CloseCouchbase(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -78,7 +78,7 @@ func TestCloseCouchbase(t *testing.T) {
 	}
 }
 
-func TestCBInsertNewFile(t *testing.T) {
+func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -100,7 +100,7 @@ func TestCBInsertNewFile(t *testing.T) {
 	di.CBDeleteFile(1)
 }
 
-func TestCBInsertNewFileByDetails(t *testing.T) {
+func TestDatabaseImpl_CBInsertNewFileByDetails(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -119,7 +119,7 @@ func TestCBInsertNewFileByDetails(t *testing.T) {
 	di.CBDeleteFile(1)
 }
 
-func TestCBDeleteFile(t *testing.T) {
+func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -137,7 +137,7 @@ func TestCBDeleteFile(t *testing.T) {
 	}
 }
 
-func TestCBGetFileVersion(t *testing.T) {
+func TestDatabaseImpl_CBGetFileVersion(t *testing.T) {
 	configSetup()
 	di := new(DatabaseImpl)
 
@@ -156,7 +156,7 @@ func TestCBGetFileVersion(t *testing.T) {
 	di.CBDeleteFile(1)
 }
 
-func TestCBGetFileChanges(t *testing.T) {
+func TestDatabaseImpl_CBGetFileChanges(t *testing.T) {
 	// setup
 	configSetup()
 	di := new(DatabaseImpl)
@@ -182,7 +182,7 @@ func TestCBGetFileChanges(t *testing.T) {
 	di.CBDeleteFile(1)
 }
 
-func TestCBAppendFileChange(t *testing.T) {
+func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	var originalFileVersion int64 = 2
 	var fileID int64 = 1
 	configSetup()

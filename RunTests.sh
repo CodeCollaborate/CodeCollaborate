@@ -8,7 +8,7 @@ show_failed(){
 
 
         if [[ "$OUTPUT" =~ FAIL.* ]]; then
-            printf -- "->%s\n" "$OUTPUT"
+            printf -- "\e[1;31m->%s \e[0m\n" "$OUTPUT"
             STATUS=1
         else
             printf -- "  %s\n" "$OUTPUT"
