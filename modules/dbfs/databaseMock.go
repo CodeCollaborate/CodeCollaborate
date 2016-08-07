@@ -76,6 +76,9 @@ func (dm *DatabaseMock) CBGetFileChanges(fileID int64) ([]string, error) {
 // CBAppendFileChange is a mock of the real implementation
 func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
 	dm.FunctionCallCount++
+	if dm.FileVersion[fileID] > baseVersion {
+		return -1, ErrVersionOutOfDate
+	}
 	dm.FileVersion[fileID]++
 	for _, change := range changes {
 		dm.FileChanges[fileID] = append(dm.FileChanges[fileID], change)
@@ -310,6 +313,7 @@ func (dm *DatabaseMock) MySQLFileMove(fileID int64, newPath string) error {
 		for _, file := range files {
 			if file.FileID == fileID {
 				file.RelativePath = newPath
+				return nil
 			}
 		}
 

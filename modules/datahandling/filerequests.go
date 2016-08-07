@@ -9,7 +9,7 @@ import (
 )
 
 var fileRequestsSetup = false
-var newFileVersion int64
+var newFileVersion int64 = 1
 
 // initProjectRequests populates the requestMap from requestmap.go with the appropriate constructors for the project methods
 func initFileRequests() {
@@ -150,6 +150,8 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return accumulate(toSenderClosure{msg: res}), err
 	}
 
+	// TODO: actually move the file
+
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    f.Tag,
@@ -193,7 +195,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), nil
+		return accumulate(toSenderClosure{msg: res}), err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -201,8 +203,11 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err = db.MySQLFileMove(f.FileID, f.NewPath)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), nil
+		return accumulate(toSenderClosure{msg: res}), err
 	}
+
+	// TODO: actually move the file
+
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    f.Tag,
