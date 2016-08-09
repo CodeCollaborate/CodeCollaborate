@@ -3,6 +3,12 @@ dist: trusty
 language: go
 go:
 - 1.6
+cache:
+  directories:
+  - $GOPATH
+#  - $HOME/opt/couchbase
+  - downloads
+
 notifications:
   slack:
     secure: d8fs3gYp5UnTeN6kpvS4exVHqhu/j2SKnyZ8ypgci2ji5vgHzPXwfZVNQXe+/gINVOnonQklQsQhf2O88gsVaGuGgY75ivVfzBNMa7QLN8QiLbW4KRNqI3IyFmxOjl/Fy3XZuqlSDJSoYoxLbRp3IHraz1uOhAPpAFLRuFNrTGfzSZjQre0czaHkRQ2V4xRMj4W5j22W7K0tRcs+J/5SsR8OWq6kv4p6+jSQE8aJwYBJIpwZcbDRXNb/u3UicxNxzGVdS+eMJp2tlnf2w6h988yrTWm9aeMLBaGXNHmRusqd/sNrMsLk+vh1of02UGJd5t142y50djFeVpEA/ztAr/En7rPqIZlhlyPGDrToa/Gv49LNX5OvXDm2oKE4Br+dwl3hm0fuACDGtfROz5jyli1SUtMXEssh1jHsxWMXSW5grKrIoYAZV2hoKCxUSniHpkiKkG68rlrqz43l1TUcrFMsrd8hkxhl/79Y1NCCV8bNrR8pWdL/PFrCwNsfp+IqIgoZ97cRQkFWIyV5d/eXZZ/azT1PsOaGpmzPy5aD0k28kjPCg6HApf8+lNZ+amHedYdRJ6Ttz2q50MbUO29P5g2kpuoKEtas0EQpgL1Pq8dyU6l7f7Zorkz2efiYg5Tah9WlAcxFfXyQgwBWBtP4XQTZs9YYY8ORZjDtClLjMm0=
@@ -22,7 +28,6 @@ before_install:
 - echo "travis doesn't install mysql natively anymore (see 'unrecognized service' above), installing now:"
 
 install:
-- sudo apt-get -qq update
 - sudo apt-get install -y mysql-server
 - travisScripts/InstallCouchBase.sh
 - cp ./config/defaults/* ./config
