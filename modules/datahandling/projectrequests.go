@@ -79,7 +79,7 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	if err != nil {
 		//if err == project already exists {
@@ -124,7 +124,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -170,7 +170,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 	res.ServerMessage = response{
 		Status: unimplemented,
 		Tag:    p.Tag,
@@ -193,7 +193,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -245,7 +245,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -294,7 +294,7 @@ func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 	res.ServerMessage = response{
 		Status: unimplemented,
 		Tag:    p.Tag,
@@ -347,7 +347,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	if errOut != nil {
 		if len(resultData) == 0 {
@@ -409,7 +409,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -530,7 +530,7 @@ type projectDeleteRequest struct {
 func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp

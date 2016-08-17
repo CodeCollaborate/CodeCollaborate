@@ -61,7 +61,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -135,7 +135,7 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -194,7 +194,7 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -252,7 +252,7 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -313,7 +313,7 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
@@ -385,7 +385,7 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	res.ServerMessage = response{
 		Status: fail,

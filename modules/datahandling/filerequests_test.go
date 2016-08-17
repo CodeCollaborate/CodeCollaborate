@@ -66,7 +66,7 @@ func TestFileCreateRequest_Process(t *testing.T) {
 
 	notFileID := reflect.ValueOf(not.ServerMessage.(notification).Data).FieldByName("FileID").Interface().(int64)
 	if FileID != notFileID {
-		t.Fatal("recieved different data from notification and responce")
+		t.Fatal("recieved different data from notification and response")
 	}
 
 }

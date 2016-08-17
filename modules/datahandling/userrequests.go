@@ -64,7 +64,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
@@ -99,7 +99,7 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 	res.ServerMessage = response{
 		Status: unimplemented,
 		Tag:    f.Tag,
@@ -135,7 +135,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	if len(users) < 0 {
 		res.ServerMessage = response{Status: fail, Tag: f.Tag}
@@ -180,7 +180,7 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	if err != nil {
 		res.ServerMessage = response{

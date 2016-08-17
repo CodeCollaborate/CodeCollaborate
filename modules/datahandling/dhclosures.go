@@ -34,7 +34,7 @@ type chanSubscribeClosure struct {
 func (cont chanSubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	// I (joel) don't believe we actually have a way to know here if this subscribe throws an error
 	dh.SubscriptionChan <- rabbitmq.Subscription{
@@ -66,7 +66,7 @@ type chanUnsubscribeClosure struct {
 func (cont chanUnsubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
-	res.Type = "Responce"
+	res.Type = "Response"
 
 	// I (joel) don't believe we actually have a way to know here if this subscribe throws an error
 	dh.SubscriptionChan <- rabbitmq.Subscription{
