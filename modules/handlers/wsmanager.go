@@ -1,11 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sync/atomic"
-
-	"errors"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"

@@ -2,17 +2,13 @@ package dbfs
 
 import (
 	"database/sql"
+	"fmt"
+	"path/filepath"
+	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql" // required to load into local namespace to
 	// initialize sql driver mapping in sql.Open("mysql", ...)
-
-	"time"
-
-	"path/filepath"
-	"strings"
-
-	"fmt"
-
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 )

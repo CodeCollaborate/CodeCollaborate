@@ -2,10 +2,9 @@ package datahandling
 
 import (
 	"log"
-	"testing"
-
 	"reflect"
 	"strconv"
+	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"

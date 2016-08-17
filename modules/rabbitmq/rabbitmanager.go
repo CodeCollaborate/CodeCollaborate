@@ -2,9 +2,8 @@ package rabbitmq
 
 import (
 	"errors"
-	"sync"
-
 	"net"
+	"sync"
 	"time"
 
 	"github.com/CodeCollaborate/Server/utils"
