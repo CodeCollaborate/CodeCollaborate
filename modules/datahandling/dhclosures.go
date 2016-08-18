@@ -1,6 +1,8 @@
 package datahandling
 
 import (
+	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -14,24 +16,48 @@ type toSenderClosure struct {
 	msg *serverMessageWrapper
 }
 
+// toSenderClosure.call is the function that will forward a server message back to the client
 func (cont toSenderClosure) call(dh DataHandler) error {
-	return dh.sendToSender(cont.msg)
+	msgJSON, err := json.Marshal(cont.msg)
+	if err != nil {
+		return err
+	}
+	dh.MessageChan <- rabbitmq.AMQPMessage{
+		Headers:     make(map[string]interface{}),
+		RoutingKey:  strconv.FormatUint(dh.WebsocketID, 10),
+		ContentType: cont.msg.Type,
+		Persistent:  false,
+		Message:     msgJSON,
+	}
+	return nil
 }
 
-type toChannelClosure struct {
+type toRabbitChannelClosure struct {
 	msg *serverMessageWrapper
 }
 
-func (cont toChannelClosure) call(dh DataHandler) error {
-	return dh.sendToChannel(cont.msg)
+// toRabbitChannelClosure.call is the function that will forward a server message to a channel based on the given routing key
+func (cont toRabbitChannelClosure) call(dh DataHandler) error {
+	msgJSON, err := json.Marshal(cont.msg)
+	if err != nil {
+		return err
+	}
+	dh.MessageChan <- rabbitmq.AMQPMessage{
+		Headers:     make(map[string]interface{}),
+		RoutingKey:  cont.msg.RoutingKey,
+		ContentType: cont.msg.Type,
+		Persistent:  false,
+		Message:     msgJSON,
+	}
+	return nil
 }
 
-type chanSubscribeClosure struct {
+type rabbitChannelSubscribeClosure struct {
 	key string
 	tag int64
 }
 
-func (cont chanSubscribeClosure) call(dh DataHandler) error {
+func (cont rabbitChannelSubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Response"
@@ -58,12 +84,12 @@ func (cont chanSubscribeClosure) call(dh DataHandler) error {
 
 }
 
-type chanUnsubscribeClosure struct {
+type rabbitChannelUnsubscribeClosure struct {
 	key string
 	tag int64
 }
 
-func (cont chanUnsubscribeClosure) call(dh DataHandler) error {
+func (cont rabbitChannelUnsubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().UnixNano()
 	res.Type = "Response"
@@ -87,15 +113,4 @@ func (cont chanUnsubscribeClosure) call(dh DataHandler) error {
 	//}
 	err := toSenderClosure{msg: res}.call(dh) // go ahead and send from here
 	return err
-}
-
-/*
- *
- *util
- *
- */
-
-// simple helper to clean up some of the syntax when creating multiple closures
-func accumulate(calls ...(dhClosure)) [](dhClosure) {
-	return calls
 }

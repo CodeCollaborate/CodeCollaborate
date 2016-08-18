@@ -74,7 +74,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	} else {
 		res.ServerMessage = response{Status: success, Tag: f.Tag}
 	}
-	return accumulate(toSenderClosure{msg: res}), err
+	return []dhClosure{toSenderClosure{msg: res}}, err
 }
 
 // User.Login
@@ -103,7 +103,7 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Status: unimplemented,
 		Tag:    f.Tag,
 		Data:   struct{}{}}
-	return accumulate(toSenderClosure{msg: res}), nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 // User.Lookup
@@ -162,7 +162,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				}}
 		}
 	}
-	return accumulate(toSenderClosure{msg: res}), erro
+	return []dhClosure{toSenderClosure{msg: res}}, erro
 }
 
 // User.Projects
@@ -201,5 +201,5 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			}}
 	}
 
-	return accumulate(toSenderClosure{msg: res}), err
+	return []dhClosure{toSenderClosure{msg: res}}, err
 }

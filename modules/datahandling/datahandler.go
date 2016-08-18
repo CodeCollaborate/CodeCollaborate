@@ -1,9 +1,7 @@
 package datahandling
 
 import (
-	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -78,36 +76,4 @@ func authenticate(abs abstractRequest) bool {
 	fmt.Println("AUTHENTICATION IS NOT IMPLEMENTED YET")
 	// TODO (non-immediate/required): implement user authentication
 	return true
-}
-
-// SendToSender is the function that will forward a server message back to the client
-func (dh DataHandler) sendToSender(msg *serverMessageWrapper) error {
-	msgJSON, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	dh.MessageChan <- rabbitmq.AMQPMessage{
-		Headers:     make(map[string]interface{}),
-		RoutingKey:  strconv.FormatUint(dh.WebsocketID, 10),
-		ContentType: msg.Type,
-		Persistent:  false,
-		Message:     msgJSON,
-	}
-	return nil
-}
-
-// SendToChannel is the function that will forward a server message to a channel based on the given routing key
-func (dh DataHandler) sendToChannel(msg *serverMessageWrapper) error {
-	msgJSON, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	dh.MessageChan <- rabbitmq.AMQPMessage{
-		Headers:     make(map[string]interface{}),
-		RoutingKey:  msg.RoutingKey,
-		ContentType: msg.Type,
-		Persistent:  false,
-		Message:     msgJSON,
-	}
-	return nil
 }

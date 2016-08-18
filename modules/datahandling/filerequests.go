@@ -73,7 +73,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Status: fail,
 			Tag:    f.Tag,
 			Data:   struct{}{}}
-		return accumulate(toSenderClosure{msg: res}), nil
+		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 
 	fileID, err := db.MySQLFileCreate(f.SenderID, f.Name, f.RelativePath, f.ProjectID)
@@ -82,7 +82,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Status: fail,
 			Tag:    f.Tag,
 			Data:   struct{}{}}
-		return accumulate(toSenderClosure{msg: res}), nil
+		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 
 	err = db.CBInsertNewFile(fileID, newFileVersion, make([]string, 0))
@@ -92,7 +92,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Status: servfail,
 			Tag:    f.Tag,
 			Data:   struct{}{}}
-		return accumulate(toSenderClosure{msg: res}), nil
+		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 	res.ServerMessage = response{
 		Status: success,
@@ -117,7 +117,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			RelativePath: f.RelativePath,
 			Version:      newFileVersion,
 		}}
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 // File.Rename
@@ -147,7 +147,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -155,12 +155,12 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err = db.MySQLFileRename(f.FileID, f.NewName)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, fileMeta.RelativePath, f.NewName, fileMeta.ProjectID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	res.ServerMessage = response{
@@ -176,7 +176,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewName: f.NewName,
 		}}
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 // File.Move
@@ -206,7 +206,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -214,12 +214,12 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err = db.MySQLFileMove(f.FileID, f.NewPath)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, f.NewPath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	res.ServerMessage = response{
@@ -235,7 +235,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewPath: f.NewPath,
 		}}
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 // File.Delete
@@ -264,7 +264,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -272,17 +272,17 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	err = db.MySQLFileDelete(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	err = db.CBDeleteFile(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	res.ServerMessage = response{
@@ -294,7 +294,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data:       struct{}{}}
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 // File.Change
@@ -325,7 +325,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
@@ -340,7 +340,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Tag:    f.Tag,
 				Data:   struct{}{}}
 		}
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	res.ServerMessage = response{
@@ -366,7 +366,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Changes:         f.Changes,
 		}}
 
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 // File.Pull
@@ -393,17 +393,17 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	rawFile, err := db.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	changes, err := db.CBGetFileChanges(f.FileID)
 	if err != nil {
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	res.ServerMessage = response{
@@ -417,5 +417,5 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Changes:   changes,
 		}}
 
-	return accumulate(toSenderClosure{msg: res}), nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }

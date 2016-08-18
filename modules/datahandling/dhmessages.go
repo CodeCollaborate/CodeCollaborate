@@ -26,7 +26,7 @@ type abstractRequest struct {
 	SenderToken string
 	Method      string
 	Timestamp   int64
-	Data        json.RawMessage
+	Data        json.RawMessage // date is a byte for now because we don't want it to unmarshal it yet
 }
 
 // CreateAbstractRequest is the testable parsing into abstractRequests

@@ -46,12 +46,12 @@ func TestFileCreateRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toChannelClosure).msg
+	not := closures[1].(toRabbitChannelClosure).msg
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
@@ -108,12 +108,12 @@ func TestFileRenameRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toChannelClosure).msg
+	not := closures[1].(toRabbitChannelClosure).msg
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
@@ -175,12 +175,12 @@ func TestFileMoveRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toChannelClosure).msg
+	not := closures[1].(toRabbitChannelClosure).msg
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
@@ -241,12 +241,12 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toChannelClosure).msg
+	not := closures[1].(toRabbitChannelClosure).msg
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
@@ -307,12 +307,12 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	// are we notifying the right people
 	if len(closures) != 2 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toChannelClosure" {
+		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toChannelClosure).msg
+	not := closures[1].(toRabbitChannelClosure).msg
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)

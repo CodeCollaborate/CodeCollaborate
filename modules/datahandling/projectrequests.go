@@ -101,7 +101,7 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			}}
 	}
 
-	return accumulate(toSenderClosure{msg: res}), nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 // Project.Rename
@@ -136,7 +136,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Tag:    p.Tag,
 			Data:   struct{}{}}
 
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 	res.ServerMessage = response{
 		Status: success,
@@ -152,7 +152,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewName: p.NewName,
 		}}
 
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 // Project.GetPermissionConstants
@@ -174,7 +174,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure
 		Status: unimplemented,
 		Tag:    p.Tag,
 		Data:   struct{}{}}
-	return accumulate(toSenderClosure{msg: res}), nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 // Project.GrantPermissions
@@ -205,7 +205,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			Tag:    p.Tag,
 			Data:   struct{}{}}
 
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	res.ServerMessage = response{
@@ -224,7 +224,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			PermissionLevel: p.PermissionLevel,
 		}}
 
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -257,7 +257,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			Tag:    p.Tag,
 			Data:   struct{}{}}
 
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
 	res.ServerMessage = response{
@@ -274,7 +274,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			RevokeUsername: p.RevokeUsername,
 		}}
 
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -298,7 +298,7 @@ func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		Status: unimplemented,
 		Tag:    p.Tag,
 		Data:   struct{}{}}
-	return accumulate(toSenderClosure{msg: res}), nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 func (p *projectGetOnlineClientsRequest) setAbstractRequest(req *abstractRequest) {
@@ -380,7 +380,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}
 
 	//fmt.Printf("Received project lookup request from %s\n", p.SenderID)
-	return accumulate(toSenderClosure{msg: res}), nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 func (p *projectLookupRequest) setAbstractRequest(req *abstractRequest) {
@@ -420,7 +420,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Files: make([]fileLookupResult, 0),
 			}}
 
-		return accumulate(toSenderClosure{msg: res}), nil
+		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 
 	resultData := make([]fileLookupResult, len(files))
@@ -477,7 +477,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			}}
 	}
 
-	return accumulate(toSenderClosure{msg: res}), nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 func (p *projectGetFilesRequest) setAbstractRequest(req *abstractRequest) {
@@ -491,11 +491,11 @@ type projectSubscribeRequest struct {
 }
 
 func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	subscribeClos := chanSubscribeClosure{
+	subscribeClos := rabbitChannelSubscribeClosure{
 		key: strconv.FormatInt(p.ProjectID, 10),
 		tag: p.Tag,
 	}
-	return accumulate(subscribeClos), nil
+	return []dhClosure{subscribeClos}, nil
 }
 
 func (p *projectSubscribeRequest) setAbstractRequest(req *abstractRequest) {
@@ -509,11 +509,11 @@ type projectUnsubscribeRequest struct {
 }
 
 func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	unsubscribeClos := chanUnsubscribeClosure{
+	unsubscribeClos := rabbitChannelUnsubscribeClosure{
 		key: strconv.FormatInt(p.ProjectID, 10),
 		tag: p.Tag,
 	}
-	return accumulate(unsubscribeClos), nil
+	return []dhClosure{unsubscribeClos}, nil
 }
 
 func (p *projectUnsubscribeRequest) setAbstractRequest(req *abstractRequest) {
@@ -550,7 +550,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Data:   struct{}{}}
 		}
 
-		return accumulate(toSenderClosure{msg: res}), err
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 	res.ServerMessage = response{
 		Status: success,
@@ -563,7 +563,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		ResourceID: p.ProjectID,
 		Data:       struct{}{}}
 
-	return accumulate(toSenderClosure{msg: res}, toChannelClosure{msg: not}), nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {
