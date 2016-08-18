@@ -8,6 +8,9 @@ cache:
   - $GOPATH
 #  - $HOME/opt/couchbase
   - downloads
+before_cache:
+  - rm -rf $GOPATH/bin
+  - rm -rf $GOPATH/src/github.com/CodeCollaborate
 
 notifications:
   slack:
