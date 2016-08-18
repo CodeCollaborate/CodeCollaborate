@@ -8,20 +8,21 @@ import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
+var geneMeta = dbfs.UserMeta{
+	FirstName: "Gene",
+	LastName:  "Logan",
+	Email:     "loganga@codecollaborate.com",
+	Password:  "correct horse battery staple",
+	Username:  "loganga",
+}
+
 func TestFileCreateRequest_Process(t *testing.T) {
 	configSetup()
 	req := *new(fileCreateRequest)
 	setBaseFields(&req)
 
 	db := dbfs.NewDBMock()
-	meta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.MySQLUserRegister(meta)
+	db.MySQLUserRegister(geneMeta)
 	projectid, err := db.MySQLProjectCreate("loganga", "hi")
 
 	req.Resource = "File"
@@ -77,14 +78,7 @@ func TestFileRenameRequest_Process(t *testing.T) {
 	setBaseFields(&req)
 
 	db := dbfs.NewDBMock()
-	meta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.MySQLUserRegister(meta)
+	db.MySQLUserRegister(geneMeta)
 	projectid, err := db.MySQLProjectCreate("loganga", "hi")
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
 
@@ -144,14 +138,7 @@ func TestFileMoveRequest_Process(t *testing.T) {
 	setBaseFields(&req)
 
 	db := dbfs.NewDBMock()
-	meta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.MySQLUserRegister(meta)
+	db.MySQLUserRegister(geneMeta)
 	projectid, err := db.MySQLProjectCreate("loganga", "hi")
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
 
@@ -211,14 +198,7 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 	setBaseFields(&req)
 
 	db := dbfs.NewDBMock()
-	meta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.MySQLUserRegister(meta)
+	db.MySQLUserRegister(geneMeta)
 	projectid, err := db.MySQLProjectCreate("loganga", "hi")
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
 
@@ -274,14 +254,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	setBaseFields(&req)
 
 	db := dbfs.NewDBMock()
-	meta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.MySQLUserRegister(meta)
+	db.MySQLUserRegister(geneMeta)
 	projectid, err := db.MySQLProjectCreate("loganga", "hi")
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
 	db.CBInsertNewFile(fileid, newFileVersion, []string{})
@@ -376,14 +349,7 @@ func TestFilePullRequest_Process(t *testing.T) {
 	setBaseFields(&req)
 
 	db := dbfs.NewDBMock()
-	meta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.MySQLUserRegister(meta)
+	db.MySQLUserRegister(geneMeta)
 	projectid, err := db.MySQLProjectCreate("loganga", "hi")
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
 	changes := []string{"hi"}

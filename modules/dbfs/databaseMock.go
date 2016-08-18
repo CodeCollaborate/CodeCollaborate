@@ -354,7 +354,7 @@ func (dm *DatabaseMock) MySQLFileGetInfo(fileID int64) (filey FileMeta, err erro
 func (dm *DatabaseMock) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
 	dm.FunctionCallCount++
 	dm.File = &raw
-	filepathy, err := calculateFilePathPath(relpath, filename, projectID)
+	filepathy, err := calculateFilePath(relpath, filename, projectID)
 	return filepath.Join(filepathy, filename), err
 }
 

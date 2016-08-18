@@ -55,14 +55,7 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 	req.Name = "new stuff"
 
 	db := dbfs.NewDBMock()
-	meta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.Users["loganga"] = meta
+	db.Users["loganga"] = geneMeta
 
 	closures, err := req.process(db)
 	if err != nil {
@@ -113,14 +106,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 	req.NewName = "newer stuff"
 
 	db := dbfs.NewDBMock()
-	usermeta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.Users["loganga"] = usermeta
+	db.Users["loganga"] = geneMeta
 	projectmeta := dbfs.ProjectMeta{
 		ProjectID:       req.ProjectID,
 		ProjectName:     "new stuff",
@@ -173,13 +159,6 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	req.PermissionLevel = 5
 
 	db := dbfs.NewDBMock()
-	genemeta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
 	notgenemeta := dbfs.UserMeta{
 		FirstName: "Notgene",
 		LastName:  "NotLogan",
@@ -187,7 +166,7 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 		Password:  "incorrect horse battery staple",
 		Username:  "notloganga",
 	}
-	db.Users["loganga"] = genemeta
+	db.Users["loganga"] = geneMeta
 	db.Users["notloganga"] = notgenemeta
 
 	projectID, err := db.MySQLProjectCreate("loganga", "new stuff")
@@ -242,13 +221,6 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 	req.RevokeUsername = "notloganga"
 
 	db := dbfs.NewDBMock()
-	genemeta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
 	notgenemeta := dbfs.UserMeta{
 		FirstName: "Notgene",
 		LastName:  "NotLogan",
@@ -256,11 +228,11 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 		Password:  "incorrect horse battery staple",
 		Username:  "notloganga",
 	}
-	db.Users["loganga"] = genemeta
+	db.Users["loganga"] = geneMeta
 	db.Users["notloganga"] = notgenemeta
 
 	projectID, err := db.MySQLProjectCreate("loganga", "new stuff")
-	db.MySQLProjectGrantPermission(projectID, notgenemeta.Username, 5, genemeta.Username)
+	db.MySQLProjectGrantPermission(projectID, notgenemeta.Username, 5, geneMeta.Username)
 
 	db.FunctionCallCount = 0
 	req.ProjectID = projectID
@@ -313,14 +285,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 	req.Resource = "Project"
 	req.Method = "Lookup"
 
-	usermeta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.Users["loganga"] = usermeta
+	db.Users["loganga"] = geneMeta
 
 	projid1, err := db.MySQLProjectCreate("loganga", "new shit")
 	projid2, err := db.MySQLProjectCreate("loganga", "newer shit")
@@ -371,14 +336,7 @@ func TestProjectGetFilesRequest_Process(t *testing.T) {
 	req.Resource = "Project"
 	req.Method = "GetFiles"
 
-	usermeta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.Users["loganga"] = usermeta
+	db.Users["loganga"] = geneMeta
 
 	projid1, err := db.MySQLProjectCreate("loganga", "new shit")
 	db.MySQLFileCreate("loganga", "file1", "", projid1)
@@ -490,14 +448,7 @@ func TestProjectDeleteRequest_process(t *testing.T) {
 	req.Method = "Delete"
 
 	db := dbfs.NewDBMock()
-	usermeta := dbfs.UserMeta{
-		FirstName: "Gene",
-		LastName:  "Logan",
-		Email:     "loganga@codecollaborate.com",
-		Password:  "correct horse battery staple",
-		Username:  "loganga",
-	}
-	db.Users["loganga"] = usermeta
+	db.Users["loganga"] = geneMeta
 	projID, err := db.MySQLProjectCreate("loganga", "new project")
 
 	db.FunctionCallCount = 0

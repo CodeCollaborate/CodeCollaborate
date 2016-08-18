@@ -15,7 +15,7 @@ var filePathSeparator = strconv.QuoteRune(os.PathSeparator)[1:2]
 // FileWrite writes the file with the given bytes to a calculated path, and
 // returns that path so it can be put in MySQL
 func (di *DatabaseImpl) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
-	relFilePath, err := calculateFilePathPath(relpath, filename, projectID)
+	relFilePath, err := calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return "", err
 	}
@@ -35,7 +35,7 @@ func (di *DatabaseImpl) FileWrite(relpath string, filename string, projectID int
 // FileDelete deletes the file with the given metadata from the file system
 // Couple this with dbfs.MySQLFileDelete and dbfs.CBDeleteFile
 func (di *DatabaseImpl) FileDelete(relpath string, filename string, projectID int64) error {
-	relFilePath, err := calculateFilePathPath(relpath, filename, projectID)
+	relFilePath, err := calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (di *DatabaseImpl) FileDelete(relpath string, filename string, projectID in
 
 // FileRead returns the project file from the calculated location on the disk
 func (di *DatabaseImpl) FileRead(relpath string, filename string, projectID int64) (*[]byte, error) {
-	relFilePath, err := calculateFilePathPath(relpath, filename, projectID)
+	relFilePath, err := calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return new([]byte), err
 	}
@@ -56,11 +56,11 @@ func (di *DatabaseImpl) FileRead(relpath string, filename string, projectID int6
 
 // FileMove moves a file form the starting path to the end path
 func (di *DatabaseImpl) FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error {
-	startRelFilePath, err := calculateFilePathPath(startRelpath, startFilename, projectID)
+	startRelFilePath, err := calculateFilePath(startRelpath, startFilename, projectID)
 	if err != nil {
 		return err
 	}
-	endRelFilePath, err := calculateFilePathPath(endRelpath, endFilename, projectID)
+	endRelFilePath, err := calculateFilePath(endRelpath, endFilename, projectID)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (di *DatabaseImpl) FileMove(startRelpath string, startFilename string, endR
 	return err
 }
 
-func calculateFilePathPath(relpath string, filename string, projectID int64) (string, error) {
+func calculateFilePath(relpath string, filename string, projectID int64) (string, error) {
 	if strings.Contains(filename, filePathSeparator) {
 		return "", ErrMaliciousRequest
 	}
