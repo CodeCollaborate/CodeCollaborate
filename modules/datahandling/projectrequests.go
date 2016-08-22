@@ -491,11 +491,11 @@ type projectSubscribeRequest struct {
 }
 
 func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	subscribeClos := rabbitChannelSubscribeClosure{
+	subscribeClosure := rabbitChannelSubscribeClosure{
 		key: strconv.FormatInt(p.ProjectID, 10),
 		tag: p.Tag,
 	}
-	return []dhClosure{subscribeClos}, nil
+	return []dhClosure{subscribeClosure}, nil
 }
 
 func (p *projectSubscribeRequest) setAbstractRequest(req *abstractRequest) {
@@ -509,11 +509,11 @@ type projectUnsubscribeRequest struct {
 }
 
 func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	unsubscribeClos := rabbitChannelUnsubscribeClosure{
+	unsubscribeClosure := rabbitChannelUnsubscribeClosure{
 		key: strconv.FormatInt(p.ProjectID, 10),
 		tag: p.Tag,
 	}
-	return []dhClosure{unsubscribeClos}, nil
+	return []dhClosure{unsubscribeClosure}, nil
 }
 
 func (p *projectUnsubscribeRequest) setAbstractRequest(req *abstractRequest) {
