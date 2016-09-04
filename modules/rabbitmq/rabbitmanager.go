@@ -172,8 +172,10 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 	if cfg.Control == nil {
 		cfg.Control = NewControl()
 	}
-	defer close(cfg.Control.Exit)
-	defer close(cfg.Control.Subscription)
+	defer func() {
+		close(cfg.Control.Exit)
+		close(cfg.Control.Subscription)
+	}()
 
 	ch, err := GetChannel()
 	if err != nil {
@@ -269,8 +271,10 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 	if cfg.Control == nil {
 		cfg.Control = utils.NewControl()
 	}
-	defer close(cfg.Control.Exit)
-	defer close(cfg.Messages)
+	defer func() {
+		close(cfg.Messages)
+		close(cfg.Control.Exit)
+	}()
 
 	ch, err := GetChannel()
 	if err != nil {

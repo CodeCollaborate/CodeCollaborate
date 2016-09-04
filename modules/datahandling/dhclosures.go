@@ -2,11 +2,14 @@ package datahandling
 
 import (
 	"encoding/json"
-	"strconv"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
+
+var hostname, _ = os.Hostname()
 
 type dhClosure interface {
 	call(dh DataHandler) error
@@ -22,9 +25,11 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 	if err != nil {
 		return err
 	}
+	key := fmt.Sprintf("%s-%d", hostname, dh.WebsocketID)
+
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
-		RoutingKey:  strconv.FormatUint(dh.WebsocketID, 10),
+		RoutingKey:  key,
 		ContentType: cont.msg.Type,
 		Persistent:  false,
 		Message:     msgJSON,

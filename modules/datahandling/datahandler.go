@@ -59,6 +59,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 		closures, err = fullRequest.process(dh.Db)
 		if err != nil {
 			utils.LogOnError(err, "Failed to handle process request")
+			// TODO: forward error message onto client? (or at least inform that error occurred)
 		}
 	}
 
