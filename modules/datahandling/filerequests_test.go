@@ -65,11 +65,10 @@ func TestFileCreateRequest_Process(t *testing.T) {
 		t.Fatal("notification sent to wrong channel")
 	}
 
-	notFileID := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("FileID").Interface().(int64)
+	notFileID := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("File").FieldByName("FileID").Interface().(int64)
 	if FileID != notFileID {
 		t.Fatal("recieved different data from notification and response")
 	}
-
 }
 
 func TestFileRenameRequest_Process(t *testing.T) {
@@ -311,8 +310,8 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	newVersion := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("FileVersion").Interface().(int64)
-	if newVersion != req.BaseFileVersion+1 {
-		t.Fatalf("wrong file version, expected: %d, got: %d", req.BaseFileVersion+1, newVersion)
+	if newVersion != req.BaseFileVersion + 1 {
+		t.Fatalf("wrong file version, expected: %d, got: %d", req.BaseFileVersion + 1, newVersion)
 	}
 
 	// try the request again to prove that it rejects lower file versions
