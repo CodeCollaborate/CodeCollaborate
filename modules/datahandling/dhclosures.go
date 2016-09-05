@@ -2,7 +2,6 @@ package datahandling
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
@@ -28,7 +27,7 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
-		RoutingKey:  fmt.Sprintf("%s-%d", hostname, dh.WebsocketID),
+		RoutingKey:  rabbitmq.RabbitQueueName(dh.WebsocketID),
 		ContentType: cont.msg.Type,
 		Persistent:  false,
 		Message:     msgJSON,
@@ -49,7 +48,7 @@ func (cont toRabbitChannelClosure) call(dh DataHandler) error {
 	}
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
-		RoutingKey:  fmt.Sprintf("%d", cont.routingKey),
+		RoutingKey:  rabbitmq.RabbitProjectQueueName(cont.routingKey),
 		ContentType: cont.msg.Type,
 		Persistent:  false,
 		Message:     msgJSON,

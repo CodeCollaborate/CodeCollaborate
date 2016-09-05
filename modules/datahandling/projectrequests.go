@@ -2,10 +2,10 @@ package datahandling
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
 var projectRequestsSetup = false
@@ -491,7 +491,7 @@ type projectSubscribeRequest struct {
 
 func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	subscribeClosure := rabbitChannelSubscribeClosure{
-		key: strconv.FormatInt(p.ProjectID, 10),
+		key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		tag: p.Tag,
 	}
 	return []dhClosure{subscribeClosure}, nil
@@ -509,7 +509,7 @@ type projectUnsubscribeRequest struct {
 
 func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	unsubscribeClosure := rabbitChannelUnsubscribeClosure{
-		key: strconv.FormatInt(p.ProjectID, 10),
+		key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		tag: p.Tag,
 	}
 	return []dhClosure{unsubscribeClosure}, nil
