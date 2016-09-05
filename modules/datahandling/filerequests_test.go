@@ -2,7 +2,6 @@ package datahandling
 
 import (
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -60,8 +59,7 @@ func TestFileCreateRequest_Process(t *testing.T) {
 	// is the data actually correct
 	FileID := reflect.ValueOf(resp.Data).FieldByName("FileID").Interface().(int64)
 
-	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
-	if route != projectid {
+	if closure.routingKey != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -112,8 +110,7 @@ func TestFileRenameRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
-	if route != projectid {
+	if closure.routingKey != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -172,8 +169,7 @@ func TestFileMoveRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
-	if route != projectid {
+	if closure.routingKey != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -231,8 +227,7 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
-	if route != projectid {
+	if closure.routingKey != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -290,8 +285,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
-	if route != projectid {
+	if closure.routingKey != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 

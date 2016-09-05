@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -39,7 +38,7 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 
 type toRabbitChannelClosure struct {
 	msg        *serverMessageWrapper
-	routingKey string
+	routingKey int64
 }
 
 // toRabbitChannelClosure.call is the function that will forward a server message to a channel based on the given routing key
@@ -50,7 +49,7 @@ func (cont toRabbitChannelClosure) call(dh DataHandler) error {
 	}
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
-		RoutingKey:  cont.routingKey,
+		RoutingKey:  fmt.Sprintf("%d", cont.routingKey),
 		ContentType: cont.msg.Type,
 		Persistent:  false,
 		Message:     msgJSON,
