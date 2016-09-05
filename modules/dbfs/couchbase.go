@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/CodeCollaborate/Server/modules/config"
-	"gopkg.in/couchbaselabs/gocb.v1"
+	"github.com/couchbase/gocb"
 )
 
 type couchbaseConn struct {

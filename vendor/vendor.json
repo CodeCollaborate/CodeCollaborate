@@ -3,10 +3,28 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "6yx0/n2JGlqdBkdwT9qxF2YGvmI=",
+			"checksumSHA1": "BiJErGHx8vrD4w7R4gVZ7fCqP00=",
+			"path": "github.com/couchbase/gocb",
+			"revision": "c30d3a7562e0f93379ca5699fa3d24929ba75aad",
+			"revisionTime": "2016-07-27T23:51:05Z"
+		},
+		{
+			"checksumSHA1": "cT/dcEd4iioWi6q/Pi8sTF9gHiE=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "3654d25ec346ee8ce71a68431025458d52a38ac0",
+			"revisionTime": "2016-06-02T00:10:21Z"
+		},
+		{
+			"checksumSHA1": "mMHT+mzAgdReYgu8zCqQxI1BnLk=",
 			"path": "github.com/gorilla/websocket",
-			"revision": "e2e3d8414d0fbae04004f151979f4e27c6747fe7",
-			"revisionTime": "2016-03-13T18:57:37Z"
+			"revision": "5e2e56d5dfd46884df1036f828777ee6273f2cff",
+			"revisionTime": "2016-07-18T23:08:34Z"
+		},
+		{
+			"checksumSHA1": "/5cyQRFZIJz9YXrxh+UHfFJ1Pmw=",
+			"path": "github.com/sermodigital/jose",
+			"revision": "fa74c9f8b6a7bf513e12d9447b1669f68991198c",
+			"revisionTime": "2016-05-27T07:52:16Z"
 		},
 		{
 			"checksumSHA1": "uboKbybSheSH99DWeX328g+tfbw=",

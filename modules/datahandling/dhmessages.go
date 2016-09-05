@@ -51,7 +51,6 @@ func commonJSON(req request, absReq *abstractRequest) (request, error) {
 type serverMessageWrapper struct {
 	Type          string
 	Timestamp     int64
-	RoutingKey    string
 	ServerMessage serverMessage
 }
 

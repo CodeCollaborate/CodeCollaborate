@@ -1,14 +1,21 @@
 package datahandling
 
 import (
-	"strconv"
 	"time"
 
+	"fmt"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
 var fileRequestsSetup = false
 var newFileVersion int64 = 1
+
+type File struct {
+	FileID       int64
+	Name         string
+	RelativePath string
+	Version      int64
+}
 
 // initProjectRequests populates the requestMap from requestmap.go with the appropriate constructors for the project methods
 func initFileRequests() {
@@ -59,13 +66,12 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
-	not.RoutingKey = strconv.FormatInt(f.ProjectID, 10)
 
 	_, err := db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
 	if err != nil {
@@ -107,17 +113,16 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Method:     f.Method,
 		ResourceID: f.ProjectID,
 		Data: struct {
-			FileID       int64
-			Name         string
-			RelativePath string
-			Version      int64
+			File File
 		}{
-			FileID:       fileID,
-			Name:         f.Name,
-			RelativePath: f.RelativePath,
-			Version:      newFileVersion,
+			File: File{
+				FileID:       fileID,
+				Name:         f.Name,
+				RelativePath: f.RelativePath,
+				Version:      newFileVersion,
+			},
 		}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", f.ProjectID)}}, nil
 }
 
 // File.Rename
@@ -133,7 +138,7 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
@@ -150,7 +155,6 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
-	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
 	err = db.MySQLFileRename(f.FileID, f.NewName)
@@ -176,7 +180,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewName: f.NewName,
 		}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", fileMeta.ProjectID)}}, nil
 }
 
 // File.Move
@@ -192,7 +196,7 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
@@ -209,7 +213,6 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
-	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
 	err = db.MySQLFileMove(f.FileID, f.NewPath)
@@ -235,7 +238,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewPath: f.NewPath,
 		}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", fileMeta.ProjectID)}}, nil
 }
 
 // File.Delete
@@ -250,7 +253,7 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
@@ -267,7 +270,6 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
-	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
 	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
@@ -294,7 +296,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data:       struct{}{}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", fileMeta.ProjectID)}}, nil
 }
 
 // File.Change
@@ -311,7 +313,7 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
@@ -328,7 +330,6 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
-	not.RoutingKey = strconv.FormatInt(fileMeta.ProjectID, 10)
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
 	// TODO (normal/required): verify changes are valid changes
@@ -366,7 +367,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Changes:         f.Changes,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", fileMeta.ProjectID)}}, nil
 }
 
 // File.Pull
@@ -383,7 +384,7 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	res.ServerMessage = response{

@@ -77,7 +77,7 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projectID, err := db.MySQLProjectCreate(p.SenderID, p.Name)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	if err != nil {
@@ -122,13 +122,12 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	err := db.MySQLProjectRename(p.ProjectID, p.NewName)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
-	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -152,7 +151,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewName: p.NewName,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
 }
 
 // Project.GetPermissionConstants
@@ -168,7 +167,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure
 	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 	res.ServerMessage = response{
 		Status: unimplemented,
@@ -191,13 +190,12 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 	err := db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
-	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -224,7 +222,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			PermissionLevel: p.PermissionLevel,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -243,13 +241,12 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 	err := db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
-	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -274,7 +271,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			RevokeUsername: p.RevokeUsername,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -292,7 +289,7 @@ func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 	res.ServerMessage = response{
 		Status: unimplemented,
@@ -345,7 +342,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	resultData = resultData[:i]
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	if errOut != nil {
@@ -407,7 +404,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	files, err := db.MySQLProjectGetFiles(p.ProjectID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	if err != nil {
@@ -528,13 +525,12 @@ type projectDeleteRequest struct {
 
 func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	not := new(serverMessageWrapper)
 	not.Timestamp = res.Timestamp
 	not.Type = "Notification"
-	not.RoutingKey = strconv.FormatInt(p.ProjectID, 10)
 
 	err := db.MySQLProjectDelete(p.ProjectID, p.SenderID)
 	if err != nil {
@@ -563,7 +559,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		ResourceID: p.ProjectID,
 		Data:       struct{}{}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {

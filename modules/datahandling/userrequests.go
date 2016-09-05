@@ -62,7 +62,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	err := db.MySQLUserRegister(newUser)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	if err != nil {
@@ -94,15 +94,24 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// ?? to verify pass ??
 	// ??  ??   ??   ??  ??
 
-	fmt.Printf("Recieved login request from %s\n", f.Username)
+	fmt.Printf("Received login request from %s\n", f.Username)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 	res.ServerMessage = response{
-		Status: unimplemented,
+		Status: success,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
+		Data: struct {
+			Token string
+		}{
+			Token: "TEST_TOKEN",
+		}}
+
+	//res.ServerMessage = response{
+	//	Status: unimplemented,
+	//	Tag:    f.Tag,
+	//	Data:   struct{}{}}
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
@@ -133,7 +142,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	users = users[:index]
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	if len(users) < 0 {
@@ -178,7 +187,7 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projects, err := db.MySQLUserProjects(f.SenderID)
 
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	if err != nil {

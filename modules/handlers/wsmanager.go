@@ -103,6 +103,7 @@ func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *rabbitmq.Rabbit
 			Keys:         []string{},
 			IsWorkQueue:  false,
 			HandleMessageFunc: func(msg rabbitmq.AMQPMessage) error {
+				fmt.Printf("Sending Message: %s\n", msg.Message)
 				return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
 			},
 			Control: ctrl,

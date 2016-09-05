@@ -2,11 +2,14 @@ package datahandling
 
 import (
 	"encoding/json"
-	"strconv"
 	"time"
 
+	"fmt"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"os"
 )
+
+var hostname, _ = os.Hostname()
 
 type dhClosure interface {
 	call(dh DataHandler) error
@@ -22,9 +25,10 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 	if err != nil {
 		return err
 	}
+
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
-		RoutingKey:  strconv.FormatUint(dh.WebsocketID, 10),
+		RoutingKey:  fmt.Sprintf("%s-%d", hostname, dh.WebsocketID),
 		ContentType: cont.msg.Type,
 		Persistent:  false,
 		Message:     msgJSON,
@@ -33,7 +37,8 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 }
 
 type toRabbitChannelClosure struct {
-	msg *serverMessageWrapper
+	msg        *serverMessageWrapper
+	routingKey string
 }
 
 // toRabbitChannelClosure.call is the function that will forward a server message to a channel based on the given routing key
@@ -44,7 +49,7 @@ func (cont toRabbitChannelClosure) call(dh DataHandler) error {
 	}
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
-		RoutingKey:  cont.msg.RoutingKey,
+		RoutingKey:  cont.routingKey,
 		ContentType: cont.msg.Type,
 		Persistent:  false,
 		Message:     msgJSON,
@@ -59,7 +64,7 @@ type rabbitChannelSubscribeClosure struct {
 
 func (cont rabbitChannelSubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	// I (joel) don't believe we actually have a way to know here if this subscribe throws an error
@@ -91,7 +96,7 @@ type rabbitChannelUnsubscribeClosure struct {
 
 func (cont rabbitChannelUnsubscribeClosure) call(dh DataHandler) error {
 	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().UnixNano()
+	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
 	// I (joel) don't believe we actually have a way to know here if this subscribe throws an error

@@ -52,7 +52,7 @@ func TestFileCreateRequest_Process(t *testing.T) {
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg
+	closure := closures[1].(toRabbitChannelClosure)
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
@@ -60,12 +60,12 @@ func TestFileCreateRequest_Process(t *testing.T) {
 	// is the data actually correct
 	FileID := reflect.ValueOf(resp.Data).FieldByName("FileID").Interface().(int64)
 
-	route, err := strconv.ParseInt(not.RoutingKey, 10, 64)
+	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
 	if route != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
-	notFileID := reflect.ValueOf(not.ServerMessage.(notification).Data).FieldByName("FileID").Interface().(int64)
+	notFileID := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("FileID").Interface().(int64)
 	if FileID != notFileID {
 		t.Fatal("recieved different data from notification and response")
 	}
@@ -107,23 +107,23 @@ func TestFileRenameRequest_Process(t *testing.T) {
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg
+	closure := closures[1].(toRabbitChannelClosure)
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(not.RoutingKey, 10, 64)
+	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
 	if route != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
-	notFileID := not.ServerMessage.(notification).ResourceID
+	notFileID := closure.msg.ServerMessage.(notification).ResourceID
 	if fileid != notFileID {
 		t.Fatal("wrong FileID recieved in notification")
 	}
 
-	filename := reflect.ValueOf(not.ServerMessage.(notification).Data).FieldByName("NewName").Interface().(string)
+	filename := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("NewName").Interface().(string)
 	if filename != req.NewName {
 		t.Fatal("wrong new filename recieved in notification")
 	}
@@ -167,23 +167,23 @@ func TestFileMoveRequest_Process(t *testing.T) {
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg
+	closure := closures[1].(toRabbitChannelClosure)
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(not.RoutingKey, 10, 64)
+	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
 	if route != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
-	notFileID := not.ServerMessage.(notification).ResourceID
+	notFileID := closure.msg.ServerMessage.(notification).ResourceID
 	if fileid != notFileID {
 		t.Fatal("wrong FileID recieved in notification")
 	}
 
-	filepath := reflect.ValueOf(not.ServerMessage.(notification).Data).FieldByName("NewPath").Interface().(string)
+	filepath := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("NewPath").Interface().(string)
 	if filepath != req.NewPath {
 		t.Fatal("wrong new filepath recieved in notification")
 	}
@@ -226,18 +226,18 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg
+	closure := closures[1].(toRabbitChannelClosure)
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(not.RoutingKey, 10, 64)
+	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
 	if route != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
-	notFileID := not.ServerMessage.(notification).ResourceID
+	notFileID := closure.msg.ServerMessage.(notification).ResourceID
 	if fileid != notFileID {
 		t.Fatal("wrong FileID recieved in notification")
 	}
@@ -285,23 +285,23 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg
+	closure := closures[1].(toRabbitChannelClosure)
 	// did the server return success status
 	if resp.Status != success {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	route, err := strconv.ParseInt(not.RoutingKey, 10, 64)
+	route, err := strconv.ParseInt(closure.routingKey, 10, 64)
 	if route != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
-	notFileID := not.ServerMessage.(notification).ResourceID
+	notFileID := closure.msg.ServerMessage.(notification).ResourceID
 	if fileid != notFileID {
 		t.Fatal("wrong FileID recieved in notification")
 	}
 
-	changes := reflect.ValueOf(not.ServerMessage.(notification).Data).FieldByName("Changes").Interface().([]string)
+	changes := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("Changes").Interface().([]string)
 	if changes[0] != req.Changes[0] {
 		t.Fatal("wrong changes recieved in notification")
 	}
@@ -310,7 +310,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 		t.Fatal("changes not inserted")
 	}
 
-	newVersion := reflect.ValueOf(not.ServerMessage.(notification).Data).FieldByName("FileVersion").Interface().(int64)
+	newVersion := reflect.ValueOf(closure.msg.ServerMessage.(notification).Data).FieldByName("FileVersion").Interface().(int64)
 	if newVersion != req.BaseFileVersion+1 {
 		t.Fatalf("wrong file version, expected: %d, got: %d", req.BaseFileVersion+1, newVersion)
 	}

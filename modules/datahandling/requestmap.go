@@ -21,10 +21,12 @@ func init() {
 }
 
 func getFullRequest(req *abstractRequest) (request, error) {
-	if (*req).SenderToken == "" {
+
+	if _, contains := unauthenticatedRequestMap[(*req).Resource+"."+(*req).Method]; contains {
 		// unauthenticated request
 		return unauthenticatedRequest(req)
 	}
+
 	// authenticated request
 	if authenticate(*req) {
 		return authenticatedRequest(req)

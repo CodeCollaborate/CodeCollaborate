@@ -39,7 +39,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 
 	if err != nil {
 		res := new(serverMessageWrapper)
-		res.Timestamp = time.Now().UnixNano()
+		res.Timestamp = time.Now().Unix()
 		res.Type = "Response"
 		if err == ErrAuthenticationFailed {
 			utils.LogOnError(err, "User not logged in")
