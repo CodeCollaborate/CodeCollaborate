@@ -2,11 +2,11 @@ package datahandling
 
 import (
 	"encoding/json"
-	"time"
-
 	"fmt"
-	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"os"
+
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"time"
 )
 
 var hostname, _ = os.Hostname()
