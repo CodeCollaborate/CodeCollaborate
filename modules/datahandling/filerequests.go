@@ -4,12 +4,15 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
 var fileRequestsSetup = false
 var newFileVersion int64 = 1
 
+// File aggregates information relating to an individual file
+// TODO(wongb): Change all responses and notifications to use this struct
 type File struct {
 	FileID       int64
 	Name         string

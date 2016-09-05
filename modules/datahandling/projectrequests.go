@@ -10,6 +10,8 @@ import (
 
 var projectRequestsSetup = false
 
+// TODO(wongb): Create & Use a Project struct
+
 // initProjectRequests populates the requestMap from requestmap.go with the appropriate constructors for the project methods
 func initProjectRequests() {
 	if projectRequestsSetup {

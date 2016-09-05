@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"time"
+
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
 var hostname, _ = os.Hostname()
