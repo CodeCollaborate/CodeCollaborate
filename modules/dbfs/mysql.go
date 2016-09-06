@@ -164,7 +164,7 @@ func (di *DatabaseImpl) MySQLUserLookup(username string) (user UserMeta, err err
 }
 
 // MySQLUserProjects returns the projectID, the project name, and the permission level the user `username` has on that project
-func (di *DatabaseImpl) MySQLUserProjects(username string) (projects []ProjectMeta, err error) {
+func (di *DatabaseImpl) MySQLUserProjects(username string) ([]ProjectMeta, error) {
 	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return nil, err
@@ -175,9 +175,11 @@ func (di *DatabaseImpl) MySQLUserProjects(username string) (projects []ProjectMe
 		return nil, err
 	}
 
+	projects := []ProjectMeta{}
+
 	for rows.Next() {
 		project := ProjectMeta{}
-		err = rows.Scan(&project.ProjectID, &project.ProjectName, &project.PermissionLevel)
+		err = rows.Scan(&project.ProjectID, &project.Name, &project.PermissionLevel)
 		if err != nil {
 			return nil, err
 		}

@@ -337,7 +337,7 @@ DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_lookup`(IN projectID bigint(20))
   BEGIN
     SELECT `Project`.`Name`, `Permissions`.`Username`, `Permissions`.`PermissionLevel`, `Permissions`.`GrantedBy`, `Permissions`.`GrantedDate`
-    FROM Project LEFT JOIN Permissions
+    FROM Project JOIN Permissions
         ON Project.ProjectID = Permissions.ProjectID
     WHERE Project.ProjectID = projectID
     UNION

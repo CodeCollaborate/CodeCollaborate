@@ -398,7 +398,6 @@ type fileLookupResult struct {
 	Creator      string
 	CreationDate time.Time
 	RelativePath string
-	ProjectID    int64
 	Version      int64
 }
 
@@ -437,7 +436,6 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Creator:      file.Creator,
 				CreationDate: file.CreationDate,
 				RelativePath: file.RelativePath,
-				ProjectID:    file.ProjectID,
 				Version:      version}
 			i++
 		}

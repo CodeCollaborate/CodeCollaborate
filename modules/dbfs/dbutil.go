@@ -31,7 +31,7 @@ type ProjectPermission struct {
 // ProjectMeta is the type which represents a row in the MySQL `Project` table
 type ProjectMeta struct {
 	ProjectID       int64
-	ProjectName     string
+	Name            string
 	PermissionLevel int
 }
 
