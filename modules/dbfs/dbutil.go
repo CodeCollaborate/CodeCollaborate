@@ -8,6 +8,9 @@ import (
 // ErrNoDbChange : No rows or values in the DB were changed, which was an unexpected result
 var ErrNoDbChange = errors.New("No entries were correctly altered")
 
+// ErrNoData : No rows or values were found for this value in the database
+var ErrNoData = errors.New("No entries were found")
+
 // ErrVersionOutOfDate : The request attempted to mutate an out of date resource
 var ErrVersionOutOfDate = errors.New("The request attempted to modify an out of date resource")
 
