@@ -141,7 +141,7 @@ func (dm *DatabaseMock) MySQLProjectCreate(username string, projectName string) 
 	proj := ProjectMeta{
 		PermissionLevel: 10,
 		ProjectID:       dm.ProjectIDCounter,
-		ProjectName:     projectName,
+		Name:            projectName,
 	}
 	dm.ProjectIDCounter++
 	dm.Projects[username] = append(dm.Projects[username], proj)
@@ -195,7 +195,7 @@ func (dm *DatabaseMock) MySQLProjectGrantPermission(projectID int64, grantUserna
 				dm.Projects[grantUsername] = append(dm.Projects[grantUsername], ProjectMeta{
 					PermissionLevel: permissionLevel,
 					ProjectID:       projectID,
-					ProjectName:     proj.ProjectName,
+					Name:            proj.Name,
 				})
 				found = true
 			}
@@ -237,7 +237,7 @@ func (dm *DatabaseMock) MySQLProjectRename(projectID int64, newName string) erro
 	for _, projects := range dm.Projects {
 		for _, project := range projects {
 			if project.ProjectID == projectID {
-				project.ProjectName = newName
+				project.Name = newName
 				found = true
 			}
 		}
@@ -255,7 +255,7 @@ func (dm *DatabaseMock) MySQLProjectLookup(projectID int64, username string) (na
 	for user, projects := range dm.Projects {
 		for _, project := range projects {
 			if project.ProjectID == projectID {
-				name = project.ProjectName
+				name = project.Name
 				// NOTE: we're not tracking who the permission is granted by (because I'm lazy)
 				permissions[user] = ProjectPermission{
 					PermissionLevel: project.PermissionLevel,

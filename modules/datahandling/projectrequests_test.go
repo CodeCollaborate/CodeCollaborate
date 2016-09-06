@@ -88,7 +88,7 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 	}
 
 	project := db.Projects["loganga"][0]
-	if project.ProjectName != "new stuff" || project.ProjectID != projectID {
+	if project.Name != "new stuff" || project.ProjectID != projectID {
 		t.Fatal("wrong project added somehow")
 	}
 
@@ -108,7 +108,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 	db.Users["loganga"] = geneMeta
 	projectmeta := dbfs.ProjectMeta{
 		ProjectID:       req.ProjectID,
-		ProjectName:     "new stuff",
+		Name:            "new stuff",
 		PermissionLevel: 10,
 	}
 	db.Projects["loganga"] = []dbfs.ProjectMeta{projectmeta}

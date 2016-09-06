@@ -13,7 +13,7 @@ var newFileVersion int64 = 1
 // TODO(wongb): Change all responses and notifications to use this struct; add creator and creation date
 type File struct {
 	FileID       int64
-	Filename         string
+	Filename     string
 	RelativePath string
 	Version      int64
 }

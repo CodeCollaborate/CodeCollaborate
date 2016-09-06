@@ -153,8 +153,8 @@ func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 	if len(projects) != 1 {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(projects))
 	}
-	if projects[0].ProjectID == -1 || projects[0].ProjectName != "codecollabcore" || projects[0].PermissionLevel != 10 {
-		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
+	if projects[0].ProjectID == -1 || projects[0].Name != "codecollabcore" || projects[0].PermissionLevel != 10 {
+		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 }
 
@@ -315,8 +315,8 @@ func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 	if len(projects) != 1 {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(projects))
 	}
-	if projects[0].ProjectID != projectID || projects[0].ProjectName != "codecollabcore" || projects[0].PermissionLevel != 5 {
-		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
+	if projects[0].ProjectID != projectID || projects[0].Name != "codecollabcore" || projects[0].PermissionLevel != 5 {
+		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
 	err = di.MySQLProjectDelete(projectID, "jshap70")
@@ -425,7 +425,7 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(projects))
 	}
 	if projects[0].ProjectID != projectID || projects[0].PermissionLevel != 5 {
-		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
+		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
 	di.MySQLProjectRevokePermission(projectID, "fahslaj", "jshap70")
@@ -468,8 +468,8 @@ func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
 	_ = di.MySQLUserDelete("jshap70", "secret")
 
-	if projects[0].ProjectID != projectID || projects[0].ProjectName != "newName" {
-		t.Fatalf("Wrong return, got project:%v %v", projects[0].ProjectName, projects[0].ProjectID)
+	if projects[0].ProjectID != projectID || projects[0].Name != "newName" {
+		t.Fatalf("Wrong return, got project:%v %v", projects[0].Name, projects[0].ProjectID)
 	}
 }
 
