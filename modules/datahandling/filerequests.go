@@ -12,10 +12,10 @@ var fileRequestsSetup = false
 var newFileVersion int64 = 1
 
 // File aggregates information relating to an individual file
-// TODO(wongb): Change all responses and notifications to use this struct
+// TODO(wongb): Change all responses and notifications to use this struct; add creator and creation date
 type File struct {
 	FileID       int64
-	Name         string
+	Filename         string
 	RelativePath string
 	Version      int64
 }
@@ -120,7 +120,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			File: File{
 				FileID:       fileID,
-				Name:         f.Name,
+				Filename:     f.Name,
 				RelativePath: f.RelativePath,
 				Version:      newFileVersion,
 			},
