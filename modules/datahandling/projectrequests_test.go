@@ -3,7 +3,6 @@ package datahandling
 import (
 	"log"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/config"
@@ -404,9 +403,9 @@ func TestProjectSubscribe_Process(t *testing.T) {
 
 	sub := closures[0].(rabbitChannelSubscribeClosure)
 	// did the server return success status
-	val, err := strconv.ParseInt(sub.key, 10, 64)
-	if val != req.ProjectID {
-		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %d, got: %d", req.ProjectID, val)
+	channelKey := rabbitmq.RabbitProjectQueueName(req.ProjectID)
+	if sub.key != channelKey {
+		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %s, got: %s", channelKey, sub.key)
 	}
 }
 
@@ -433,9 +432,9 @@ func TestProjectUnsubscribe_Process(t *testing.T) {
 
 	sub := closures[0].(rabbitChannelUnsubscribeClosure)
 	// did the server return success status
-	val, err := strconv.ParseInt(sub.key, 10, 64)
-	if val != req.ProjectID {
-		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %d, got: %d", req.ProjectID, val)
+	channelKey := rabbitmq.RabbitProjectQueueName(req.ProjectID)
+	if sub.key != channelKey {
+		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %s, got: %s", channelKey, sub.key)
 	}
 }
 

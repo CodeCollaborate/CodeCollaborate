@@ -2,10 +2,10 @@ package datahandling
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
 var projectRequestsSetup = false
@@ -153,7 +153,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewName: p.NewName,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
 }
 
 // Project.GetPermissionConstants
@@ -224,7 +224,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			PermissionLevel: p.PermissionLevel,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -273,7 +273,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			RevokeUsername: p.RevokeUsername,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -489,7 +489,7 @@ type projectSubscribeRequest struct {
 
 func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	subscribeClosure := rabbitChannelSubscribeClosure{
-		key: strconv.FormatInt(p.ProjectID, 10),
+		key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		tag: p.Tag,
 	}
 	return []dhClosure{subscribeClosure}, nil
@@ -507,7 +507,7 @@ type projectUnsubscribeRequest struct {
 
 func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	unsubscribeClosure := rabbitChannelUnsubscribeClosure{
-		key: strconv.FormatInt(p.ProjectID, 10),
+		key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		tag: p.Tag,
 	}
 	return []dhClosure{unsubscribeClosure}, nil
@@ -559,7 +559,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		ResourceID: p.ProjectID,
 		Data:       struct{}{}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fmt.Sprintf("%d", p.ProjectID)}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {

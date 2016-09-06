@@ -50,7 +50,17 @@ type AMQPSubCfg struct {
 
 // QueueName generates the Queue
 func (cfg AMQPSubCfg) QueueName() string {
-	return fmt.Sprintf("%s-%d", hostname, cfg.QueueID)
+	return RabbitQueueName(cfg.QueueID)
+}
+
+// RabbitQueueName returns the name of the Queue a websocket with the given ID would have
+func RabbitQueueName(queueID uint64) string {
+	return fmt.Sprintf("%s-%d", hostname, queueID)
+}
+
+// RabbitProjectQueueName returns the name of the Queue a project with the given ID would have
+func RabbitProjectQueueName(projectID int64) string {
+	return fmt.Sprintf("Project-%d", projectID)
 }
 
 // AMQPPubCfg represents the settings needed to create a new publisher
