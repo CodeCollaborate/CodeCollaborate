@@ -153,7 +153,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewName: p.NewName,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }
 
 // Project.GetPermissionConstants
@@ -224,7 +224,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			PermissionLevel: p.PermissionLevel,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -273,7 +273,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			RevokeUsername: p.RevokeUsername,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -559,7 +559,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		ResourceID: p.ProjectID,
 		Data:       struct{}{}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: p.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {

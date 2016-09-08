@@ -123,7 +123,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Version:      newFileVersion,
 			},
 		}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: f.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: f.ProjectID}}, nil
 }
 
 // File.Rename
@@ -181,7 +181,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewName: f.NewName,
 		}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fileMeta.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
 // File.Move
@@ -239,7 +239,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewPath: f.NewPath,
 		}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fileMeta.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
 // File.Delete
@@ -297,7 +297,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data:       struct{}{}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fileMeta.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
 // File.Change
@@ -368,7 +368,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Changes:         f.Changes,
 		}}
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, routingKey: fileMeta.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
 // File.Pull

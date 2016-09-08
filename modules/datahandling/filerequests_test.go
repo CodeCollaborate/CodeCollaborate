@@ -59,7 +59,7 @@ func TestFileCreateRequest_Process(t *testing.T) {
 	// is the data actually correct
 	FileID := reflect.ValueOf(resp.Data).FieldByName("FileID").Interface().(int64)
 
-	if closure.routingKey != projectid {
+	if closure.projectID != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -110,7 +110,7 @@ func TestFileRenameRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	if closure.routingKey != projectid {
+	if closure.projectID != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -169,7 +169,7 @@ func TestFileMoveRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	if closure.routingKey != projectid {
+	if closure.projectID != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -227,7 +227,7 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	if closure.routingKey != projectid {
+	if closure.projectID != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
@@ -285,7 +285,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	if closure.routingKey != projectid {
+	if closure.projectID != projectid {
 		t.Fatal("notification sent to wrong channel")
 	}
 
