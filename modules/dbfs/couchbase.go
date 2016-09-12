@@ -147,6 +147,10 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	// check the version is accurate and get the object's cas,
 	// then use it in the MutateIn call to verify the document hasn't updated underneath us
 	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileID, 10)).Get("version").Execute()
+	if err != nil {
+		return -1, ErrResourceNotFound
+	}
+
 	cas := frag.Cas()
 	var version int64
 	frag.Content("version", &version)

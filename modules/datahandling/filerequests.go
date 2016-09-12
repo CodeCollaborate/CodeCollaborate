@@ -342,6 +342,12 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Tag:    f.Tag,
 				Data:   struct{}{}}
 		}
+		if err == dbfs.ErrResourceNotFound {
+			res.ServerMessage = response{
+				Status: notFound,
+				Tag:    f.Tag,
+				Data:   struct{}{}}
+		}
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 

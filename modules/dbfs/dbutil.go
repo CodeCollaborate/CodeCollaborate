@@ -11,6 +11,9 @@ var ErrNoDbChange = errors.New("No entries were correctly altered")
 // ErrVersionOutOfDate : The request attempted to mutate an out of date resource
 var ErrVersionOutOfDate = errors.New("The request attempted to modify an out of date resource")
 
+// ErrVersionOutOfDate : The request attempted to mutate an out of date resource
+var ErrResourceNotFound = errors.New("No such resource was found")
+
 // ErrDbNotInitialized : Active db connection does not exist
 var ErrDbNotInitialized = errors.New("The database was not propperly initialized before execution")
 
