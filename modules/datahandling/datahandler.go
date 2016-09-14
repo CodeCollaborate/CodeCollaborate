@@ -38,6 +38,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	var closures []dhClosure
 
 	if err != nil {
+		// TODO(shapiro): create response and notification factory
 		res := new(serverMessageWrapper)
 		res.Timestamp = time.Now().Unix()
 		res.Type = "Response"
@@ -46,13 +47,15 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 			res.ServerMessage = response{
 				Status: unauthorized,
 				Tag:    req.Tag,
-				Data:   struct{}{}}
+				Data:   struct{}{},
+			}
 		} else {
 			utils.LogOnError(err, "Failed to construct full request")
 			res.ServerMessage = response{
 				Status: unimplemented,
 				Tag:    req.Tag,
-				Data:   struct{}{}}
+				Data:   struct{}{},
+			}
 		}
 		closures = []dhClosure{toSenderClosure{msg: res}}
 	} else {
@@ -64,9 +67,9 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	}
 
 	for _, closure := range closures {
-		erro := closure.call(dh)
-		if erro != nil {
-			utils.LogOnError(erro, "Failed to complete continuation")
+		err := closure.call(dh)
+		if err != nil {
+			utils.LogOnError(err, "Failed to complete continuation")
 		}
 	}
 

@@ -79,7 +79,8 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		res.ServerMessage = response{
 			Status: fail,
 			Tag:    f.Tag,
-			Data:   struct{}{}}
+			Data:   struct{}{},
+		}
 		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 
@@ -88,7 +89,8 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		res.ServerMessage = response{
 			Status: fail,
 			Tag:    f.Tag,
-			Data:   struct{}{}}
+			Data:   struct{}{},
+		}
 		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 
@@ -98,7 +100,8 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		res.ServerMessage = response{
 			Status: servfail,
 			Tag:    f.Tag,
-			Data:   struct{}{}}
+			Data:   struct{}{},
+		}
 		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 	res.ServerMessage = response{
@@ -108,7 +111,8 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			FileID int64
 		}{
 			FileID: fileID,
-		}}
+		},
+	}
 	not.ServerMessage = notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
@@ -122,7 +126,8 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				RelativePath: f.RelativePath,
 				Version:      newFileVersion,
 			},
-		}}
+		},
+	}
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: f.ProjectID}}, nil
 }
 
@@ -149,16 +154,17 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: fail,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
-
-	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		Data:   struct{}{},
 	}
 
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
-	err = db.MySQLFileRename(f.FileID, f.NewName)
+	err := db.MySQLFileRename(f.FileID, f.NewName)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: res}}, err
+	}
+
+	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
@@ -171,7 +177,8 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
+		Data:   struct{}{},
+	}
 	not.ServerMessage = notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
@@ -180,7 +187,8 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewName string
 		}{
 			NewName: f.NewName,
-		}}
+		},
+	}
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
@@ -207,16 +215,17 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: fail,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
-
-	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		Data:   struct{}{},
 	}
 
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
-	err = db.MySQLFileMove(f.FileID, f.NewPath)
+	err := db.MySQLFileMove(f.FileID, f.NewPath)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: res}}, err
+	}
+
+	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
@@ -229,7 +238,8 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
+		Data:   struct{}{},
+	}
 	not.ServerMessage = notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
@@ -238,7 +248,8 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewPath string
 		}{
 			NewPath: f.NewPath,
-		}}
+		},
+	}
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
@@ -264,21 +275,22 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: fail,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
+		Data:   struct{}{},
+	}
+
+	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
+
+	err := db.MySQLFileDelete(f.FileID)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: res}}, err
+	}
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
-	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
-
 	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: res}}, err
-	}
-
-	err = db.MySQLFileDelete(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
@@ -291,13 +303,18 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
+		Data:   struct{}{},
+	}
 	not.ServerMessage = notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.FileID,
-		Data:       struct{}{}}
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
+		Data:       struct{}{},
+	}
+	return []dhClosure{
+		toSenderClosure{msg: res},
+		toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID},
+	}, nil
 }
 
 // File.Change
@@ -324,11 +341,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: fail,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
-
-	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		Data:   struct{}{},
 	}
 
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
@@ -340,13 +353,15 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			res.ServerMessage = response{
 				Status: versionOutOfDate,
 				Tag:    f.Tag,
-				Data:   struct{}{}}
+				Data:   struct{}{},
+			}
 		}
 		if err == dbfs.ErrResourceNotFound {
 			res.ServerMessage = response{
 				Status: notFound,
 				Tag:    f.Tag,
-				Data:   struct{}{}}
+				Data:   struct{}{},
+			}
 		}
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
@@ -358,21 +373,28 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			FileVersion int64
 		}{
 			FileVersion: version,
-		}}
+		},
+	}
 
 	not.ServerMessage = notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data: struct {
-			BaseFileVersion int64
+			BaseFileVersion int64 // TODO(wongb): check if BaseFileVersion is needed on notifications
 			FileVersion     int64
 			Changes         []string
 		}{
 			BaseFileVersion: f.BaseFileVersion,
 			FileVersion:     version,
 			Changes:         f.Changes,
-		}}
+		},
+	}
+
+	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: res}}, err
+	}
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
@@ -397,7 +419,8 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	res.ServerMessage = response{
 		Status: fail,
 		Tag:    f.Tag,
-		Data:   struct{}{}}
+		Data:   struct{}{},
+	}
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
@@ -423,7 +446,8 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			FileBytes: *rawFile,
 			Changes:   changes,
-		}}
+		},
+	}
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }

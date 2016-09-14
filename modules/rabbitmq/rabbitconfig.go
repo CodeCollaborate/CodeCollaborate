@@ -50,11 +50,11 @@ type AMQPSubCfg struct {
 
 // QueueName generates the Queue
 func (cfg AMQPSubCfg) QueueName() string {
-	return RabbitQueueName(cfg.QueueID)
+	return RabbitWebsocketQueueName(cfg.QueueID)
 }
 
-// RabbitQueueName returns the name of the Queue a websocket with the given ID would have
-func RabbitQueueName(queueID uint64) string {
+// RabbitWebsocketQueueName returns the name of the Queue a websocket with the given ID would have
+func RabbitWebsocketQueueName(queueID uint64) string {
 	return fmt.Sprintf("%s-%d", hostname, queueID)
 }
 

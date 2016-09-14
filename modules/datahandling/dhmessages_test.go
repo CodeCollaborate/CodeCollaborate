@@ -38,11 +38,11 @@ func TestCreateValidAbstractRequest(t *testing.T) {
 	if req.Data == nil {
 		t.Fail()
 	}
-	fullreq, err := getFullRequest(req)
+	fullReq, err := getFullRequest(req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if fullreq == nil {
+	if fullReq == nil {
 		t.Fatal("Could not parse full request")
 	}
 }

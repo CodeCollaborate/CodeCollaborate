@@ -2,13 +2,10 @@ package datahandling
 
 import (
 	"encoding/json"
-	"os"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
-
-var hostname, _ = os.Hostname()
 
 type dhClosure interface {
 	call(dh DataHandler) error
@@ -27,7 +24,7 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
-		RoutingKey:  rabbitmq.RabbitQueueName(dh.WebsocketID),
+		RoutingKey:  rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
 		ContentType: cont.msg.Type,
 		Persistent:  false,
 		Message:     msgJSON,
@@ -66,23 +63,17 @@ func (cont rabbitChannelSubscribeClosure) call(dh DataHandler) error {
 	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
-	// I (joel) don't believe we actually have a way to know here if this subscribe throws an error
+	// TODO(shapiro): find a way to tell the client if the subscription errored
 	dh.SubscriptionChan <- rabbitmq.Subscription{
 		Channel:     cont.key,
 		IsSubscribe: true,
 	}
 
-	//if err != nil {
-	//	res.ServerMessage = response{
-	//		Status: fail,
-	//		Tag:    p.Tag,
-	//		Data:   struct{}{}}
-	//} else {
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    cont.tag,
-		Data:   struct{}{}}
-	//}
+		Data:   struct{}{},
+	}
 	err := toSenderClosure{msg: res}.call(dh) // go ahead and send from here
 	return err
 
@@ -98,23 +89,17 @@ func (cont rabbitChannelUnsubscribeClosure) call(dh DataHandler) error {
 	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
 
-	// I (joel) don't believe we actually have a way to know here if this subscribe throws an error
+	// TODO(shapiro): find a way to tell the client if the subscription errored
 	dh.SubscriptionChan <- rabbitmq.Subscription{
 		Channel:     cont.key,
 		IsSubscribe: false,
 	}
 
-	//if err != nil {
-	//	res.ServerMessage = response{
-	//		Status: fail,
-	//		Tag:    p.Tag,
-	//		Data:   struct{}{}}
-	//} else {
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    cont.tag,
-		Data:   struct{}{}}
-	//}
+		Data:   struct{}{},
+	}
 	err := toSenderClosure{msg: res}.call(dh) // go ahead and send from here
 	return err
 }
