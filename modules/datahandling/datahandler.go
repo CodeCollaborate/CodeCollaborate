@@ -14,8 +14,8 @@ import (
 
 // DataHandler handles the json data received from the WebSocket connection.
 type DataHandler struct {
-	MessageChan      chan <- rabbitmq.AMQPMessage
-	SubscriptionChan chan <- rabbitmq.Subscription
+	MessageChan      chan<- rabbitmq.AMQPMessage
+	SubscriptionChan chan<- rabbitmq.Subscription
 	WebsocketID      uint64
 	Db               dbfs.DBFS
 }

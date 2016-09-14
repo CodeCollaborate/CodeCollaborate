@@ -63,9 +63,8 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
 			return []dhClosure{toSenderClosure{msg: newEmptyResponse(notFound, f.Tag)}}, err
-		} else {
-			return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 		}
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
 	return []dhClosure{toSenderClosure{msg: newEmptyResponse(success, f.Tag)}}, err
 }

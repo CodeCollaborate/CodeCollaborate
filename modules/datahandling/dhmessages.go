@@ -68,13 +68,13 @@ type response struct {
 
 func (message response) wrap() *serverMessageWrapper {
 	return &serverMessageWrapper{
-		Timestamp: time.Now().Unix(),
-		Type: "Response",
+		Timestamp:     time.Now().Unix(),
+		Type:          "Response",
 		ServerMessage: message,
 	}
 }
 
-func newEmptyResponse(status int, tag int64) *serverMessageWrapper{
+func newEmptyResponse(status int, tag int64) *serverMessageWrapper {
 	return response{
 		Status: status,
 		Tag:    tag,
@@ -92,8 +92,8 @@ type notification struct {
 
 func (message notification) wrap() *serverMessageWrapper {
 	return &serverMessageWrapper{
-		Timestamp: time.Now().Unix(),
-		Type: "Notification",
+		Timestamp:     time.Now().Unix(),
+		Type:          "Notification",
 		ServerMessage: message,
 	}
 }

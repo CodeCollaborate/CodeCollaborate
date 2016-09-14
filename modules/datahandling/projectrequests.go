@@ -298,18 +298,17 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				},
 			}.wrap()
 			return []dhClosure{toSenderClosure{msg: res}}, nil
-		} else {
-			res := response{
-				Status: partialfail,
-				Tag:    p.Tag,
-				Data: struct {
-					Projects []projectLookupResult
-				}{
-					Projects: resultData,
-				},
-			}.wrap()
-			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
+		res := response{
+			Status: partialfail,
+			Tag:    p.Tag,
+			Data: struct {
+				Projects []projectLookupResult
+			}{
+				Projects: resultData,
+			},
+		}.wrap()
+		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 
 	res := response{
@@ -394,18 +393,17 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				},
 			}.wrap()
 			return []dhClosure{toSenderClosure{msg: res}}, nil
-		} else {
-			res := response{
-				Status: partialfail,
-				Tag:    p.Tag,
-				Data: struct {
-					Files []fileLookupResult
-				}{
-					Files: resultData,
-				},
-			}.wrap()
-			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
+		res := response{
+			Status: partialfail,
+			Tag:    p.Tag,
+			Data: struct {
+				Files []fileLookupResult
+			}{
+				Files: resultData,
+			},
+		}.wrap()
+		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 	res := response{
 		Status: success,
@@ -476,8 +474,8 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	}
 
-	res:= newEmptyResponse(success, p.Tag)
-	not:= notification{
+	res := newEmptyResponse(success, p.Tag)
+	not := notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
