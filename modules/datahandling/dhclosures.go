@@ -2,7 +2,6 @@ package datahandling
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
@@ -59,9 +58,7 @@ type rabbitChannelSubscribeClosure struct {
 }
 
 func (cont rabbitChannelSubscribeClosure) call(dh DataHandler) error {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	// TODO(shapiro): find a way to tell the client if the subscription errored
 	dh.SubscriptionChan <- rabbitmq.Subscription{
@@ -85,9 +82,7 @@ type rabbitChannelUnsubscribeClosure struct {
 }
 
 func (cont rabbitChannelUnsubscribeClosure) call(dh DataHandler) error {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	// TODO(shapiro): find a way to tell the client if the subscription errored
 	dh.SubscriptionChan <- rabbitmq.Subscription{

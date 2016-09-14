@@ -3,6 +3,7 @@ package datahandling
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
@@ -69,6 +70,13 @@ func (message response) serverMessageType() string {
 	return "Response"
 }
 
+func newResponse() serverMessageWrapper {
+	res := new(serverMessageWrapper)
+	res.Timestamp = time.Now().Unix()
+	res.Type = "Response"
+	return res
+}
+
 // Notification is the type which is the unprompted server messages to clients
 type notification struct {
 	Resource   string
@@ -79,6 +87,13 @@ type notification struct {
 
 func (message notification) serverMessageType() string {
 	return "Notification"
+}
+
+func newNotification() serverMessageWrapper {
+	not := new(serverMessageWrapper)
+	not.Timestamp = time.Now().Unix()
+	not.Type = "Notification"
+	return not
 }
 
 /**

@@ -2,7 +2,6 @@ package datahandling
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -39,9 +38,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 
 	if err != nil {
 		// TODO(shapiro): create response and notification factory
-		res := new(serverMessageWrapper)
-		res.Timestamp = time.Now().Unix()
-		res.Type = "Response"
+		res := newResponse()
 		if err == ErrAuthenticationFailed {
 			utils.LogOnError(err, "User not logged in")
 			res.ServerMessage = response{

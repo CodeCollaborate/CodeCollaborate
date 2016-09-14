@@ -1,10 +1,6 @@
 package datahandling
 
-import (
-	"time"
-
-	"github.com/CodeCollaborate/Server/modules/dbfs"
-)
+import "github.com/CodeCollaborate/Server/modules/dbfs"
 
 var fileRequestsSetup = false
 var newFileVersion int64 = 1
@@ -66,13 +62,8 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	_, err := db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
 	if err != nil {
@@ -143,13 +134,8 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	res.ServerMessage = response{
 		Status: fail,
@@ -204,13 +190,8 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	res.ServerMessage = response{
 		Status: fail,
@@ -264,13 +245,8 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	res.ServerMessage = response{
 		Status: fail,
@@ -330,13 +306,8 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	res.ServerMessage = response{
 		Status: fail,
@@ -412,9 +383,7 @@ func (f *filePullRequest) setAbstractRequest(req *abstractRequest) {
 func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	res.ServerMessage = response{
 		Status: fail,

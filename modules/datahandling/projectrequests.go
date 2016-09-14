@@ -78,9 +78,7 @@ func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
 func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projectID, err := db.MySQLProjectCreate(p.SenderID, p.Name)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	if err != nil {
 		//if err == project already exists {
@@ -123,13 +121,8 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err := db.MySQLProjectRename(p.ProjectID, p.NewName)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -168,9 +161,7 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 	res.ServerMessage = response{
 		Status: unimplemented,
 		Tag:    p.Tag,
@@ -191,13 +182,8 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 
 	err := db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -242,13 +228,8 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 	// TODO: check if permission high enough on project
 	err := db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -290,9 +271,7 @@ func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 	// TODO: implement on redis (and actually implement redis)
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 	res.ServerMessage = response{
 		Status: unimplemented,
 		Tag:    p.Tag,
@@ -343,9 +322,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// shrink to cut off remainder left by errors
 	resultData = resultData[:i]
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	if errOut != nil {
 		if len(resultData) == 0 {
@@ -404,9 +381,7 @@ type fileLookupResult struct {
 func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	files, err := db.MySQLProjectGetFiles(p.ProjectID)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	if err != nil {
 		res.ServerMessage = response{
@@ -524,13 +499,8 @@ type projectDeleteRequest struct {
 }
 
 func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-
-	not := new(serverMessageWrapper)
-	not.Timestamp = res.Timestamp
-	not.Type = "Notification"
+	res := newResponse()
+	not := newNotification()
 
 	err := db.MySQLProjectDelete(p.ProjectID, p.SenderID)
 	if err != nil {

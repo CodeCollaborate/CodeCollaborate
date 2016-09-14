@@ -2,7 +2,6 @@ package datahandling
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
@@ -61,9 +60,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err := db.MySQLUserRegister(newUser)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
@@ -96,9 +93,7 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fmt.Printf("Received login request from %s\n", f.Username)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 	res.ServerMessage = response{
 		Status: success,
 		Tag:    f.Tag,
@@ -108,10 +103,6 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Token: "TEST_TOKEN",
 		}}
 
-	//res.ServerMessage = response{
-	//	Status: unimplemented,
-	//	Tag:    f.Tag,
-	//	Data:   struct{}{}}
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
@@ -141,9 +132,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// shrink as needed
 	users = users[:index]
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	if len(users) < 0 {
 		res.ServerMessage = response{Status: fail, Tag: f.Tag}
@@ -186,9 +175,7 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projects, err := db.MySQLUserProjects(f.SenderID)
 
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
+	res := newResponse()
 
 	if err != nil {
 		res.ServerMessage = response{
