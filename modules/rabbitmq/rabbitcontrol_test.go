@@ -24,7 +24,7 @@ func TestNewControl(t *testing.T) {
 	go func() {
 		for {
 			select {
-			case sub := <-control.Subscription:
+			case sub := <-control.SubChan:
 				if sub == subsci {
 					received <- true
 				} else {
@@ -38,28 +38,21 @@ func TestNewControl(t *testing.T) {
 		}
 	}()
 
-	control.Subscription <- subsci
-	go timeo(timeout)
+	control.SubChan <- subsci
 
 	select {
 	case <-received:
 	// success
-	case <-timeout:
+	case <-time.After(time.Second * 5):
 		t.Fatal("control sygnal timed out")
 	}
 
 	control.Exit <- true
-	go timeo(timeout)
 	select {
 	case <-doneTesting:
 	// success
-	case <-timeout:
+	case <-time.After(time.Second * 5):
 		t.Fatal("control sygnal timed out")
 	}
 
-}
-
-func timeo(timeout chan bool) {
-	time.Sleep(5 * time.Second)
-	timeout <- true
 }

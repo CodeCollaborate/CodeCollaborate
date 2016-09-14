@@ -6,7 +6,6 @@ go:
 cache:
   directories:
   - $GOPATH
-#  - $HOME/opt/couchbase
   - ~/downloads
 before_cache:
   - rm -rf $GOPATH/bin

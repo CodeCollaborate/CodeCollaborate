@@ -55,7 +55,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	// Run WSSendingHandler in a separate GoRoutine
 	sendingRoutineControl := rabbitmq.NewControl()
 
-	// we (probably) want to have 1 publisher per connection
+	// we (probably) want to have 1 publisher per connection to prevent overload. Goroutines are cheap.
 	pubCfg := rabbitmq.NewPubConfig(config.ServerConfig.Name)
 
 	defer func() {
@@ -63,7 +63,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		sendingRoutineControl.Exit <- true
 		pubCfg.Control.Exit <- true
 		// we want to recover here so that the server doesn't die
-		if r := recover(); r != nil {
+		if r := recover(); r != nil { // TODO(shapiro): Make sure this gets properly logged.
 			// the most likely cause is that we tried to close an already closed channel
 			utils.LogOnError(errors.New("Recovered a panic in wsmanager"), "Error in Datahandling")
 		}
@@ -75,7 +75,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	// we don't actually need more than 1 datahandler per websocket
 	dh := datahandling.DataHandler{
 		MessageChan:      pubCfg.Messages,
-		SubscriptionChan: sendingRoutineControl.Subscription,
+		SubscriptionChan: sendingRoutineControl.SubChan,
 		WebsocketID:      wsID,
 		Db:               dbfs.Dbfs,
 	}

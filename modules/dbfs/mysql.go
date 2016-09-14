@@ -33,16 +33,16 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 	}
 
 	if di.mysqldb.config.Schema == "" {
-		di.mysqldb.config.Schema = "cc"
+		panic("No MySQL schema found in config")
 	}
 
-	connString := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?timeout=%vs&parseTime=true",
+	connString := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?timeout=%ds&parseTime=true",
 		di.mysqldb.config.Username,
 		di.mysqldb.config.Password,
 		di.mysqldb.config.Host,
-		int(di.mysqldb.config.Port),
+		di.mysqldb.config.Port,
 		di.mysqldb.config.Schema,
-		int(di.mysqldb.config.Timeout))
+		di.mysqldb.config.Timeout)
 	db, err := sql.Open("mysql", connString)
 	if err == nil {
 		if err = db.Ping(); err != nil {
@@ -83,9 +83,9 @@ func (di *DatabaseImpl) MySQLUserRegister(user UserMeta) error {
 	if err != nil {
 		return err
 	}
-	numrows, err := result.RowsAffected()
+	numRows, err := result.RowsAffected()
 
-	if err != nil || numrows == 0 {
+	if err != nil || numRows == 0 {
 		return ErrNoDbChange
 	}
 
@@ -346,9 +346,9 @@ func (di *DatabaseImpl) MySQLProjectLookup(projectID int64, username string) (na
 	var hasAccess = false
 	for rows.Next() {
 		perm := ProjectPermission{}
-		var hora string
-		err = rows.Scan(&name, &perm.Username, &perm.PermissionLevel, &perm.GrantedBy, &hora)
-		perm.GrantedDate, _ = time.Parse("2006-01-02 15:04:05", hora)
+		var timeVal string
+		err = rows.Scan(&name, &perm.Username, &perm.PermissionLevel, &perm.GrantedBy, &timeVal)
+		perm.GrantedDate, _ = time.Parse("2006-01-02 15:04:05", timeVal)
 		if err != nil {
 			return "", permissions, err
 		}

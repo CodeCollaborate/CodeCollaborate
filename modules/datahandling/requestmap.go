@@ -21,7 +21,6 @@ func init() {
 }
 
 func getFullRequest(req *abstractRequest) (request, error) {
-
 	if _, contains := unauthenticatedRequestMap[(*req).Resource+"."+(*req).Method]; contains {
 		// unauthenticated request
 		return unauthenticatedRequest(req)

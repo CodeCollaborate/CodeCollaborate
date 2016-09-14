@@ -72,12 +72,11 @@ type AMQPPubCfg struct {
 
 // NewPubConfig creates a new AMQPPubCfg, initialized
 func NewPubConfig(exchangeName string) *AMQPPubCfg {
-	cfg := AMQPPubCfg{
+	return &AMQPPubCfg{
 		ExchangeName: exchangeName,
 		Messages:     make(chan AMQPMessage, 1),
+		Control:      utils.NewControl(),
 	}
-	cfg.Control = utils.NewControl()
-	return &cfg
 }
 
 // AMQPMessage represents the information required to send a new message

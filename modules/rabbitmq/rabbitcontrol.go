@@ -6,18 +6,17 @@ import (
 
 // RabbitControl controls the RabbitMQ subscriber and allows us to control rabbit subscriptions
 type RabbitControl struct {
-	Subscription chan Subscription
 	*utils.Control
+	SubChan chan Subscription
 }
 
 // NewControl creates a new control group, initialized to the not ready state
 // (Ready WaitGroup semaphore to 1). Exit Go Channel is also created with a buffer of 1.
 func NewControl() *RabbitControl {
-	control := RabbitControl{
-		Subscription: make(chan Subscription, 1),
+	return &RabbitControl{
+		SubChan: make(chan Subscription, 1),
+		Control: utils.NewControl(),
 	}
-	control.Control = utils.NewControl()
-	return &control
 }
 
 // Subscription is the object which is used to control subscription changes to the rabbitmq service

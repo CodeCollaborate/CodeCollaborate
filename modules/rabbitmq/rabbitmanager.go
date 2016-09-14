@@ -174,7 +174,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 	}
 	defer func() {
 		close(cfg.Control.Exit)
-		close(cfg.Control.Subscription)
+		close(cfg.Control.SubChan)
 	}()
 
 	ch, err := GetChannel()
@@ -228,7 +228,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 		select {
 		case <-cfg.Control.Exit:
 			return nil
-		case subscription := <-cfg.Control.Subscription:
+		case subscription := <-cfg.Control.SubChan:
 			if subscription.IsSubscribe {
 				err = ch.QueueBind(
 					cfg.QueueName(),       // queue name
@@ -237,17 +237,21 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 					false,                 // no-wait
 					nil,                   // arguments
 				)
+				if err != nil {
+					utils.LogOnError(err, "error subscribing from rabbit")
+					cfg.Control.Exit <- true
+				}
 			} else {
 				err = ch.QueueUnbind(
-					cfg.QueueName(),
-					subscription.GetKey(),
-					cfg.ExchangeName,
-					nil,
+					cfg.QueueName(),       // queue name
+					subscription.GetKey(), // routing key
+					cfg.ExchangeName,      // exchange
+					nil,                   // arguments
 				)
-			}
-			if err != nil {
-				utils.LogOnError(err, "error subscribing/unsubscribing from rabbit")
-				cfg.Control.Exit <- true
+				if err != nil {
+					utils.LogOnError(err, "error unsubscribing from rabbit")
+					cfg.Control.Exit <- true
+				}
 			}
 		case msg := <-msgs:
 			message := AMQPMessage{
@@ -258,9 +262,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 				Persistent:  (msg.DeliveryMode == 2),
 			}
 			err := cfg.HandleMessageFunc(message)
-			if err != nil {
-				utils.LogOnError(err, "Failed to handle message")
-			}
+			utils.LogOnError(err, "Failed to handle message")
 		}
 	}
 }
@@ -280,7 +282,7 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 	if err != nil {
 		utils.LogOnError(err, "Failed to get RabbitMQ Channel")
 		// panic so we shut down the subscriber too
-		panic(err)
+		panic(err) // TODO(shapiro): Think of a better way of having publisher and consumer be able to shut each other down
 	}
 	defer ch.Close()
 

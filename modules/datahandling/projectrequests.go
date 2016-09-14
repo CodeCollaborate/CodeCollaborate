@@ -79,7 +79,7 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projectID, err := db.MySQLProjectCreate(p.SenderID, p.Name)
 	if err != nil {
 		//if err == project already exists {
-		// TODO: implement a specific error for this on the mysql.go side
+		// TODO(shapiro): implement a specific error for this on the mysql.go side
 		//}
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, nil
 	}
@@ -116,11 +116,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
-		Tag:    p.Tag,
-		Data:   struct{}{},
-	}.wrap()
+	res := newEmptyResponse(success, p.Tag)
 	not := notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
@@ -167,11 +163,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
-		Tag:    p.Tag,
-		Data:   struct{}{},
-	}.wrap()
+	res := newEmptyResponse(success, p.Tag)
 	not := notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
@@ -207,11 +199,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
-		Tag:    p.Tag,
-		Data:   struct{}{},
-	}.wrap()
+	res := newEmptyResponse(success, p.Tag)
 	not := notification{
 		Resource:   p.Resource,
 		Method:     p.Method,

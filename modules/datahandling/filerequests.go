@@ -74,10 +74,10 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}
 
 	err = db.CBInsertNewFile(fileID, newFileVersion, make([]string, 0))
-
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, nil
 	}
+
 	res := response{
 		Status: success,
 		Tag:    f.Tag,
@@ -102,6 +102,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			},
 		},
 	}.wrap()
+
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: f.ProjectID}}, nil
 }
 
@@ -134,11 +135,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
-		Tag:    f.Tag,
-		Data:   struct{}{},
-	}.wrap()
+	res := newEmptyResponse(success, f.Tag)
 	not := notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
@@ -149,6 +146,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewName: f.NewName,
 		},
 	}.wrap()
+
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
@@ -181,11 +179,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
-		Tag:    f.Tag,
-		Data:   struct{}{},
-	}.wrap()
+	res := newEmptyResponse(success, f.Tag)
 	not := notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
@@ -196,6 +190,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewPath: f.NewPath,
 		},
 	}.wrap()
+
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }
 
@@ -232,17 +227,14 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
-		Tag:    f.Tag,
-		Data:   struct{}{},
-	}.wrap()
+	res := newEmptyResponse(success, f.Tag)
 	not := notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data:       struct{}{},
 	}.wrap()
+
 	return []dhClosure{
 		toSenderClosure{msg: res},
 		toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID},
@@ -263,6 +255,13 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
+
+	// This has to be before the CouchBase append, to make sure that the the two databases are kept in sync.
+	// Specifically, this prevents CouchBase from incrementing a version number without the notifications being sent out.
+	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+	}
 
 	// TODO (normal/required): verify changes are valid changes
 	version, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
@@ -298,11 +297,6 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Changes:         f.Changes,
 		},
 	}.wrap()
-
-	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: res}}, err
-	}
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
 }

@@ -6,6 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"time"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
@@ -134,8 +136,6 @@ func TestSendMessage(t *testing.T) {
 
 	queueID := uint64(0)
 	routingKey := fmt.Sprintf("%s-%d", hostname, queueID)
-	timeout := make(chan bool, 1)
-	defer close(timeout)
 	doneTesting := make(chan bool, 1)
 	defer close(doneTesting)
 
@@ -190,11 +190,10 @@ func TestSendMessage(t *testing.T) {
 	}()
 	wg.Wait()
 
-	go timeo(timeout)
 	select {
 	case <-doneTesting:
 		// success
-	case <-timeout:
+	case <-time.After(time.Second * 5):
 		t.Fatal("control signal timed out")
 	}
 
@@ -218,8 +217,6 @@ func TestSubscription(t *testing.T) {
 	queueID := uint64(0)
 	subscriptionChannel := "gene's project"
 
-	timeout := make(chan bool, 1)
-	defer close(timeout)
 	doneTesting := make(chan bool, 1)
 	defer close(doneTesting)
 
@@ -261,7 +258,7 @@ func TestSubscription(t *testing.T) {
 		})
 	}()
 
-	subscriberControl.Subscription <- Subscription{
+	subscriberControl.SubChan <- Subscription{
 		Channel:     subscriptionChannel,
 		IsSubscribe: true,
 	}
@@ -279,11 +276,10 @@ func TestSubscription(t *testing.T) {
 
 	publisherMessages <- TestMessage
 
-	go timeo(timeout)
 	select {
 	case <-doneTesting:
 	// success
-	case <-timeout:
+	case <-time.After(time.Second * 5):
 		t.Fatal("control signal timed out")
 	}
 

@@ -54,7 +54,8 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		FirstName: f.FirstName,
 		LastName:  f.LastName,
 		Email:     f.Email,
-		Password:  f.Password}
+		Password:  f.Password,
+	}
 
 	// TODO (non-immediate/required): password validation
 
