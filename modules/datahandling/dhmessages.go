@@ -70,7 +70,7 @@ func (message response) serverMessageType() string {
 	return "Response"
 }
 
-func newResponse() serverMessageWrapper {
+func newResponse() *serverMessageWrapper {
 	res := new(serverMessageWrapper)
 	res.Timestamp = time.Now().Unix()
 	res.Type = "Response"
@@ -89,7 +89,7 @@ func (message notification) serverMessageType() string {
 	return "Notification"
 }
 
-func newNotification() serverMessageWrapper {
+func newNotification() *serverMessageWrapper {
 	not := new(serverMessageWrapper)
 	not.Timestamp = time.Now().Unix()
 	not.Type = "Notification"
