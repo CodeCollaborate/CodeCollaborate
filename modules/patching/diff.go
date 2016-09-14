@@ -129,8 +129,8 @@ func (diff *Diff) ConvertToLF(base string) *Diff {
 	return NewDiff(diff.Insertion, newStartIndex, newChanges)
 }
 
-// GetUndo reverses this diff, producing a diff to undo the changes done by applying the diff.
-func (diff *Diff) GetUndo() *Diff {
+// Undo reverses this diff, producing a diff to undo the changes done by applying the diff.
+func (diff *Diff) Undo() *Diff {
 	return NewDiff(!diff.Insertion, diff.StartIndex, diff.Changes)
 }
 
@@ -139,15 +139,15 @@ func (diff *Diff) OffsetDiff(offset int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex+offset, diff.Changes)
 }
 
-func (diff *Diff) getSubChanges(start, end int) *Diff {
+func (diff *Diff) subChanges(start, end int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes[start:end])
 }
 
-func (diff *Diff) getSubChangesStartingFrom(start int) *Diff {
+func (diff *Diff) subChangesStartingFrom(start int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes[start:])
 }
 
-func (diff *Diff) getSubChangesEndingAt(end int) *Diff {
+func (diff *Diff) subChangesEndingAt(end int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes[:end])
 }
 
@@ -242,13 +242,13 @@ func transformType4(current, other *Diff) []*Diff {
 	}
 	overlap := other.StartIndex + other.Length() - current.StartIndex
 	newDiff := current.OffsetDiff(-other.Length() + overlap)
-	newDiff = newDiff.getSubChangesStartingFrom(overlap)
+	newDiff = newDiff.subChangesStartingFrom(overlap)
 	return []*Diff{newDiff}
 }
 
 func transformType5(current, other *Diff) []*Diff {
 	if current.Length() > other.Length() {
-		return []*Diff{current.getSubChangesStartingFrom(other.Length())}
+		return []*Diff{current.subChangesStartingFrom(other.Length())}
 	} // Else do nothing; already done by previous patch.
 	return []*Diff{}
 }
@@ -257,8 +257,8 @@ func transformType6(current, other *Diff) []*Diff {
 	if (current.StartIndex + current.Length()) > other.StartIndex {
 		length1 := other.StartIndex - current.StartIndex
 
-		diff1 := current.getSubChangesEndingAt(length1)
-		diff2 := current.getSubChangesStartingFrom(length1).OffsetDiff(other.Length())
+		diff1 := current.subChangesEndingAt(length1)
+		diff2 := current.subChangesStartingFrom(length1).OffsetDiff(other.Length())
 
 		return []*Diff{diff1, diff2}
 	}
@@ -269,7 +269,7 @@ func transformType7(current, other *Diff) []*Diff {
 	if (current.StartIndex + current.Length()) > other.StartIndex {
 		nonOverlap := other.StartIndex - current.StartIndex
 
-		return []*Diff{current.getSubChangesEndingAt(current.Length() - nonOverlap)}
+		return []*Diff{current.subChangesEndingAt(current.Length() - nonOverlap)}
 	}
 	return []*Diff{current}
 }

@@ -95,12 +95,12 @@ func TestPatch_ConvertToLF(t *testing.T) {
 func TestPatch_GetUndo(t *testing.T) {
 	patch, err := NewPatchFromString("v2:\n0:+4:test")
 	require.Nil(t, err)
-	newPatch := patch.GetUndo()
+	newPatch := patch.Undo()
 	require.Equal(t, "v2:\n0:-4:test", newPatch.String())
 
 	patch, err = NewPatchFromString("v6:\n2:+6:test%0D%0A,\n9:+4:test")
 	require.Nil(t, err)
-	newPatch = patch.GetUndo()
+	newPatch = patch.Undo()
 	require.Equal(t, "v6:\n9:-4:test,\n2:-6:test%0D%0A", newPatch.String())
 }
 

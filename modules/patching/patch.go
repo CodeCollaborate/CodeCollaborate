@@ -80,15 +80,15 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 	return NewPatch(patch.BaseVersion, newChanges)
 }
 
-// GetUndo reverses this patch, producing a patch to undo the changes done by applying the patch.
-func (patch *Patch) GetUndo() *Patch {
+// Undo reverses this patch, producing a patch to undo the changes done by applying the patch.
+func (patch *Patch) Undo() *Patch {
 	newChanges := []*Diff{}
 
 	// This needs to be in reverse order, since all the diffs in a package will have been applied in order.
 	// The last diff will have been computed relative to the previous few.
 	for i := len(patch.Changes) - 1; i >= 0; i-- {
 		//_, diff := range patch.Changes {
-		newChanges = append(newChanges, patch.Changes[i].GetUndo())
+		newChanges = append(newChanges, patch.Changes[i].Undo())
 	}
 
 	return NewPatch(patch.BaseVersion, newChanges)

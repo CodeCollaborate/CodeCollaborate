@@ -103,12 +103,12 @@ func TestDiff_ConvertToLF(t *testing.T) {
 func TestDiff_GetUndo(t *testing.T) {
 	diff, err := NewDiffFromString("0:+4:str1")
 	require.Nil(t, err)
-	newDiff := diff.GetUndo()
+	newDiff := diff.Undo()
 	require.Equal(t, "0:-4:str1", newDiff.String())
 
 	diff, err = NewDiffFromString("1:-4:str2")
 	require.Nil(t, err)
-	newDiff = diff.GetUndo()
+	newDiff = diff.Undo()
 	require.Equal(t, "1:+4:str2", newDiff.String())
 }
 
