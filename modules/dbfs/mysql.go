@@ -149,13 +149,17 @@ func (di *DatabaseImpl) MySQLUserLookup(username string) (user UserMeta, err err
 		return user, err
 	}
 
+	result := false
 	for rows.Next() {
 		err = rows.Scan(&user.FirstName, &user.LastName, &user.Email, &user.Username)
 		if err != nil {
 			return user, err
 		}
+		result = true
 	}
-
+	if !result {
+		return user, ErrNoData
+	}
 	return user, nil
 }
 
@@ -237,6 +241,7 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 		return nil, err
 	}
 
+	result := false
 	for rows.Next() {
 		file := FileMeta{}
 		err = rows.Scan(&file.FileID, &file.Creator, &file.CreationDate, &file.RelativePath, &file.ProjectID, &file.Filename)
@@ -244,6 +249,10 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 			return nil, err
 		}
 		files = append(files, file)
+		result = true
+	}
+	if !result {
+		return files, ErrNoData
 	}
 
 	return files, nil
@@ -333,6 +342,7 @@ func (di *DatabaseImpl) MySQLProjectLookup(projectID int64, username string) (na
 		return "", permissions, err
 	}
 
+	result := false
 	var hasAccess = false
 	for rows.Next() {
 		perm := ProjectPermission{}
@@ -346,13 +356,14 @@ func (di *DatabaseImpl) MySQLProjectLookup(projectID int64, username string) (na
 			hasAccess = true
 		}
 		permissions[perm.Username] = perm
+		result = true
 	}
 
 	// verify user has access to view this info
-	if hasAccess {
-		return name, permissions, err
+	if !result || !hasAccess {
+		return "", make(map[string](ProjectPermission)), ErrNoData
 	}
-	return "", make(map[string](ProjectPermission)), err
+	return name, permissions, err
 }
 
 // MySQLFileCreate create a new file in MySQL

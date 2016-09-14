@@ -118,6 +118,11 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 		t.Fatalf("Wrong return, got: %v %v, email: %v", userRet.FirstName, userRet.LastName, userRet.Email)
 	}
 
+	userRet, err = di.MySQLUserLookup("notjshap70")
+	if err == nil {
+		t.Fatal("Expected lookup with incorrect username to fail, but it did not")
+	}
+
 	err = di.MySQLUserDelete("jshap70", "secret")
 	if err != nil {
 		t.Fatal(err)
@@ -273,6 +278,11 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 	if files[0].FileID == -1 || files[0].Creator != "jshap70" || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
+
+	files, err = di.MySQLProjectGetFiles(projectID + 1000)
+	if err == nil {
+		t.Fatal("Expected lookup to fail when using an incorrect projectID")
+	}
 }
 
 func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
@@ -360,15 +370,21 @@ func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 
-	err := di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+	defer di.MySQLUserDelete("fahslaj", "secret")
+	defer di.MySQLUserDelete("jshap70", "secret")
+	defer di.MySQLProjectDelete(projectID, "jshap70")
+
+	name, perms, err := di.MySQLProjectLookup(projectID, "fahslaj")
+	if err == nil {
+		t.Fatal("Expected failure when given a projectID you don't have access to")
+	}
+
+	err = di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	name, perms, err := di.MySQLProjectLookup(projectID, "fahslaj")
-	di.MySQLProjectDelete(projectID, "jshap70")
-	di.MySQLUserDelete("fahslaj", "secret")
-	di.MySQLUserDelete("jshap70", "secret")
+	name, perms, err = di.MySQLProjectLookup(projectID, "fahslaj")
 
 	if err != nil {
 		t.Fatal(err)
@@ -388,6 +404,11 @@ func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 	}
 	if perms["fahslaj"].GrantedDate == time.Unix(0, 0) {
 		t.Fatal("time did not correctly parse")
+	}
+
+	name, perms, err = di.MySQLProjectLookup(projectID+1000, "fahslaj")
+	if err == nil {
+		t.Fatal("Expected failure when given a non-existant projectID")
 	}
 }
 
