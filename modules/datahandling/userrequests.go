@@ -60,18 +60,14 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err := db.MySQLUserRegister(newUser)
 
-	res := newResponse()
-
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
-			res.ServerMessage = response{Status: notFound, Tag: f.Tag}
+			return []dhClosure{toSenderClosure{msg: newEmptyResponse(notFound, f.Tag)}}, err
 		} else {
-			res.ServerMessage = response{Status: fail, Tag: f.Tag}
+			return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 		}
-	} else {
-		res.ServerMessage = response{Status: success, Tag: f.Tag}
 	}
-	return []dhClosure{toSenderClosure{msg: res}}, err
+	return []dhClosure{toSenderClosure{msg: newEmptyResponse(success, f.Tag)}}, err
 }
 
 // User.Login
@@ -87,21 +83,18 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (non-immediate/required): implement login logic
-	// ??  lol  wat  do  ??
-	// ?? to verify pass ??
-	// ??  ??   ??   ??  ??
 
-	fmt.Printf("Received login request from %s\n", f.Username)
+	fmt.Printf("Received login request from %s. Login logic not implemented yet.\n", f.Username)
 
-	res := newResponse()
-	res.ServerMessage = response{
+	res := response{
 		Status: success,
 		Tag:    f.Tag,
 		Data: struct {
 			Token string
 		}{
 			Token: "TEST_TOKEN",
-		}}
+		},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
@@ -132,34 +125,34 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// shrink as needed
 	users = users[:index]
 
-	res := newResponse()
-
 	if len(users) < 0 {
-		res.ServerMessage = response{Status: fail, Tag: f.Tag}
-	} else {
-		if erro != nil {
-			// at least 1 value failed
-			// return what we can but
-			// tell the client whatever they don't get back failed
-			res.ServerMessage = response{
-				Status: partialfail,
-				Tag:    f.Tag,
-				Data: struct {
-					Users []dbfs.UserMeta
-				}{
-					Users: users,
-				}}
-		} else {
-			res.ServerMessage = response{
-				Status: success,
-				Tag:    f.Tag,
-				Data: struct {
-					Users []dbfs.UserMeta
-				}{
-					Users: users,
-				}}
-		}
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, erro
+	} else if erro != nil {
+		// at least 1 value failed
+		// return what we can but
+		// tell the client whatever they don't get back failed
+		res := response{
+			Status: partialfail,
+			Tag:    f.Tag,
+			Data: struct {
+				Users []dbfs.UserMeta
+			}{
+				Users: users,
+			},
+		}.wrap()
+		return []dhClosure{toSenderClosure{msg: res}}, erro
 	}
+
+	res := response{
+		Status: success,
+		Tag:    f.Tag,
+		Data: struct {
+			Users []dbfs.UserMeta
+		}{
+			Users: users,
+		},
+	}.wrap()
+
 	return []dhClosure{toSenderClosure{msg: res}}, erro
 }
 
@@ -174,28 +167,28 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projects, err := db.MySQLUserProjects(f.SenderID)
-
-	res := newResponse()
-
 	if err != nil {
-		res.ServerMessage = response{
+		res := response{
 			Status: partialfail,
 			Tag:    f.Tag,
 			Data: struct {
 				Projects []dbfs.ProjectMeta
 			}{
 				Projects: projects,
-			}}
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    f.Tag,
-			Data: struct {
-				Projects []dbfs.ProjectMeta
-			}{
-				Projects: projects,
-			}}
+			},
+		}.wrap()
+		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
+
+	res := response{
+		Status: success,
+		Tag:    f.Tag,
+		Data: struct {
+			Projects []dbfs.ProjectMeta
+		}{
+			Projects: projects,
+		},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, err
 }

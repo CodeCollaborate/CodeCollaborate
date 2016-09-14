@@ -14,8 +14,8 @@ import (
 
 // DataHandler handles the json data received from the WebSocket connection.
 type DataHandler struct {
-	MessageChan      chan<- rabbitmq.AMQPMessage
-	SubscriptionChan chan<- rabbitmq.Subscription
+	MessageChan      chan <- rabbitmq.AMQPMessage
+	SubscriptionChan chan <- rabbitmq.Subscription
 	WebsocketID      uint64
 	Db               dbfs.DBFS
 }
@@ -38,23 +38,13 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 
 	if err != nil {
 		// TODO(shapiro): create response and notification factory
-		res := newResponse()
 		if err == ErrAuthenticationFailed {
 			utils.LogOnError(err, "User not logged in")
-			res.ServerMessage = response{
-				Status: unauthorized,
-				Tag:    req.Tag,
-				Data:   struct{}{},
-			}
+			closures = []dhClosure{toSenderClosure{msg: newEmptyResponse(unauthorized, req.Tag)}}
 		} else {
 			utils.LogOnError(err, "Failed to construct full request")
-			res.ServerMessage = response{
-				Status: unimplemented,
-				Tag:    req.Tag,
-				Data:   struct{}{},
-			}
+			closures = []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, req.Tag)}}
 		}
-		closures = []dhClosure{toSenderClosure{msg: res}}
 	} else {
 		closures, err = fullRequest.process(dh.Db)
 		if err != nil {

@@ -56,7 +56,7 @@ type serverMessageWrapper struct {
 }
 
 type serverMessage interface {
-	serverMessageType() string
+	wrap() *serverMessageWrapper
 }
 
 // Response is the type which is the server responses to the client
@@ -66,15 +66,20 @@ type response struct {
 	Data   interface{}
 }
 
-func (message response) serverMessageType() string {
-	return "Response"
+func (message response) wrap() *serverMessageWrapper {
+	return &serverMessageWrapper{
+		Timestamp: time.Now().Unix(),
+		Type: "Response",
+		ServerMessage: message,
+	}
 }
 
-func newResponse() *serverMessageWrapper {
-	res := new(serverMessageWrapper)
-	res.Timestamp = time.Now().Unix()
-	res.Type = "Response"
-	return res
+func newEmptyResponse(status int, tag int64) *serverMessageWrapper{
+	return response{
+		Status: status,
+		Tag:    tag,
+		Data:   struct{}{},
+	}.wrap()
 }
 
 // Notification is the type which is the unprompted server messages to clients
@@ -85,15 +90,12 @@ type notification struct {
 	Data       interface{}
 }
 
-func (message notification) serverMessageType() string {
-	return "Notification"
-}
-
-func newNotification() *serverMessageWrapper {
-	not := new(serverMessageWrapper)
-	not.Timestamp = time.Now().Unix()
-	not.Type = "Notification"
-	return not
+func (message notification) wrap() *serverMessageWrapper {
+	return &serverMessageWrapper{
+		Timestamp: time.Now().Unix(),
+		Type: "Notification",
+		ServerMessage: message,
+	}
 }
 
 /**

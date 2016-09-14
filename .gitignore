@@ -39,6 +39,7 @@ _testmain.go
 # Filesystem testing temp
 /testing
 ProjectFiles
+data
 
 # misc
 *.swp

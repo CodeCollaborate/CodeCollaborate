@@ -58,22 +58,14 @@ type rabbitChannelSubscribeClosure struct {
 }
 
 func (cont rabbitChannelSubscribeClosure) call(dh DataHandler) error {
-	res := newResponse()
-
 	// TODO(shapiro): find a way to tell the client if the subscription errored
 	dh.SubscriptionChan <- rabbitmq.Subscription{
 		Channel:     cont.key,
 		IsSubscribe: true,
 	}
 
-	res.ServerMessage = response{
-		Status: success,
-		Tag:    cont.tag,
-		Data:   struct{}{},
-	}
-	err := toSenderClosure{msg: res}.call(dh) // go ahead and send from here
+	err := toSenderClosure{msg: newEmptyResponse(success, cont.tag)}.call(dh) // go ahead and send from here
 	return err
-
 }
 
 type rabbitChannelUnsubscribeClosure struct {
@@ -82,19 +74,12 @@ type rabbitChannelUnsubscribeClosure struct {
 }
 
 func (cont rabbitChannelUnsubscribeClosure) call(dh DataHandler) error {
-	res := newResponse()
-
 	// TODO(shapiro): find a way to tell the client if the subscription errored
 	dh.SubscriptionChan <- rabbitmq.Subscription{
 		Channel:     cont.key,
 		IsSubscribe: false,
 	}
 
-	res.ServerMessage = response{
-		Status: success,
-		Tag:    cont.tag,
-		Data:   struct{}{},
-	}
-	err := toSenderClosure{msg: res}.call(dh) // go ahead and send from here
+	err := toSenderClosure{msg: newEmptyResponse(success, cont.tag)}.call(dh) // go ahead and send from here
 	return err
 }

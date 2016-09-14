@@ -77,29 +77,22 @@ func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
 
 func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projectID, err := db.MySQLProjectCreate(p.SenderID, p.Name)
-
-	res := newResponse()
-
 	if err != nil {
 		//if err == project already exists {
 		// TODO: implement a specific error for this on the mysql.go side
 		//}
-
-		res.ServerMessage = response{
-			Status: servfail,
-			Tag:    p.Tag,
-			Data:   struct{ ProjectID int64 }{ProjectID: -1},
-		}
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    p.Tag,
-			Data: struct {
-				ProjectID int64
-			}{
-				ProjectID: projectID,
-			}}
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, nil
 	}
+
+	res := response{
+		Status: success,
+		Tag:    p.Tag,
+		Data: struct {
+			ProjectID int64
+		}{
+			ProjectID: projectID,
+		},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
@@ -116,27 +109,19 @@ func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-
 	// TODO: check if permission high enough on project
 
 	err := db.MySQLProjectRename(p.ProjectID, p.NewName)
-
-	res := newResponse()
-	not := newNotification()
-
 	if err != nil {
-		res.ServerMessage = response{
-			Status: servfail,
-			Tag:    p.Tag,
-			Data:   struct{}{}}
-
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
 	}
-	res.ServerMessage = response{
+
+	res := response{
 		Status: success,
 		Tag:    p.Tag,
-		Data:   struct{}{}}
-	not.ServerMessage = notification{
+		Data:   struct{}{},
+	}.wrap()
+	not := notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
@@ -144,7 +129,8 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			NewName string
 		}{
 			NewName: p.NewName,
-		}}
+		},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }
@@ -161,12 +147,8 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
 	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
-	res := newResponse()
-	res.ServerMessage = response{
-		Status: unimplemented,
-		Tag:    p.Tag,
-		Data:   struct{}{}}
-	return []dhClosure{toSenderClosure{msg: res}}, nil
+
+	return []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, p.Tag)}}, nil
 }
 
 // Project.GrantPermissions
@@ -181,24 +163,16 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 	// TODO: check if permission high enough on project
 
 	err := db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
-
-	res := newResponse()
-	not := newNotification()
-
 	if err != nil {
-		res.ServerMessage = response{
-			Status: servfail,
-			Tag:    p.Tag,
-			Data:   struct{}{}}
-
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
 	}
 
-	res.ServerMessage = response{
+	res := response{
 		Status: success,
 		Tag:    p.Tag,
-		Data:   struct{}{}}
-	not.ServerMessage = notification{
+		Data:   struct{}{},
+	}.wrap()
+	not := notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
@@ -208,7 +182,8 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		}{
 			GrantUsername:   p.GrantUsername,
 			PermissionLevel: p.PermissionLevel,
-		}}
+		},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }
@@ -228,23 +203,16 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 	// TODO: check if permission high enough on project
 	err := db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
-	res := newResponse()
-	not := newNotification()
-
 	if err != nil {
-		res.ServerMessage = response{
-			Status: servfail,
-			Tag:    p.Tag,
-			Data:   struct{}{}}
-
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
 	}
 
-	res.ServerMessage = response{
+	res := response{
 		Status: success,
 		Tag:    p.Tag,
-		Data:   struct{}{}}
-	not.ServerMessage = notification{
+		Data:   struct{}{},
+	}.wrap()
+	not := notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
@@ -252,7 +220,8 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			RevokeUsername string
 		}{
 			RevokeUsername: p.RevokeUsername,
-		}}
+		},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }
@@ -271,12 +240,7 @@ func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 	// TODO: implement on redis (and actually implement redis)
 	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
 
-	res := newResponse()
-	res.ServerMessage = response{
-		Status: unimplemented,
-		Tag:    p.Tag,
-		Data:   struct{}{}}
-	return []dhClosure{toSenderClosure{msg: res}}, nil
+	return []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, p.Tag)}}, nil
 }
 
 func (p *projectGetOnlineClientsRequest) setAbstractRequest(req *abstractRequest) {
@@ -322,40 +286,42 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// shrink to cut off remainder left by errors
 	resultData = resultData[:i]
 
-	res := newResponse()
-
 	if errOut != nil {
 		if len(resultData) == 0 {
-			res.ServerMessage = response{
+			res := response{
 				Status: fail,
 				Tag:    p.Tag,
 				Data: struct {
 					Projects []projectLookupResult
 				}{
 					Projects: resultData,
-				}}
+				},
+			}.wrap()
+			return []dhClosure{toSenderClosure{msg: res}}, nil
 		} else {
-			res.ServerMessage = response{
+			res := response{
 				Status: partialfail,
 				Tag:    p.Tag,
 				Data: struct {
 					Projects []projectLookupResult
 				}{
 					Projects: resultData,
-				}}
+				},
+			}.wrap()
+			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    p.Tag,
-			Data: struct {
-				Projects []projectLookupResult
-			}{
-				Projects: resultData,
-			}}
 	}
 
-	//fmt.Printf("Received project lookup request from %s\n", p.SenderID)
+	res := response{
+		Status: success,
+		Tag:    p.Tag,
+		Data: struct {
+			Projects []projectLookupResult
+		}{
+			Projects: resultData,
+		},
+	}.wrap()
+
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
@@ -380,18 +346,16 @@ type fileLookupResult struct {
 
 func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	files, err := db.MySQLProjectGetFiles(p.ProjectID)
-
-	res := newResponse()
-
 	if err != nil {
-		res.ServerMessage = response{
+		res := response{
 			Status: fail,
 			Tag:    p.Tag,
 			Data: struct {
 				Files []fileLookupResult
 			}{
 				Files: make([]fileLookupResult, 0),
-			}}
+			},
+		}.wrap()
 
 		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
@@ -420,34 +384,38 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	if errOut != nil {
 		if len(resultData) == 0 {
-			res.ServerMessage = response{
+			res := response{
 				Status: fail,
 				Tag:    p.Tag,
 				Data: struct {
 					Files []fileLookupResult
 				}{
 					Files: resultData,
-				}}
+				},
+			}.wrap()
+			return []dhClosure{toSenderClosure{msg: res}}, nil
 		} else {
-			res.ServerMessage = response{
+			res := response{
 				Status: partialfail,
 				Tag:    p.Tag,
 				Data: struct {
 					Files []fileLookupResult
 				}{
 					Files: resultData,
-				}}
+				},
+			}.wrap()
+			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
-	} else {
-		res.ServerMessage = response{
-			Status: success,
-			Tag:    p.Tag,
-			Data: struct {
-				Files []fileLookupResult
-			}{
-				Files: resultData,
-			}}
 	}
+	res := response{
+		Status: success,
+		Tag:    p.Tag,
+		Data: struct {
+			Files []fileLookupResult
+		}{
+			Files: resultData,
+		},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
@@ -499,35 +467,22 @@ type projectDeleteRequest struct {
 }
 
 func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	res := newResponse()
-	not := newNotification()
-
 	err := db.MySQLProjectDelete(p.ProjectID, p.SenderID)
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
-			res.ServerMessage = response{
-				Status: fail,
-				Tag:    p.Tag,
-				Data:   struct{}{}}
-		} else {
-			res.ServerMessage = response{
-				Status: servfail,
-				Tag:    p.Tag,
-				Data:   struct{}{}}
+			return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, p.Tag)}}, err
 		}
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
 
-		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
-	res.ServerMessage = response{
-		Status: success,
-		Tag:    p.Tag,
-		Data:   struct{}{}}
 
-	not.ServerMessage = notification{
+	res:= newEmptyResponse(success, p.Tag)
+	not:= notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
-		Data:       struct{}{}}
+		Data:       struct{}{},
+	}.wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
 }

@@ -318,7 +318,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
+	if db.FunctionCallCount != 1 {
 		t.Fatal("did not call correct number of db functions")
 	}
 
