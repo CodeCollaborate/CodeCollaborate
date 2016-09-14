@@ -7,11 +7,17 @@ import (
 	"strings"
 )
 
+// Patch represents a set of changes to a versioned document
 type Patch struct {
+	// BaseVersion is the version that this patch was created on.
 	BaseVersion int
-	Changes     []*Diff
+
+	// Changes is the list of changes that were applied to the document.
+	// When patching, changes MUST be applied in order.
+	Changes []*Diff
 }
 
+// NewPatch creates a new patch with the given parameters
 func NewPatch(baseVersion int, changes []*Diff) *Patch {
 	return &Patch{
 		BaseVersion: baseVersion,
@@ -19,6 +25,7 @@ func NewPatch(baseVersion int, changes []*Diff) *Patch {
 	}
 }
 
+// NewPatchFromString parses a patch from its given string representation
 func NewPatchFromString(str string) (*Patch, error) {
 	var err error
 	patch := Patch{}
@@ -51,6 +58,7 @@ func NewPatchFromString(str string) (*Patch, error) {
 	return &patch, nil
 }
 
+// ConvertToCRLF converts this patch from using LF to CRLF line separators given the base text to patch.
 func (patch *Patch) ConvertToCRLF(base string) *Patch {
 	newChanges := []*Diff{}
 
@@ -61,6 +69,7 @@ func (patch *Patch) ConvertToCRLF(base string) *Patch {
 	return NewPatch(patch.BaseVersion, newChanges)
 }
 
+// ConvertToLF converts this patch from using CRLF to LF line separators given the base text to patch.
 func (patch *Patch) ConvertToLF(base string) *Patch {
 	newChanges := []*Diff{}
 
@@ -71,22 +80,27 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 	return NewPatch(patch.BaseVersion, newChanges)
 }
 
+// GetUndo reverses this patch, producing a patch to undo the changes done by applying the patch.
 func (patch *Patch) GetUndo() *Patch {
 	newChanges := []*Diff{}
 
-	for _, diff := range patch.Changes {
-		newChanges = append(newChanges, diff.GetUndo())
+	// This needs to be in reverse order, since all the diffs in a package will have been applied in order.
+	// The last diff will have been computed relative to the previous few.
+	for i := len(patch.Changes) - 1; i >= 0; i-- {
+		//_, diff := range patch.Changes {
+		newChanges = append(newChanges, patch.Changes[i].GetUndo())
 	}
 
 	return NewPatch(patch.BaseVersion, newChanges)
 }
 
+// Transform does an Operational Transform against the other patches, creating a set
+// of changes relative to previously applied changes.
 func (patch *Patch) Transform(others []*Patch) *Patch {
 	intermediateDiffs := patch.Changes
 	maxVersionSeen := patch.BaseVersion
 
 	for _, otherPatch := range others {
-
 		newIntermediateDiffs := []*Diff{}
 
 		for _, diff := range intermediateDiffs {

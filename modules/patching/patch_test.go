@@ -101,7 +101,7 @@ func TestPatch_GetUndo(t *testing.T) {
 	patch, err = NewPatchFromString("v6:\n2:+6:test%0D%0A,\n9:+4:test")
 	require.Nil(t, err)
 	newPatch = patch.GetUndo()
-	require.Equal(t, "v6:\n2:-6:test%0D%0A,\n9:-4:test", newPatch.String())
+	require.Equal(t, "v6:\n9:-4:test,\n2:-6:test%0D%0A", newPatch.String())
 }
 
 func TestPatch_Transform(t *testing.T) {
