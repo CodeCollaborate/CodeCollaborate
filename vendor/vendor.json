@@ -45,6 +45,18 @@
 			"revisionTime": "2016-03-11T21:55:03Z"
 		},
 		{
+			"checksumSHA1": "dM4WxRpcrt2jK8Kd10XsHR9iIwE=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
+		},
+		{
+			"checksumSHA1": "ijg28hsp/vqFRrJnicpz0AdSIFk=",
+			"path": "github.com/stretchr/testify/require",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
+		},
+		{
 			"checksumSHA1": "yzpQCB49RlE61433DziY5hhEURc=",
 			"path": "gopkg.in/couchbaselabs/gocb.v1",
 			"revision": "c1ce858361cb597fbfb1dac90b26229da665102f",
