@@ -5,10 +5,8 @@ import (
 	"strings"
 
 	"github.com/CodeCollaborate/Server/modules/config"
-	"gopkg.in/couchbase/gocb.v1"
+	"github.com/couchbase/gocb"
 )
-
-var couchbasedb *couchbaseConn
 
 type couchbaseConn struct {
 	config config.ConnCfg
@@ -21,49 +19,49 @@ type cbFile struct {
 	Changes []string `json:"changes"`
 }
 
-func openCouchBase() (*couchbaseConn, error) {
-	if couchbasedb != nil && couchbasedb.bucket != nil {
-		return couchbasedb, nil
+func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
+	if di.couchbaseDB != nil && di.couchbaseDB.bucket != nil {
+		return di.couchbaseDB, nil
 	}
 
-	if couchbasedb == nil || couchbasedb.config == (config.ConnCfg{}) {
-		couchbasedb = new(couchbaseConn)
+	if di.couchbaseDB == nil || di.couchbaseDB.config == (config.ConnCfg{}) {
+		di.couchbaseDB = new(couchbaseConn)
 		configMap := config.GetConfig()
-		couchbasedb.config = configMap.ConnectionConfig["Couchbase"]
+		di.couchbaseDB.config = configMap.ConnectionConfig["Couchbase"]
 	}
 
 	var documentsCluster *gocb.Cluster
 	var err error
 
-	if strings.HasPrefix(couchbasedb.config.Host, "couchbase://") {
-		documentsCluster, err = gocb.Connect(couchbasedb.config.Host + ":" + strconv.Itoa(int(couchbasedb.config.Port)))
+	if strings.HasPrefix(di.couchbaseDB.config.Host, "couchbase://") {
+		documentsCluster, err = gocb.Connect(di.couchbaseDB.config.Host + ":" + strconv.Itoa(int(di.couchbaseDB.config.Port)))
 	} else {
-		documentsCluster, err = gocb.Connect("couchbase://" + couchbasedb.config.Host + ":" + strconv.Itoa(int(couchbasedb.config.Port)))
+		documentsCluster, err = gocb.Connect("couchbase://" + di.couchbaseDB.config.Host + ":" + strconv.Itoa(int(di.couchbaseDB.config.Port)))
 	}
 
 	if err != nil {
-		return couchbasedb, err
+		return di.couchbaseDB, err
 	}
 
-	if couchbasedb.config.Schema == "" {
-		couchbasedb.config.Schema = "documents"
+	if di.couchbaseDB.config.Schema == "" {
+		di.couchbaseDB.config.Schema = "documents"
 	}
 
-	myBucket, err := documentsCluster.OpenBucket(couchbasedb.config.Schema, couchbasedb.config.Password)
+	myBucket, err := documentsCluster.OpenBucket(di.couchbaseDB.config.Schema, di.couchbaseDB.config.Password)
 	if err != nil {
-		return couchbasedb, err
+		return di.couchbaseDB, err
 	}
-	couchbasedb.bucket = myBucket
+	di.couchbaseDB.bucket = myBucket
 
-	return couchbasedb, nil
+	return di.couchbaseDB, nil
 }
 
 // CloseCouchbase closes the CouchBase db connection
 // YOU PROBABLY DON'T NEED TO RUN THIS EVER
-func CloseCouchbase() error {
-	if couchbasedb != nil && couchbasedb.bucket != nil {
-		couchbasedb.bucket.Close()
-		couchbasedb = nil
+func (di *DatabaseImpl) CloseCouchbase() error {
+	if di.couchbaseDB != nil && di.couchbaseDB.bucket != nil {
+		di.couchbaseDB.bucket.Close()
+		di.couchbaseDB = nil
 	} else {
 		return ErrDbNotInitialized
 	}
@@ -72,9 +70,8 @@ func CloseCouchbase() error {
 }
 
 // CBInsertNewFile inserts a new document into couchbase with CBFile.FileID == fileID
-func cbInsertNewFile(file cbFile) error {
-	cb, err := openCouchBase()
-	//defer cb.close()
+func (di *DatabaseImpl) cbInsertNewFile(file cbFile) error {
+	cb, err := di.openCouchBase()
 
 	if err != nil {
 		return err
@@ -85,13 +82,17 @@ func cbInsertNewFile(file cbFile) error {
 }
 
 // CBInsertNewFile inserts a new document with the given arguments
-func CBInsertNewFile(fileID int64, version int64, changes []string) error {
-	return cbInsertNewFile(cbFile{FileID: fileID, Version: version, Changes: changes})
+func (di *DatabaseImpl) CBInsertNewFile(fileID int64, version int64, changes []string) error {
+	return di.cbInsertNewFile(cbFile{
+		FileID:  fileID,
+		Version: version,
+		Changes: changes,
+	})
 }
 
 // CBDeleteFile deletes the document with FileID == fileID from couchbase
-func CBDeleteFile(fileID int64) error {
-	cb, err := openCouchBase()
+func (di *DatabaseImpl) CBDeleteFile(fileID int64) error {
+	cb, err := di.openCouchBase()
 	if err != nil {
 		return err
 	}
@@ -100,8 +101,8 @@ func CBDeleteFile(fileID int64) error {
 }
 
 // CBGetFileVersion returns the current version of the file for the given FileID
-func CBGetFileVersion(fileID int64) (int64, error) {
-	cb, err := openCouchBase()
+func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
+	cb, err := di.openCouchBase()
 	if err != nil {
 		return -1, err
 	}
@@ -117,8 +118,8 @@ func CBGetFileVersion(fileID int64) (int64, error) {
 }
 
 // CBGetFileChanges returns the array of file changes for the given fileID
-func CBGetFileChanges(fileID int64) ([]string, error) {
-	cb, err := openCouchBase()
+func (di *DatabaseImpl) CBGetFileChanges(fileID int64) ([]string, error) {
+	cb, err := di.openCouchBase()
 	if err != nil {
 		return []string{}, err
 	}
@@ -135,14 +136,40 @@ func CBGetFileChanges(fileID int64) ([]string, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-func CBAppendFileChange(fileID int64, version int64, change string) error {
-	cb, err := openCouchBase()
-	//defer cb.close()
-
+func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
+	// TODO (non-immediate/required): verify changes are valid changes
+	cb, err := di.openCouchBase()
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	_, err = cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), 0, 0).PushBack("changes", change, false).Replace("version", version).Execute()
-	return err
+	// optimistic locking operation
+	// check the version is accurate and get the object's cas,
+	// then use it in the MutateIn call to verify the document hasn't updated underneath us
+	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileID, 10)).Get("version").Execute()
+	if err != nil {
+		return -1, ErrResourceNotFound
+	}
+
+	cas := frag.Cas()
+	var version int64
+	frag.Content("version", &version)
+
+	// check to make sure the patch is being applied to the most recent revision
+	if baseVersion != version {
+		return -1, ErrVersionOutOfDate
+	}
+
+	// use the cas to make sure the document hasn't changed
+	builder := cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), cas, 0)
+	for _, change := range changes {
+		builder = builder.ArrayAppend("changes", change, false)
+	}
+
+	builder = builder.Counter("version", 1, false)
+	_, err = builder.Execute()
+	if err != nil {
+		return version, err
+	}
+	return version + 1, err
 }

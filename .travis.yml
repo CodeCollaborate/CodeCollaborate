@@ -6,8 +6,7 @@ go:
 cache:
   directories:
   - $GOPATH
-#  - $HOME/opt/couchbase
-  - downloads
+  - ~/downloads
 before_cache:
   - rm -rf $GOPATH/bin
   - rm -rf $GOPATH/src/github.com/CodeCollaborate

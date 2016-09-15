@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/handlers"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
@@ -17,7 +18,8 @@ import (
  * Runner.go starts the server. It initializes processes and begins listening for websocket requests.
  */
 
-var addr = flag.String("addr", "0.0.0.0:80", "http service address")
+// changed from "0.0.0.0:80" because you need to be root to bind to that port
+var addr = flag.String("addr", "0.0.0.0:8000", "http service address")
 
 func main() {
 
@@ -58,6 +60,8 @@ func main() {
 			Control: AMQPControl,
 		},
 	)
+
+	dbfs.Dbfs = new(dbfs.DatabaseImpl)
 
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 

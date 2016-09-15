@@ -5,7 +5,7 @@ import (
 )
 
 /**
- * requestmap.go provides the pseudo-factory map for looking up the associated request
+ * provides the pseudo-factory map for looking up the associated request
  */
 
 // map to lookup authenticated api functions
@@ -21,16 +21,16 @@ func init() {
 }
 
 func getFullRequest(req *abstractRequest) (request, error) {
-	if (*req).SenderToken == "" {
+	if _, contains := unauthenticatedRequestMap[(*req).Resource+"."+(*req).Method]; contains {
 		// unauthenticated request
 		return unauthenticatedRequest(req)
 	}
+
 	// authenticated request
 	if authenticate(*req) {
 		return authenticatedRequest(req)
 	}
-
-	return nil, errors.New("Cannot authenticate user")
+	return nil, ErrAuthenticationFailed
 }
 
 // authenticatedRequest returns fully parsed Request from the given authenticated AbstractRequest

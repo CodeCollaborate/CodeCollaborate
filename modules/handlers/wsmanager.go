@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"sync/atomic"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
+	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
@@ -45,28 +47,51 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		return
 	}
 	defer wsConn.Close()
+	config := config.GetConfig()
 
 	// Generate unique ID for this websocket
 	wsID := atomic.AddUint64(&atomicIDCounter, 1)
 
 	// Run WSSendingHandler in a separate GoRoutine
-	sendingRoutineControl := utils.NewControl()
+	sendingRoutineControl := rabbitmq.NewControl()
+
+	// we (probably) want to have 1 publisher per connection to prevent overload. Goroutines are cheap.
+	pubCfg := rabbitmq.NewPubConfig(config.ServerConfig.Name)
+
+	defer func() {
+		// this prevents a channel leak on an unplanned exit
+		sendingRoutineControl.Exit <- true
+		pubCfg.Control.Exit <- true
+		// we want to recover here so that the server doesn't die
+		if r := recover(); r != nil { // TODO(shapiro): Make sure this gets properly logged.
+			// the most likely cause is that we tried to close an already closed channel
+			utils.LogOnError(errors.New("Recovered a panic in wsmanager"), "Error in Datahandling")
+		}
+	}()
+
+	go rabbitmq.RunPublisher(pubCfg)
 	go WSSendingRoutine(wsID, wsConn, sendingRoutineControl)
+
+	// we don't actually need more than 1 datahandler per websocket
+	dh := datahandling.DataHandler{
+		MessageChan:      pubCfg.Messages,
+		SubscriptionChan: sendingRoutineControl.SubChan,
+		WebsocketID:      wsID,
+		Db:               dbfs.Dbfs,
+	}
 
 	for {
 		messageType, message, err := wsConn.ReadMessage()
 		if err != nil {
 			fmt.Println("WebSocket failed to read message, exiting handler")
-			sendingRoutineControl.Exit <- true
 			break
 		}
-		dh := datahandling.DataHandler{}
-		go dh.Handle(wsID, messageType, message)
+		go dh.Handle(messageType, message)
 	}
 }
 
 // WSSendingRoutine receives messages from the RabbitMq subscriber and passes them to the WebSocket.
-func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *utils.Control) {
+func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *rabbitmq.RabbitControl) {
 
 	// Don't check for error; if it would have
 	config := config.GetConfig()
@@ -78,6 +103,7 @@ func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *utils.Control) 
 			Keys:         []string{},
 			IsWorkQueue:  false,
 			HandleMessageFunc: func(msg rabbitmq.AMQPMessage) error {
+				fmt.Printf("Sending Message: %s\n", msg.Message)
 				return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
 			},
 			Control: ctrl,

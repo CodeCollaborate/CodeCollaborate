@@ -6,7 +6,11 @@ import (
 	"testing"
 )
 
-// authenticated
+/*
+ *
+ * authenticated
+ *
+ */
 
 // Project functions
 func TestProjectCreateRequest(t *testing.T) {
@@ -23,11 +27,8 @@ func TestProjectCreateRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectCreateRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectCreateRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectCreateRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -46,11 +47,8 @@ func TestProjectRenameRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectRenameRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectRenameRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectRenameRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -66,11 +64,8 @@ func TestProjectGetPermissionConstantsRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectGetPermissionConstantsRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectGetPermissionConstantsRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectGetPermissionConstantsRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -90,11 +85,8 @@ func TestProjectGrantPermissionsRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectGrantPermissionsRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectGrantPermissionsRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectGrantPermissionsRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -113,11 +105,8 @@ func TestProjectRevokePermissionsRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectRevokePermissionsRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectRevokePermissionsRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectRevokePermissionsRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -135,11 +124,8 @@ func TestProjectGetOnlineClientsRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectGetOnlineClientsRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectGetOnlineClientsRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectGetOnlineClientsRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -154,11 +140,8 @@ func TestProjectLookupRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectLookupRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectLookupRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectLookupRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -176,11 +159,8 @@ func TestProjectGetFilesRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectGetFilesRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectGetFilesRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectGetFilesRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -198,11 +178,27 @@ func TestProjectSubscribeRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectSubscribeRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectSubscribeRequest:
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectSubscribeRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
+	}
+}
 
+func TestProjectUnsubscribeRequest(t *testing.T) {
+	req := *new(abstractRequest)
+	req.Resource = "Project"
+	req.Method = "Unsubscribe"
+	req.SenderToken = "supersecure"
+	req.Data = json.RawMessage("{" +
+		"\"ProjectID\": 12345" +
+		"}")
+
+	newRequest, err := getFullRequest(&req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectUnsubscribeRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -220,11 +216,8 @@ func TestProjectDeleteRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *projectDeleteRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *projectDeleteRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.projectDeleteRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -247,11 +240,8 @@ func TestFileCreateRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *fileCreateRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *fileCreateRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.fileCreateRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -270,11 +260,8 @@ func TestFileRenameRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *fileRenameRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *fileRenameRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.fileRenameRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -293,11 +280,8 @@ func TestFileMoveRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *fileMoveRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *fileMoveRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.fileMoveRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -315,11 +299,8 @@ func TestFileDeleteRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *fileDeleteRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *fileDeleteRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.fileDeleteRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -339,11 +320,8 @@ func TestFileChangeRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *fileChangeRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *fileChangeRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.fileChangeRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -361,11 +339,8 @@ func TestFilePullRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *filePullRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *filePullRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.filePullRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -384,11 +359,8 @@ func TestUserLookupRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *userRegiserRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *userLookupRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.userLookupRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -403,15 +375,17 @@ func TestUserProjectsRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *userRegiserRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *userProjectsRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.userProjectsRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
-// unauthenticated
+/*
+ *
+ * unauthenticated
+ *
+ */
+
 func TestUserRegisterRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "User"
@@ -429,11 +403,8 @@ func TestUserRegisterRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *userRegisterRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *userRegisterRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.userRegisterRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }
 
@@ -451,10 +422,7 @@ func TestUserLoginRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch newRequest.(type) {
-	default:
-		t.Fatalf("newRequest is the wrong type, expected: *userLoginRequest, actual: %s\n", reflect.TypeOf(newRequest))
-	case *userLoginRequest:
-
+	if reflect.TypeOf(newRequest).String() != "*datahandling.userLoginRequest" {
+		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
 }

@@ -45,12 +45,22 @@ type AMQPSubCfg struct {
 	Keys              []string
 	IsWorkQueue       bool
 	HandleMessageFunc func(AMQPMessage) error
-	Control           *utils.Control
+	Control           *RabbitControl
 }
 
 // QueueName generates the Queue
 func (cfg AMQPSubCfg) QueueName() string {
-	return fmt.Sprintf("%s-%d", hostname, cfg.QueueID)
+	return RabbitWebsocketQueueName(cfg.QueueID)
+}
+
+// RabbitWebsocketQueueName returns the name of the Queue a websocket with the given ID would have
+func RabbitWebsocketQueueName(queueID uint64) string {
+	return fmt.Sprintf("%s-%d", hostname, queueID)
+}
+
+// RabbitProjectQueueName returns the name of the Queue a project with the given ID would have
+func RabbitProjectQueueName(projectID int64) string {
+	return fmt.Sprintf("Project-%d", projectID)
 }
 
 // AMQPPubCfg represents the settings needed to create a new publisher
@@ -58,6 +68,15 @@ type AMQPPubCfg struct {
 	ExchangeName string
 	Messages     chan AMQPMessage
 	Control      *utils.Control
+}
+
+// NewPubConfig creates a new AMQPPubCfg, initialized
+func NewPubConfig(exchangeName string) *AMQPPubCfg {
+	return &AMQPPubCfg{
+		ExchangeName: exchangeName,
+		Messages:     make(chan AMQPMessage, 1),
+		Control:      utils.NewControl(),
+	}
 }
 
 // AMQPMessage represents the information required to send a new message

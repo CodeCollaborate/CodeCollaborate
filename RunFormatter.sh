@@ -1,4 +1,4 @@
-     #!/usr/bin/env bash
+#!/usr/bin/env bash
 
 PACKAGES=$(go list ./... | grep -v /vendor/)
 FILES=$(find . -type f -name '*.go' -not -path "./vendor/*")
