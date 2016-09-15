@@ -105,8 +105,8 @@ func (diff *Diff) ConvertToCRLF(base string) *Diff {
 	newStartIndex := diff.StartIndex
 	newChanges := strings.Replace(diff.Changes, "\n", "\r\n", -1)
 
-	for i := 0; i < newStartIndex && i < len(base)-1; i++ {
-		if base[i] == '\r' && base[i+1] == '\n' {
+	for i := 0; i < newStartIndex && i < len(base) - 1; i++ {
+		if base[i] == '\r' && base[i + 1] == '\n' {
 			newStartIndex++
 		}
 	}
@@ -120,7 +120,7 @@ func (diff *Diff) ConvertToLF(base string) *Diff {
 	newStartIndex := diff.StartIndex
 	newChanges := strings.Replace(diff.Changes, "\r\n", "\n", -1)
 
-	for i := 0; i < newStartIndex && i < len(base)-1; i++ {
+	for i := 0; i < diff.StartIndex - 1 && i < len(base) - 1; i++ {
 		if base[i] == '\n' {
 			newStartIndex--
 		}
@@ -136,7 +136,7 @@ func (diff *Diff) Undo() *Diff {
 
 // OffsetDiff shifts the start index of this diff by the provided offset
 func (diff *Diff) OffsetDiff(offset int) *Diff {
-	return NewDiff(diff.Insertion, diff.StartIndex+offset, diff.Changes)
+	return NewDiff(diff.Insertion, diff.StartIndex + offset, diff.Changes)
 }
 
 func (diff *Diff) subChanges(start, end int) *Diff {
