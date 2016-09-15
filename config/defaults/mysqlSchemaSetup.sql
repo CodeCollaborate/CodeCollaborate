@@ -265,10 +265,11 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `project_delete`(IN projectID bigint(20))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `project_delete`(IN projectID bigint(20),
+                                                             IN revokeUsername varchar(25))
   BEGIN
     DELETE FROM Project
-    WHERE Project.ProjectID = projectID;
+    WHERE Project.ProjectID = projectID AND Project.Owner = revokeUsername;
   END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -336,7 +337,7 @@ DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_lookup`(IN projectID bigint(20))
   BEGIN
     SELECT `Project`.`Name`, `Permissions`.`Username`, `Permissions`.`PermissionLevel`, `Permissions`.`GrantedBy`, `Permissions`.`GrantedDate`
-    FROM Project LEFT JOIN Permissions
+    FROM Project JOIN Permissions
         ON Project.ProjectID = Permissions.ProjectID
     WHERE Project.ProjectID = projectID
     UNION

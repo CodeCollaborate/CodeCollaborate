@@ -5,11 +5,12 @@ import (
 	"time"
 )
 
-func TestOpenMySQLConn(t *testing.T) {
+func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
-	my, err := getMySQLConn()
-	defer CloseMySQL()
+	my, err := di.getMySQLConn()
+	defer di.CloseMySQL()
 
 	if err != nil {
 		t.Fatal(err)
@@ -23,25 +24,29 @@ func TestOpenMySQLConn(t *testing.T) {
 
 }
 
-func TestCloseMySQL(t *testing.T) {
+func TestDatabaseImpl_CloseMySQL(t *testing.T) {
 	configSetup()
-	_, err := getMySQLConn()
+	di := new(DatabaseImpl)
+
+	_, err := di.getMySQLConn()
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = CloseMySQL()
+	err = di.CloseMySQL()
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = CloseMySQL()
+	err = di.CloseMySQL()
 	if err != ErrDbNotInitialized {
 		t.Fatal("Wrong error recieved")
 	}
 }
 
-func TestMySQLUserRegister(t *testing.T) {
+func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 	configSetup()
-	mySQLUserDelete("jshap70", "secret")
+	di := new(DatabaseImpl)
+
+	di.MySQLUserDelete("jshap70", "secret")
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -50,19 +55,20 @@ func TestMySQLUserRegister(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	err := MySQLUserRegister(user)
+	err := di.MySQLUserRegister(user)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = mySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70", "secret")
 	if err == ErrNoDbChange {
 		t.Fatal("No user added")
 	}
 }
 
-func TestMySQLUserGetPass(t *testing.T) {
+func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 	configSetup()
-	mySQLUserDelete("jshap70", "secret")
+	di := new(DatabaseImpl)
+	di.MySQLUserDelete("jshap70", "secret")
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -71,12 +77,12 @@ func TestMySQLUserGetPass(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	err := MySQLUserRegister(user)
+	err := di.MySQLUserRegister(user)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	pass, err := MySQLUserGetPass("jshap70")
+	pass, err := di.MySQLUserGetPass("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,12 +90,13 @@ func TestMySQLUserGetPass(t *testing.T) {
 		t.Fatal("Wrong password returned")
 	}
 
-	err = mySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70", "secret")
 }
 
-func TestMySQLUserLookup(t *testing.T) {
+func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 	configSetup()
-	mySQLUserDelete("jshap70", "secret")
+	di := new(DatabaseImpl)
+	di.MySQLUserDelete("jshap70", "secret")
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -98,12 +105,12 @@ func TestMySQLUserLookup(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	err := MySQLUserRegister(user)
+	err := di.MySQLUserRegister(user)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	userRet, err := MySQLUserLookup("jshap70")
+	userRet, err := di.MySQLUserLookup("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,15 +118,21 @@ func TestMySQLUserLookup(t *testing.T) {
 		t.Fatalf("Wrong return, got: %v %v, email: %v", userRet.FirstName, userRet.LastName, userRet.Email)
 	}
 
-	err = mySQLUserDelete("jshap70", "secret")
+	userRet, err = di.MySQLUserLookup("notjshap70")
+	if err == nil {
+		t.Fatal("Expected lookup with incorrect username to fail, but it did not")
+	}
+
+	err = di.MySQLUserDelete("jshap70", "secret")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestMySQLUserProjects(t *testing.T) {
+func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 	configSetup()
-	mySQLUserDelete("jshap70", "secret")
+	di := new(DatabaseImpl)
+	di.MySQLUserDelete("jshap70", "secret")
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -128,12 +141,16 @@ func TestMySQLUserProjects(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projects, err := MySQLUserProjects("jshap70")
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+
+	projects, err := di.MySQLUserProjects("jshap70")
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,13 +158,14 @@ func TestMySQLUserProjects(t *testing.T) {
 	if len(projects) != 1 {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(projects))
 	}
-	if projects[0].ProjectID == -1 || projects[0].ProjectName != "codecollabcore" || projects[0].PermissionLevel != 10 {
-		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
+	if projects[0].ProjectID == -1 || projects[0].Name != "codecollabcore" || projects[0].PermissionLevel != 10 {
+		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 }
 
-func TestMySQLProjectCreate(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -156,9 +174,12 @@ func TestMySQLProjectCreate(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, err := MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,23 +187,24 @@ func TestMySQLProjectCreate(t *testing.T) {
 		t.Fatal("incorrect ProjectID")
 	}
 
-	_, err = MySQLProjectCreate("jshap70", "codecollabcore")
+	_, err = di.MySQLProjectCreate("jshap70", "codecollabcore")
 	if err == nil {
 		t.Fatal("unexpected opperation allowed")
 	}
 
-	err = MySQLProjectDelete(projectID)
+	err = di.MySQLProjectDelete(projectID, "jshap70")
 	if err != nil {
 		t.Fatal(err, projectID)
 	}
-	err = mySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70", "secret")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestMySQLProjectDelete(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -191,36 +213,40 @@ func TestMySQLProjectDelete(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, err := MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// test trying to delete a project that contains files
-	_, err = MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	_, err = di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = MySQLProjectDelete(projectID)
+	err = di.MySQLProjectDelete(projectID, "jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = MySQLProjectDelete(projectID)
+	err = di.MySQLProjectDelete(projectID, "jshap70")
 	if err == nil {
 		t.Fatal("project delete succeded 2x on the same projectID")
 	}
 
-	err = mySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70", "secret")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestMySQLProjectGetFiles(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -229,15 +255,18 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, err := MySQLProjectCreate("jshap70", "codecollabcore")
-	MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
-	files, err := MySQLProjectGetFiles(projectID)
+	files, err := di.MySQLProjectGetFiles(projectID)
 
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
 		t.Fatal(err)
@@ -249,10 +278,16 @@ func TestMySQLProjectGetFiles(t *testing.T) {
 	if files[0].FileID == -1 || files[0].Creator != "jshap70" || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
+
+	//files, err = di.MySQLProjectGetFiles(projectID + 1000)
+	//if err == nil {
+	//	t.Fatal("Expected lookup to fail when using an incorrect projectID")
+	//}
 }
 
-func TestMySQLProjectGrantPermission(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	userJoel := UserMeta{
 		Username:  "jshap70",
@@ -268,17 +303,21 @@ func TestMySQLProjectGrantPermission(t *testing.T) {
 		FirstName: "Austin",
 		LastName:  "Fahsl"}
 
-	MySQLUserRegister(userJoel)
-	MySQLUserRegister(userAustin)
+	erro := di.MySQLUserRegister(userJoel)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
+	di.MySQLUserRegister(userAustin)
 
-	err := MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+
+	err := di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	projects, err := MySQLUserProjects("fahslaj")
+	projects, err := di.MySQLUserProjects("fahslaj")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,26 +325,27 @@ func TestMySQLProjectGrantPermission(t *testing.T) {
 	if len(projects) != 1 {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(projects))
 	}
-	if projects[0].ProjectID != projectID || projects[0].ProjectName != "codecollabcore" || projects[0].PermissionLevel != 5 {
-		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
+	if projects[0].ProjectID != projectID || projects[0].Name != "codecollabcore" || projects[0].PermissionLevel != 5 {
+		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
-	err = MySQLProjectDelete(projectID)
+	err = di.MySQLProjectDelete(projectID, "jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = mySQLUserDelete("fahslaj", "secret")
+	err = di.MySQLUserDelete("fahslaj", "secret")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = mySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70", "secret")
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestMySQLProjectLookup(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	userJoel := UserMeta{
 		Username:  "jshap70",
@@ -321,20 +361,30 @@ func TestMySQLProjectLookup(t *testing.T) {
 		FirstName: "Austin",
 		LastName:  "Fahsl"}
 
-	MySQLUserRegister(userJoel)
-	MySQLUserRegister(userAustin)
+	erro := di.MySQLUserRegister(userJoel)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
+	di.MySQLUserRegister(userAustin)
 
-	err := MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+
+	defer di.MySQLUserDelete("fahslaj", "secret")
+	defer di.MySQLUserDelete("jshap70", "secret")
+	defer di.MySQLProjectDelete(projectID, "jshap70")
+
+	name, perms, err := di.MySQLProjectLookup(projectID, "fahslaj")
+	if err == nil {
+		t.Fatal("Expected failure when given a projectID you don't have access to")
+	}
+
+	err = di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	name, perms, err := MySQLProjectLookup(projectID)
-	MySQLProjectDelete(projectID)
-	mySQLUserDelete("fahslaj", "secret")
-	mySQLUserDelete("jshap70", "secret")
+	name, perms, err = di.MySQLProjectLookup(projectID, "fahslaj")
 
 	if err != nil {
 		t.Fatal(err)
@@ -355,10 +405,16 @@ func TestMySQLProjectLookup(t *testing.T) {
 	if perms["fahslaj"].GrantedDate == time.Unix(0, 0) {
 		t.Fatal("time did not correctly parse")
 	}
+
+	name, perms, err = di.MySQLProjectLookup(projectID+1000, "fahslaj")
+	if err == nil {
+		t.Fatal("Expected failure when given a non-existant projectID")
+	}
 }
 
-func TestMySQLProjectRevokePermission(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	userJoel := UserMeta{
 		Username:  "jshap70",
@@ -374,35 +430,41 @@ func TestMySQLProjectRevokePermission(t *testing.T) {
 		FirstName: "Austin",
 		LastName:  "Fahsl"}
 
-	MySQLUserRegister(userJoel)
-	MySQLUserRegister(userAustin)
+	erro := di.MySQLUserRegister(userJoel)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
+	di.MySQLUserRegister(userAustin)
 
-	MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 
-	projects, _ := MySQLUserProjects("fahslaj")
+	di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+
+	projects, _ := di.MySQLUserProjects("fahslaj")
 	if len(projects) != 1 {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(projects))
 	}
 	if projects[0].ProjectID != projectID || projects[0].PermissionLevel != 5 {
-		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].ProjectName, projects[0].ProjectID, projects[0].PermissionLevel)
+		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
-	MySQLProjectRevokePermission(projectID, "fahslaj")
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
-	_ = mySQLUserDelete("fahslaj", "secret")
+	di.MySQLProjectRevokePermission(projectID, "fahslaj", "jshap70")
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("fahslaj", "secret")
 
-	projects, _ = MySQLUserProjects("fahslaj")
+	projects, _ = di.MySQLUserProjects("fahslaj")
 	if len(projects) > 0 {
 		t.Fatalf("Projects returned not the correct length, expected: 0, actual: %v", len(projects))
 	}
 }
 
-func TestMySQLProjectRename(t *testing.T) {
+func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 	configSetup()
-	mySQLUserDelete("jshap70", "secret")
+	di := new(DatabaseImpl)
+
+	di.MySQLUserDelete("jshap70", "secret")
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -411,26 +473,30 @@ func TestMySQLProjectRename(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 
-	err := MySQLProjectRename(projectID, "newName")
+	err := di.MySQLProjectRename(projectID, "newName")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	projects, err := MySQLUserProjects("jshap70")
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	projects, err := di.MySQLUserProjects("jshap70")
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 
-	if projects[0].ProjectID != projectID || projects[0].ProjectName != "newName" {
-		t.Fatalf("Wrong return, got project:%v %v", projects[0].ProjectName, projects[0].ProjectID)
+	if projects[0].ProjectID != projectID || projects[0].Name != "newName" {
+		t.Fatalf("Wrong return, got project:%v %v", projects[0].Name, projects[0].ProjectID)
 	}
 }
 
-func TestMySQLFileCreate(t *testing.T) {
+func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -439,15 +505,18 @@ func TestMySQLFileCreate(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, err := MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	fileID, err := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
-	files, _ := MySQLProjectGetFiles(projectID)
+	files, _ := di.MySQLProjectGetFiles(projectID)
 
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
 		t.Fatal(err)
@@ -461,8 +530,9 @@ func TestMySQLFileCreate(t *testing.T) {
 	}
 }
 
-func TestMySQLFileDelete(t *testing.T) {
+func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -471,15 +541,18 @@ func TestMySQLFileDelete(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
-	err := MySQLFileDelete(fileID)
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	err := di.MySQLFileDelete(fileID)
 
-	files, _ := MySQLProjectGetFiles(projectID)
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	files, _ := di.MySQLProjectGetFiles(projectID)
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
 		t.Fatal(err)
@@ -489,8 +562,9 @@ func TestMySQLFileDelete(t *testing.T) {
 	}
 }
 
-func TestMySQLFileMove(t *testing.T) {
+func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -499,16 +573,19 @@ func TestMySQLFileMove(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
-	err := MySQLFileMove(fileID, "cc")
+	err := di.MySQLFileMove(fileID, "cc")
 
-	files, _ := MySQLProjectGetFiles(projectID)
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	files, _ := di.MySQLProjectGetFiles(projectID)
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
 		t.Fatal(err)
@@ -521,8 +598,9 @@ func TestMySQLFileMove(t *testing.T) {
 	}
 }
 
-func TestMySQLRenameFile(t *testing.T) {
+func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -531,16 +609,19 @@ func TestMySQLRenameFile(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
-	err := MySQLFileRename(fileID, "file-z")
+	err := di.MySQLFileRename(fileID, "file-z")
 
-	files, _ := MySQLProjectGetFiles(projectID)
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	files, _ := di.MySQLProjectGetFiles(projectID)
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
 		t.Fatal(err)
@@ -553,8 +634,9 @@ func TestMySQLRenameFile(t *testing.T) {
 	}
 }
 
-func TestMySQLFileGetInfo(t *testing.T) {
+func TestDatabaseImpl_MySQLFileGetInfo(t *testing.T) {
 	configSetup()
+	di := new(DatabaseImpl)
 
 	user := UserMeta{
 		Username:  "jshap70",
@@ -563,17 +645,20 @@ func TestMySQLFileGetInfo(t *testing.T) {
 		FirstName: "Joel",
 		LastName:  "Shapiro"}
 
-	MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(user)
+	if erro != nil {
+		t.Fatal(erro)
+	}
 
-	projectID, _ := MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
 
-	filebefore, err := MySQLFileGetInfo(fileID)
-	_ = MySQLFileMove(fileID, "cc")
-	fileafter, err := MySQLFileGetInfo(fileID)
+	filebefore, err := di.MySQLFileGetInfo(fileID)
+	_ = di.MySQLFileMove(fileID, "cc")
+	fileafter, err := di.MySQLFileGetInfo(fileID)
 
-	_ = MySQLProjectDelete(projectID)
-	_ = mySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLProjectDelete(projectID, "jshap70")
+	_ = di.MySQLUserDelete("jshap70", "secret")
 
 	if err != nil {
 		t.Fatal(err)
