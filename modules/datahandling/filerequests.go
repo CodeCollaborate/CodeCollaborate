@@ -120,12 +120,12 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
-	err := db.MySQLFileRename(f.FileID, f.NewName)
+	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
 
-	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
+	err = db.MySQLFileRename(f.FileID, f.NewName)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
@@ -164,12 +164,12 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
-	err := db.MySQLFileMove(f.FileID, f.NewPath)
+	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
 
-	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
+	err = db.MySQLFileMove(f.FileID, f.NewPath)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
@@ -207,12 +207,12 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
 
-	err := db.MySQLFileDelete(f.FileID)
+	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
 
-	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
+	err = db.MySQLFileDelete(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}

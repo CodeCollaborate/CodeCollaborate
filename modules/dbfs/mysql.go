@@ -241,7 +241,8 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 		return nil, err
 	}
 
-	result := false
+	files = []FileMeta{}
+
 	for rows.Next() {
 		file := FileMeta{}
 		err = rows.Scan(&file.FileID, &file.Creator, &file.CreationDate, &file.RelativePath, &file.ProjectID, &file.Filename)
@@ -249,10 +250,6 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 			return nil, err
 		}
 		files = append(files, file)
-		result = true
-	}
-	if !result {
-		return files, ErrNoData
 	}
 
 	return files, nil
