@@ -83,12 +83,12 @@ func TestPatch_ConvertToCRLF(t *testing.T) {
 func TestPatch_ConvertToLF(t *testing.T) {
 	patch, err := NewPatchFromString("v2:\n0:+6:test%0D%0A")
 	require.Nil(t, err)
-	newPatch := patch.ConvertToLF("\ntest")
+	newPatch := patch.ConvertToLF("\r\ntest")
 	require.Equal(t, "v2:\n0:+5:test%0A", newPatch.String())
 
 	patch, err = NewPatchFromString("v6:\n2:+6:test%0D%0A,\n9:+4:test")
 	require.Nil(t, err)
-	newPatch = patch.ConvertToLF("\ntes\nt")
+	newPatch = patch.ConvertToLF("\r\nntes\r\nnt")
 	require.Equal(t, "v6:\n1:+5:test%0A,\n7:+4:test", newPatch.String())
 }
 

@@ -81,22 +81,17 @@ func TestDiff_ConvertToCRLF(t *testing.T) {
 func TestDiff_ConvertToLF(t *testing.T) {
 	diff, err := NewDiffFromString("0:+6:test%0D%0A")
 	require.Nil(t, err)
-	newDiff := diff.ConvertToLF("\ntest")
-	require.Equal(t, "0:+5:test%0A", newDiff.String())
-
-	diff, err = NewDiffFromString("1:+6:test%0D%0A")
-	require.Nil(t, err)
-	newDiff = diff.ConvertToLF("\ntest")
+	newDiff := diff.ConvertToLF("\r\ntest")
 	require.Equal(t, "0:+5:test%0A", newDiff.String())
 
 	diff, err = NewDiffFromString("2:+6:test%0D%0A")
 	require.Nil(t, err)
-	newDiff = diff.ConvertToLF("\ntest")
+	newDiff = diff.ConvertToLF("\r\ntest")
 	require.Equal(t, "1:+5:test%0A", newDiff.String())
 
 	diff, err = NewDiffFromString("7:+6:test%0D%0A")
 	require.Nil(t, err)
-	newDiff = diff.ConvertToLF("\ntes\nt")
+	newDiff = diff.ConvertToLF("\r\ntes\r\nt")
 	require.Equal(t, "5:+5:test%0A", newDiff.String())
 }
 

@@ -121,7 +121,7 @@ func (diff *Diff) ConvertToLF(base string) *Diff {
 	newChanges := strings.Replace(diff.Changes, "\r\n", "\n", -1)
 
 	for i := 0; i < diff.StartIndex - 1 && i < len(base) - 1; i++ {
-		if base[i] == '\n' {
+		if base[i] == '\r' &&  base[i+1] == '\n' {
 			newStartIndex--
 		}
 	}
