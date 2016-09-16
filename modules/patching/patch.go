@@ -87,7 +87,6 @@ func (patch *Patch) Undo() *Patch {
 	// This needs to be in reverse order, since all the diffs in a package will have been applied in order.
 	// The last diff will have been computed relative to the previous few.
 	for i := len(patch.Changes) - 1; i >= 0; i-- {
-		//_, diff := range patch.Changes {
 		newChanges = append(newChanges, patch.Changes[i].Undo())
 	}
 
@@ -108,8 +107,8 @@ func (patch *Patch) Transform(others []*Patch) *Patch {
 		}
 
 		intermediateDiffs = newIntermediateDiffs
-		if maxVersionSeen < patch.BaseVersion {
-			maxVersionSeen = patch.BaseVersion
+		if maxVersionSeen < otherPatch.BaseVersion {
+			maxVersionSeen = otherPatch.BaseVersion
 		}
 	}
 

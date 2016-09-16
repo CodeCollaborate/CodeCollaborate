@@ -7,26 +7,24 @@ import (
 )
 
 func TestPatch_NewPatch(t *testing.T) {
+	patchString := "v1:\n3:-8:deletion,\n2:+6:insert"
 
-	// Test addition
-	diff := NewDiff(true, 2, "test")
-	patch := NewPatch(2, []*Diff{diff})
-	require.Equal(t, 2, patch.BaseVersion)
-	require.Equal(t, 1, len(patch.Changes))
-	require.Equal(t, diff, patch.Changes[0])
-
-	// Test removal
-	diff = NewDiff(false, 42, "string")
-	patch = NewPatch(10, []*Diff{diff})
-	require.Equal(t, 10, patch.BaseVersion)
-	require.Equal(t, 1, len(patch.Changes))
-	require.Equal(t, diff, patch.Changes[0])
+	diff1 := NewDiff(false, 3, "deletion")
+	diff2 := NewDiff(true, 2, "insert")
+	patch := NewPatch(1, []*Diff{diff1, diff2})
+	require.Equal(t, patchString, patch.String())
 }
 
 func TestPatch_NewPatchFromString(t *testing.T) {
+	patch, err := NewPatchFromString("v6:\n3:-8:deletion,\n2:+6:insert")
+	require.Nil(t, err)
+	require.Equal(t, 6, patch.BaseVersion)
+	require.Equal(t, 2, len(patch.Changes))
+	require.Equal(t, "3:-8:deletion", patch.Changes[0].String())
+	require.Equal(t, "2:+6:insert", patch.Changes[1].String())
 
 	// Test insertion from string
-	patch, err := NewPatchFromString("v4:\n2:+1:a")
+	patch, err = NewPatchFromString("v4:\n2:+1:a")
 	require.Nil(t, err)
 	require.Equal(t, 4, patch.BaseVersion)
 	require.Equal(t, 1, len(patch.Changes))
@@ -69,69 +67,137 @@ func TestPatch_NewPatchFromStringInvalidFormats(t *testing.T) {
 }
 
 func TestPatch_ConvertToCRLF(t *testing.T) {
-	patch, err := NewPatchFromString("v2:\n0:+5:test%0A")
+	patch, err := NewPatchFromString("v0:\n0:+5:test%0A")
 	require.Nil(t, err)
 	newPatch := patch.ConvertToCRLF("\r\ntest")
-	require.Equal(t, "v2:\n0:+6:test%0D%0A", newPatch.String())
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n0:+6:test%0D%0A", newPatch.String())
 
-	patch, err = NewPatchFromString("v6:\n1:+5:test%0A,\n7:+4:test")
+	patch, err = NewPatchFromString("v0:\n1:+5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToCRLF("\r\ntest")
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n2:+6:test%0D%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n2:+5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToCRLF("\r\ntest")
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n3:+6:test%0D%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n7:+5:test%0A")
 	require.Nil(t, err)
 	newPatch = patch.ConvertToCRLF("\r\ntes\r\nt")
-	require.Equal(t, "v6:\n2:+6:test%0D%0A,\n9:+4:test", newPatch.String())
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n9:+6:test%0D%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n2:+5:test%0A,\n7:+5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToCRLF("\r\ntes\r\nt")
+	require.Equal(t, 2, len(newPatch.Changes))
+	require.Equal(t, "v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n2:+5:test%0A,\n7:+5:test%0A,\n0:+5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToCRLF("\r\ntes\r\nt")
+	require.Equal(t, 3, len(newPatch.Changes))
+	require.Equal(t, "v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A,\n0:+6:test%0D%0A", newPatch.String())
 }
 
 func TestPatch_ConvertToLF(t *testing.T) {
-	patch, err := NewPatchFromString("v2:\n0:+6:test%0D%0A")
+	patch, err := NewPatchFromString("v0:\n0:+6:test%0D%0A")
 	require.Nil(t, err)
 	newPatch := patch.ConvertToLF("\r\ntest")
-	require.Equal(t, "v2:\n0:+5:test%0A", newPatch.String())
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n0:+5:test%0A", newPatch.String())
 
-	patch, err = NewPatchFromString("v6:\n2:+6:test%0D%0A,\n9:+4:test")
+	patch, err = NewPatchFromString("v0:\n2:+6:test%0D%0A")
 	require.Nil(t, err)
-	newPatch = patch.ConvertToLF("\r\nntes\r\nnt")
-	require.Equal(t, "v6:\n1:+5:test%0A,\n7:+4:test", newPatch.String())
+	newPatch = patch.ConvertToLF("\r\ntest")
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n1:+5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n3:+6:test%0D%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToLF("\r\ntest")
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n2:+5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n9:+6:test%0D%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToLF("\r\ntes\r\nt")
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n7:+5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToLF("\r\ntes\r\nt")
+	require.Equal(t, 2, len(newPatch.Changes))
+	require.Equal(t, "v0:\n2:+5:test%0A,\n7:+5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A,\n0:+6:test%0D%0A")
+	require.Nil(t, err)
+	newPatch = patch.ConvertToLF("\r\ntes\r\nt")
+	require.Equal(t, 3, len(newPatch.Changes))
+	require.Equal(t, "v0:\n2:+5:test%0A,\n7:+5:test%0A,\n0:+5:test%0A", newPatch.String())
 }
 
-func TestPatch_GetUndo(t *testing.T) {
-	patch, err := NewPatchFromString("v2:\n0:+4:test")
+func TestPatch_Undo(t *testing.T) {
+	patch, err := NewPatchFromString("v0:\n0:+5:test%0A")
 	require.Nil(t, err)
 	newPatch := patch.Undo()
-	require.Equal(t, "v2:\n0:-4:test", newPatch.String())
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n0:-5:test%0A", newPatch.String())
 
-	patch, err = NewPatchFromString("v6:\n2:+6:test%0D%0A,\n9:+4:test")
+	patch, err = NewPatchFromString("v0:\n1:-5:test%0A")
 	require.Nil(t, err)
 	newPatch = patch.Undo()
-	require.Equal(t, "v6:\n9:-4:test,\n2:-6:test%0D%0A", newPatch.String())
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n1:+5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n2:+5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.Undo()
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n2:-5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n7:-5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.Undo()
+	require.Equal(t, 1, len(newPatch.Changes))
+	require.Equal(t, "v0:\n7:+5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n2:-5:test%0A,\n7:+5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.Undo()
+	require.Equal(t, 2, len(newPatch.Changes))
+	require.Equal(t, "v0:\n7:-5:test%0A,\n2:+5:test%0A", newPatch.String())
+
+	patch, err = NewPatchFromString("v0:\n2:+5:test%0A,\n7:-5:test%0A,\n0:-5:test%0A")
+	require.Nil(t, err)
+	newPatch = patch.Undo()
+	require.Equal(t, 3, len(newPatch.Changes))
+	require.Equal(t, "v0:\n0:+5:test%0A,\n7:+5:test%0A,\n2:-5:test%0A", newPatch.String())
 }
 
 func TestPatch_Transform(t *testing.T) {
-
 	// Test set 1
-	patch1String := "v1:\n0:-1:a"
-	patch2String := "v0:\n3:-8:deletion,\n3:+6:insert"
-
-	patch1, err := NewPatchFromString(patch1String)
+	patch1, err := NewPatchFromString("v1:\n0:-1:a")
 	require.Nil(t, err)
-	patch2, err := NewPatchFromString(patch2String)
+	patch2, err := NewPatchFromString("v0:\n3:-8:deletion,\n3:+6:insert")
 	require.Nil(t, err)
-
-	expectedString := "v0:\n2:-8:deletion,\n2:+6:insert"
-	result := patch2.Transform([]*Patch{patch1})
-	require.Equal(t, expectedString, result.String())
+	newPatch := patch2.Transform([]*Patch{patch1})
+	require.Equal(t, 2, len(newPatch.Changes))
+	require.Equal(t, "v1:\n2:-8:deletion,\n2:+6:insert", newPatch.String())
 
 	// Test set 2
-	patch1String = "v1:\n0:-1:a"
-	patch2String = "v2:\n0:-1:b"
-	patch3String := "v0:\n3:-8:deletion,\n3:+6:insert"
-
-	patch1, err = NewPatchFromString(patch1String)
+	patch1, err = NewPatchFromString("v1:\n0:-1:a")
 	require.Nil(t, err)
-	patch2, err = NewPatchFromString(patch2String)
+	patch2, err = NewPatchFromString("v2:\n0:-1:b")
 	require.Nil(t, err)
-	patch3, err := NewPatchFromString(patch3String)
+	patch3, err := NewPatchFromString("v0:\n3:-8:deletion,\n3:+6:insert")
 	require.Nil(t, err)
-
-	expectedString = "v0:\n1:-8:deletion,\n1:+6:insert"
-	result = patch3.Transform([]*Patch{patch1, patch2})
-	require.Equal(t, expectedString, result.String())
+	newPatch = patch3.Transform([]*Patch{patch1, patch2})
+	require.Equal(t, 2, len(newPatch.Changes))
+	require.Equal(t, "v2:\n1:-8:deletion,\n1:+6:insert", newPatch.String())
 }
