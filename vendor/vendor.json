@@ -21,6 +21,13 @@
 			"revisionTime": "2016-07-27T23:51:05Z"
 		},
 		{
+			"checksumSHA1": "JYVxwR0rMkpsCZkQzig/lQszMI4=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/davecgh/go-spew/spew",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
+		},
+		{
 			"checksumSHA1": "A50uGjK2/E8w+Q7uWyfzHca2jH4=",
 			"path": "github.com/dgrijalva/jwt-go",
 			"revision": "24c63f56522a87ec5339cc3567883f1039378fdb",
@@ -45,10 +52,30 @@
 			"revisionTime": "2016-08-23T17:07:15Z"
 		},
 		{
+			"checksumSHA1": "OdjJhBQQtNpITIPc6X+C9e/6RLw=",
+			"path": "github.com/kr/text",
+			"revision": "7cafcd837844e784b526369c9bce262804aebc60",
+			"revisionTime": "2016-05-04T02:26:26Z"
+		},
+		{
+			"checksumSHA1": "+oyIJwPyeof36XCkY8awrNfxaNM=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/pmezard/go-difflib/difflib",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
+		},
+		{
 			"checksumSHA1": "uboKbybSheSH99DWeX328g+tfbw=",
 			"path": "github.com/streadway/amqp",
 			"revision": "2e25825abdbd7752ff08b270d313b93519a0a232",
 			"revisionTime": "2016-03-11T21:55:03Z"
+		},
+		{
+			"checksumSHA1": "iDI3Ec9Co5dn9MAf6VRg5cGNRPI=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/stretchr/objx",
+			"path": "github.com/stretchr/objx",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
 		},
 		{
 			"checksumSHA1": "fPjZ9M1PDFi51iQ0aXEjQG+qLqM=",
@@ -57,8 +84,32 @@
 			"revisionTime": "2016-06-15T09:26:46Z"
 		},
 		{
+			"checksumSHA1": "dM4WxRpcrt2jK8Kd10XsHR9iIwE=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
+		},
+		{
+			"checksumSHA1": "D4bXPof9qSyXm4ZssBn6J5/FX0U=",
+			"path": "github.com/stretchr/testify/http",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
+		},
+		{
+			"checksumSHA1": "jH5Mk0m4ZwDtgieRPu2W1PNNJtI=",
+			"path": "github.com/stretchr/testify/mock",
+			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
+			"revisionTime": "2016-06-15T09:26:46Z"
+		},
+		{
 			"checksumSHA1": "vE43s37+4CJ2CDU6TlOUOYE0K9c=",
 			"path": "golang.org/x/crypto/bcrypt",
+			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
+			"revisionTime": "2016-09-19T18:57:51Z"
+		},
+		{
+			"checksumSHA1": "JsJdKXhz87gWenMwBeejTOeNE7k=",
+			"path": "golang.org/x/crypto/blowfish",
 			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
 			"revisionTime": "2016-09-19T18:57:51Z"
 		},
