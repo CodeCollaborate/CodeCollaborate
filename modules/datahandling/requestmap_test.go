@@ -12,12 +12,15 @@ import (
  *
  */
 
+const TestSenderID = "testUser"
+
 // Project functions
 func TestProjectCreateRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Create"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"Name\": \"Namey\"" +
 		"}")
@@ -36,7 +39,8 @@ func TestProjectRenameRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Rename"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"NewName\": \"Namey\", " +
 		"\"ProjectID\": 12345" +
@@ -56,7 +60,8 @@ func TestProjectGetPermissionConstantsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GetPermissionsConstants"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{}")
 
 	newRequest, err := getFullRequest(&req)
@@ -73,7 +78,8 @@ func TestProjectGrantPermissionsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GrantPermissions"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"ProjectID\": 12345, " +
 		"\"GrantUsername\": \"loganga\", " +
@@ -94,7 +100,8 @@ func TestProjectRevokePermissionsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "RevokePermissions"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"ProjectID\": 12345, " +
 		"\"RevokeUsername\": \"loganga\"" +
@@ -114,7 +121,8 @@ func TestProjectGetOnlineClientsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GetOnlineClients"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"ProjectID\": 12345" +
 		"}")
@@ -133,7 +141,8 @@ func TestProjectLookupRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Lookup"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{\"ProjectIds\": [12345, 38292]}")
 	newRequest, err := getFullRequest(&req)
 	if err != nil {
@@ -149,7 +158,8 @@ func TestProjectGetFilesRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "GetFiles"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"ProjectID\": 12345" +
 		"}")
@@ -168,7 +178,8 @@ func TestProjectSubscribeRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Subscribe"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"ProjectID\": 12345" +
 		"}")
@@ -187,7 +198,8 @@ func TestProjectUnsubscribeRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Unsubscribe"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"ProjectID\": 12345" +
 		"}")
@@ -206,7 +218,8 @@ func TestProjectDeleteRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
 	req.Method = "Delete"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"ProjectID\": 12345" +
 		"}")
@@ -227,7 +240,8 @@ func TestFileCreateRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Create"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"Name\": \"Namey\", " +
 		"\"RelativePath\": \"src/\", " +
@@ -249,7 +263,8 @@ func TestFileRenameRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Rename"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"NewName\": \"Namey\", " +
 		"\"FileID\": 12345" +
@@ -269,7 +284,8 @@ func TestFileMoveRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Move"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"NewPath\": \"golang/\", " +
 		"\"FileID\": 12345" +
@@ -289,7 +305,8 @@ func TestFileDeleteRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Delete"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"FileID\": 12345" +
 		"}")
@@ -308,7 +325,8 @@ func TestFileChangeRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Change"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"FileID\": 12345," +
 		"\"FileVersion\": 25," +
@@ -329,7 +347,8 @@ func TestFilePullRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "File"
 	req.Method = "Pull"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{" +
 		"\"FileID\": 12345" +
 		"}")
@@ -350,7 +369,8 @@ func TestUserLookupRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "User"
 	req.Method = "Lookup"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage(
 		"{\"Usernames\": [\"jshap70\"]" +
 			"}")
@@ -368,7 +388,8 @@ func TestUserProjectsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "User"
 	req.Method = "Projects"
-	req.SenderToken = "supersecure"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{}")
 	newRequest, err := getFullRequest(&req)
 	if err != nil {

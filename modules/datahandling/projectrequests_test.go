@@ -8,10 +8,6 @@ import (
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
-func init() {
-	disableAuth = true
-}
-
 func setBaseFields(req request) {
 	req.setAbstractRequest(&abstractRequest{
 		SenderID:    "loganga",
@@ -26,7 +22,7 @@ var datahanly = DataHandler{
 }
 
 func TestProjectCreateRequest_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectCreateRequest)
 	setBaseFields(&req)
 
@@ -76,7 +72,7 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 }
 
 func TestProjectRenameRequest_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectRenameRequest)
 	setBaseFields(&req)
 
@@ -129,7 +125,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 // projectGetPermissionConstantsRequest.process is unimplemented
 
 func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectGrantPermissionsRequest)
 	setBaseFields(&req)
 
@@ -192,7 +188,7 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 }
 
 func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectRevokePermissionsRequest)
 	setBaseFields(&req)
 
@@ -257,7 +253,7 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 // projectGetOnlineClientsRequest.process is unimplemented
 
 func TestProjectLookupRequest_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectLookupRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -308,7 +304,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 }
 
 func TestProjectGetFilesRequest_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectGetFilesRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -362,7 +358,7 @@ func TestProjectGetFilesRequest_Process(t *testing.T) {
 }
 
 func TestProjectSubscribe_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectSubscribeRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -391,7 +387,7 @@ func TestProjectSubscribe_Process(t *testing.T) {
 }
 
 func TestProjectUnsubscribe_Process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectUnsubscribeRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -420,7 +416,7 @@ func TestProjectUnsubscribe_Process(t *testing.T) {
 }
 
 func TestProjectDeleteRequest_process(t *testing.T) {
-	configSetupUnauthenticated(t)
+	configSetup(t)
 	req := *new(projectDeleteRequest)
 	setBaseFields(&req)
 

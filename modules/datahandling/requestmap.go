@@ -2,14 +2,13 @@ package datahandling
 
 import (
 	"errors"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 /**
  * provides the pseudo-factory map for looking up the associated request
  */
-
-// flag to disable authentication for testing purposes
-var disableAuth = false
 
 // map to lookup authenticated api functions
 var authenticatedRequestMap = make(map[string](func(req *abstractRequest) (request, error)))
@@ -30,7 +29,7 @@ func getFullRequest(req *abstractRequest) (request, error) {
 	}
 
 	// authenticated request
-	if disableAuth || authenticate(*req) == nil {
+	if config.GetConfig().ServerConfig.DisableAuth || authenticate(*req) == nil {
 		return authenticatedRequest(req)
 	}
 	return nil, ErrAuthenticationFailed
