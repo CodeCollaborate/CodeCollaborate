@@ -7,8 +7,12 @@ import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
+func init() {
+	disableAuth = true
+}
+
 func TestUserRegisterRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(userRegisterRequest)
 	setBaseFields(&req)
 
@@ -58,7 +62,7 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 // userLoginRequest.process is unimplemented
 
 func TestUserLookupRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(userLookupRequest)
 	setBaseFields(&req)
 
@@ -105,7 +109,7 @@ func TestUserLookupRequest_Process(t *testing.T) {
 }
 
 func TestUserProjectsRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(userProjectsRequest)
 	setBaseFields(&req)
 

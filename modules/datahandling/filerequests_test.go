@@ -7,6 +7,10 @@ import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
+func init() {
+	disableAuth = true
+}
+
 var geneMeta = dbfs.UserMeta{
 	FirstName: "Gene",
 	LastName:  "Logan",
@@ -16,7 +20,7 @@ var geneMeta = dbfs.UserMeta{
 }
 
 func TestFileCreateRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(fileCreateRequest)
 	setBaseFields(&req)
 
@@ -70,7 +74,7 @@ func TestFileCreateRequest_Process(t *testing.T) {
 }
 
 func TestFileRenameRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(fileRenameRequest)
 	setBaseFields(&req)
 
@@ -129,7 +133,7 @@ func TestFileRenameRequest_Process(t *testing.T) {
 }
 
 func TestFileMoveRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(fileMoveRequest)
 	setBaseFields(&req)
 
@@ -188,7 +192,7 @@ func TestFileMoveRequest_Process(t *testing.T) {
 }
 
 func TestFileDeleteRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(fileDeleteRequest)
 	setBaseFields(&req)
 
@@ -243,7 +247,7 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 }
 
 func TestFileChangeRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(fileChangeRequest)
 	setBaseFields(&req)
 
@@ -337,7 +341,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 }
 
 func TestFilePullRequest_Process(t *testing.T) {
-	configSetup()
+	configSetupUnauthenticated(t)
 	req := *new(filePullRequest)
 	setBaseFields(&req)
 

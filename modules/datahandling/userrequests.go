@@ -1,9 +1,11 @@
 package datahandling
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var userRequestsSetup = false
@@ -49,17 +51,22 @@ func (f *userRegisterRequest) setAbstractRequest(req *abstractRequest) {
 
 func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
+	hashed, err := bcrypt.GenerateFromPassword([]byte(f.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+	}
+
 	newUser := dbfs.UserMeta{
 		Username:  f.Username,
 		FirstName: f.FirstName,
 		LastName:  f.LastName,
 		Email:     f.Email,
-		Password:  f.Password,
+		Password:  string(hashed),
 	}
 
 	// TODO (non-immediate/required): password validation
 
-	err := db.MySQLUserRegister(newUser)
+	err = db.MySQLUserRegister(newUser)
 
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
@@ -82,9 +89,25 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (non-immediate/required): implement login logic
+	hashed, err := db.MySQLUserGetPass(f.Username)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+	}
 
-	fmt.Printf("Received login request from %s. Login logic not implemented yet.\n", f.Username)
+	if err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(f.Password)); err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(unauthorized, f.Tag)}}, err
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenPayload{
+		Username:     f.Username,
+		CreationTime: time.Now().Unix(),
+		Validity:     time.Now().Add(1 * time.Hour).Unix(),
+	})
+
+	signed, err := token.SignedString(privKey)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+	}
 
 	res := response{
 		Status: success,
@@ -92,7 +115,7 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Data: struct {
 			Token string
 		}{
-			Token: "TEST_TOKEN",
+			Token: signed,
 		},
 	}.wrap()
 

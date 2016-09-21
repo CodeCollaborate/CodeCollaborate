@@ -18,6 +18,7 @@ type ServerCfg struct {
 	Name        string
 	Port        uint16
 	ProjectPath string
+	DisableAuth bool
 }
 
 // ConnCfg represents the information required to make a connection

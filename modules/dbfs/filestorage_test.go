@@ -11,7 +11,7 @@ import (
 )
 
 func TestDatabaseImpl_FileWrite(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
@@ -74,7 +74,7 @@ func TestDatabaseImpl_FileWrite(t *testing.T) {
 }
 
 func TestDatabaseImpl_FileRead(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
@@ -100,7 +100,7 @@ func TestDatabaseImpl_FileRead(t *testing.T) {
 }
 
 func TestDatabaseImpl_FileDelete(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
@@ -128,7 +128,7 @@ func TestDatabaseImpl_FileDelete(t *testing.T) {
 }
 
 func TestDatabaseImpl_FileMove(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)

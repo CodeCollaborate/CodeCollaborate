@@ -4,6 +4,10 @@ import (
 	"testing"
 )
 
+func init() {
+	disableAuth = true
+}
+
 func TestCreateValidAbstractRequest(t *testing.T) {
 	var testJSON = []byte(
 		"{\"Tag\":12345, " +
