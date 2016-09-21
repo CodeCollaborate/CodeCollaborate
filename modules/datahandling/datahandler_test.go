@@ -96,6 +96,17 @@ func TestAuthenticate(t *testing.T) {
 			err: "authenticate - expired token",
 		},
 		{
+			desc:     "Expired token",
+			senderID: "TestUser1",
+			token: signedTokenOrDie(t,
+				"TestUser1",
+				time.Now().Add(1*time.Second).Unix(),
+				time.Now().Add(1*time.Second).Unix(),
+				privKey,
+			),
+			err: "authenticate - token not valid yet",
+		},
+		{
 			desc:     "Invalid token",
 			senderID: "TestUser1",
 			token:    "Invalid token",
