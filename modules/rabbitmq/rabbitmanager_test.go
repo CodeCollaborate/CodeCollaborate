@@ -20,7 +20,7 @@ var testExchange = AMQPExchCfg{
 
 func getRabbitMQConfig(t *testing.T) config.ConnCfg {
 	config.SetConfigDir("../../config")
-	err := config.InitConfig()
+	err := config.LoadConfig()
 	if err != nil {
 		t.Fatal("Could not get connection config")
 	}

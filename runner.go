@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -12,6 +10,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/handlers"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
+	log "github.com/Sirupsen/logrus"
 )
 
 /**
@@ -20,29 +19,30 @@ import (
 
 // changed from "0.0.0.0:80" because you need to be root to bind to that port
 var addr = flag.String("addr", "0.0.0.0:8000", "http service address")
+var logDir = flag.String("log_dir", "./data/logs/", "log file location")
 
 func main() {
 
 	flag.Parse()
-	log.SetFlags(0)
 
 	// START DB CONNECTION
 	//managers.ConnectMGo()
 	//defer managers.GetPrimaryMGoSession().Close()
 
-	err := config.InitConfig()
+	config.EnableLoggingToFile(*logDir)
+	err := config.LoadConfig()
 	if err != nil {
-		log.Fatal(err)
+		utils.LogIfFatal("Failed to load configuration", err, nil)
 	}
-	config := config.GetConfig()
+	cfg := config.GetConfig()
 
 	// Get working directory
 	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Printf("Fatal error: Could not get Working Directory: %s\n", err)
-		log.Fatal(err)
-	}
-	fmt.Println("Running in directory: " + dir)
+	utils.LogIfFatal("Could not get working directory", err, nil)
+
+	utils.LogInfo("Working directory initalized", log.Fields{
+		"Working Directory": dir,
+	})
 
 	// Creates a NewControl block for multithreading control
 	AMQPControl := utils.NewControl()
@@ -50,10 +50,10 @@ func main() {
 	// RabbitMQ uses "Exchanges" as containers for Queues, and ours is initialized here.
 	rabbitmq.SetupRabbitExchange(
 		&rabbitmq.AMQPConnCfg{
-			ConnCfg: config.ConnectionConfig["RabbitMQ"],
+			ConnCfg: cfg.ConnectionConfig["RabbitMQ"],
 			Exchanges: []rabbitmq.AMQPExchCfg{
 				{
-					ExchangeName: config.ServerConfig.Name,
+					ExchangeName: cfg.ServerConfig.Name,
 					Durable:      true,
 				},
 			},
@@ -65,10 +65,14 @@ func main() {
 
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
-	fmt.Println("Binding to address: " + *addr)
+	utils.LogInfo("Starting server", log.Fields{
+		"Address": *addr,
+	})
 	err = http.ListenAndServe(*addr, nil)
-	utils.FailOnError(err, "Could not bind to port")
+	utils.LogIfError("Could not bind to port", err, nil)
 
 	// Kill the SetupRabbitExchange thread (Multithreading control)
-	AMQPControl.Exit <- true
+	defer func() {
+		AMQPControl.Exit <- true
+	}()
 }

@@ -21,6 +21,7 @@ type ServerCfg struct {
 	Port                  uint16
 	ProjectPath           string
 	DisableAuth           bool
+	LogLevel    string
 	TokenValidity         string
 	tokenValidityDuration time.Duration
 }

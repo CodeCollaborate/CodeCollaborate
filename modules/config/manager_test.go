@@ -13,13 +13,13 @@ func TestGetConfig(t *testing.T) {
 	tmpDir := createTmpDir(t, ".", "test-config-files")
 	defer os.RemoveAll(tmpDir)
 
-	err := InitConfig()
+	err := LoadConfig()
 	if err == nil {
 		t.Fatal("Config dir not set yet; ./config does not exist. Should have failed.")
 	}
 
 	SetConfigDir(tmpDir)
-	err = InitConfig()
+	err = LoadConfig()
 	if err == nil {
 		t.Fatal("Empty config dir, should have failed.")
 	}
@@ -37,7 +37,7 @@ func TestGetConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = InitConfig()
+	err = LoadConfig()
 	data := GetConfig()
 	if err != nil {
 		t.Fatal(err)
