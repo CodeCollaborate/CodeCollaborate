@@ -2,11 +2,11 @@ USE `cc`;
 # USE `testing`;
 
 
--- MySQL dump 10.13  Distrib 5.7.12, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.15, for Linux (x86_64)
 --
 -- Host: localhost    Database: cc
 -- ------------------------------------------------------
--- Server version	5.7.12
+-- Server version	5.7.15
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -39,7 +39,23 @@ CREATE TABLE `File` (
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
   CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE NO ACTION ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=153 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `PermissionValueMap`
+--
+
+DROP TABLE IF EXISTS `PermissionValueMap`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `PermissionValueMap` (
+  `permission_name` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
+  `permission_value` tinyint(1) NOT NULL,
+  PRIMARY KEY (`permission_name`),
+  UNIQUE KEY `permission_name_UNIQUE` (`permission_name`),
+  UNIQUE KEY `permission_value_UNIQUE` (`permission_value`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -58,8 +74,10 @@ CREATE TABLE `Permissions` (
   PRIMARY KEY (`ProjectID`,`Username`),
   KEY `fk_ProjectID_idx` (`ProjectID`),
   KEY `fk_Permissions_Username_idx` (`Username`),
+  KEY `fk_Permissions_Value_idx` (`PermissionLevel`),
   CONSTRAINT `fk_Permissions_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_Permissions_Username` FOREIGN KEY (`Username`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_Permissions_Username` FOREIGN KEY (`Username`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_Permissions_Value` FOREIGN KEY (`PermissionLevel`) REFERENCES `PermissionValueMap` (`permission_value`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -78,8 +96,8 @@ CREATE TABLE `Project` (
   UNIQUE KEY `ProjectID_UNIQUE` (`ProjectID`),
   UNIQUE KEY `NameOwner_UNIQUE` (`Name`,`Owner`),
   KEY `fk_Project_Username_idx` (`Owner`),
-  CONSTRAINT `fk_Project_Username` FOREIGN KEY (`Owner`) REFERENCES `User` (`Username`) ON DELETE NO ACTION ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=346 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  CONSTRAINT `fk_Project_Username` FOREIGN KEY (`Owner`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
