@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 /**
  * Models for the configuration CodeCollaborate Server.
  */
@@ -15,10 +17,23 @@ type Config struct {
 
 // ServerCfg contains various config items that pertain to the server
 type ServerCfg struct {
-	Name        string
-	Port        uint16
-	ProjectPath string
-	DisableAuth bool
+	Name                  string
+	Port                  uint16
+	ProjectPath           string
+	DisableAuth           bool
+	TokenValidity         string
+	tokenValidityDuration time.Duration
+}
+
+// TokenValidityDuration parses the given duration, and returns the time.Duration struct, or an error.
+func (cfg ServerCfg) TokenValidityDuration() (time.Duration, error) {
+	if cfg.tokenValidityDuration != 0 {
+		return cfg.tokenValidityDuration, nil
+	}
+
+	var err error
+	cfg.tokenValidityDuration, err = time.ParseDuration(cfg.TokenValidity)
+	return cfg.tokenValidityDuration, err
 }
 
 // ConnCfg represents the information required to make a connection
