@@ -89,6 +89,9 @@ type tokenPayload struct {
 	Validity     int64
 }
 
+// Valid is the (unused) method to determine if the token is valid. however, since we need to have a reference
+// to the abstract request, we cannot do validation here. Token validation has been shifted to the authenticate
+// method. This is here for conformance to the token.Claims interface.
 func (tokenPayload) Valid() error {
 	return nil
 }
