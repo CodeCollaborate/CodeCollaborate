@@ -112,7 +112,7 @@ DROP TABLE IF EXISTS `User`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `User` (
   `Username` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
-  `Password` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `Password` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
   `Email` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `FirstName` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
   `LastName` varchar(30) COLLATE utf8_unicode_ci NOT NULL,
@@ -489,7 +489,7 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `user_register`(IN username varchar(25),
-                                                            IN pass varchar(50),
+                                                            IN pass varchar(100),
                                                             IN email varchar(50),
                                                             IN firstName varchar(30),
                                                             IN lastName varchar(30))

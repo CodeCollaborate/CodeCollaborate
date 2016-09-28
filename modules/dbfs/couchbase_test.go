@@ -1,35 +1,11 @@
 package dbfs
 
 import (
-	"log"
 	"testing"
-
-	"github.com/CodeCollaborate/Server/modules/config"
 )
 
-func configSetup() {
-	config.SetConfigDir("../../config")
-	err := config.InitConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// NOTE: this is backup for the tests, and will likely fail on a
-	// non-local system unless the DB's have been set up to allow for this
-	if val := config.GetConfig().ConnectionConfig["MySQL"].Schema; val == "" {
-		tempCon := config.GetConfig().ConnectionConfig["MySQL"]
-		tempCon.Schema = "testing"
-		config.GetConfig().ConnectionConfig["MySQL"] = tempCon
-	}
-	if val := config.GetConfig().ConnectionConfig["Couchbase"].Schema; val == "" {
-		tempCon := config.GetConfig().ConnectionConfig["Couchbase"]
-		tempCon.Schema = "testing"
-		config.GetConfig().ConnectionConfig["Couchbase"] = tempCon
-	}
-}
-
 func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	cb, err := di.openCouchBase()
@@ -61,7 +37,7 @@ func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
 }
 
 func TestDatabaseImpl_CloseCouchbase(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	db, err := di.openCouchBase()
@@ -79,7 +55,7 @@ func TestDatabaseImpl_CloseCouchbase(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	// ensure it doesn't actually exist
@@ -101,7 +77,7 @@ func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBInsertNewFileByDetails(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(1)
@@ -120,7 +96,7 @@ func TestDatabaseImpl_CBInsertNewFileByDetails(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}}
@@ -138,7 +114,7 @@ func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBGetFileVersion(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(1)
@@ -158,7 +134,7 @@ func TestDatabaseImpl_CBGetFileVersion(t *testing.T) {
 
 func TestDatabaseImpl_CBGetFileChanges(t *testing.T) {
 	// setup
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(1)
@@ -185,7 +161,7 @@ func TestDatabaseImpl_CBGetFileChanges(t *testing.T) {
 func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	var originalFileVersion int64 = 2
 	var fileID int64 = 1
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(fileID)

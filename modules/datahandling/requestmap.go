@@ -2,6 +2,8 @@ package datahandling
 
 import (
 	"errors"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 /**
@@ -27,7 +29,7 @@ func getFullRequest(req *abstractRequest) (request, error) {
 	}
 
 	// authenticated request
-	if authenticate(*req) {
+	if config.GetConfig().ServerConfig.DisableAuth || authenticate(*req) == nil {
 		return authenticatedRequest(req)
 	}
 	return nil, ErrAuthenticationFailed

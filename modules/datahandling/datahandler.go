@@ -3,10 +3,25 @@ package datahandling
 import (
 	"fmt"
 
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 )
+
+var privKey *ecdsa.PrivateKey
+
+func init() {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		panic("Could not generate temporary signing key")
+	}
+
+	privKey = key
+}
 
 /**
  * Data Handling logic for the CodeCollaborate Server.
@@ -61,10 +76,4 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	}
 
 	return err
-}
-
-func authenticate(abs abstractRequest) bool {
-	fmt.Println("AUTHENTICATION IS NOT IMPLEMENTED YET")
-	// TODO (non-immediate/required): implement user authentication
-	return true
 }
