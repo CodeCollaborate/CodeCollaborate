@@ -1,11 +1,7 @@
 package datahandling
 
 import (
-	"time"
-
-	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
-	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -99,15 +95,7 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(unauthorized, f.Tag)}}, err
 	}
 
-	tokenValidityDuration, err := config.GetConfig().ServerConfig.TokenValidityDuration()
-
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenPayload{
-		Username:     f.Username,
-		CreationTime: time.Now().Unix(),
-		Validity:     time.Now().Add(tokenValidityDuration).Unix(),
-	})
-
-	signed, err := token.SignedString(privKey)
+	signed, err := newAuthToken(f.Username)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
 	}
