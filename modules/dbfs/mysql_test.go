@@ -6,7 +6,7 @@ import (
 )
 
 func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	my, err := di.getMySQLConn()
@@ -25,7 +25,7 @@ func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
 }
 
 func TestDatabaseImpl_CloseMySQL(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	_, err := di.getMySQLConn()
@@ -43,7 +43,7 @@ func TestDatabaseImpl_CloseMySQL(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	di.MySQLUserDelete("jshap70", "secret")
@@ -66,7 +66,7 @@ func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
 
@@ -94,7 +94,7 @@ func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
 
@@ -130,7 +130,7 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
 
@@ -164,7 +164,7 @@ func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{
@@ -203,7 +203,7 @@ func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{
@@ -245,7 +245,7 @@ func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{
@@ -286,7 +286,7 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	userJoel := UserMeta{
@@ -344,7 +344,7 @@ func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	userJoel := UserMeta{
@@ -413,7 +413,7 @@ func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	userJoel := UserMeta{
@@ -461,7 +461,7 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	di.MySQLUserDelete("jshap70", "secret")
@@ -495,7 +495,7 @@ func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{
@@ -531,7 +531,7 @@ func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{
@@ -563,7 +563,7 @@ func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{
@@ -599,7 +599,7 @@ func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{
@@ -635,7 +635,7 @@ func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileGetInfo(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	di := new(DatabaseImpl)
 
 	user := UserMeta{

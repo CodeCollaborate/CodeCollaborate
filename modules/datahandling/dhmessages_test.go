@@ -5,12 +5,16 @@ import (
 )
 
 func TestCreateValidAbstractRequest(t *testing.T) {
+	configSetup(t)
+
+	testToken := testToken(t, TestSenderID)
+
 	var testJSON = []byte(
 		"{\"Tag\":12345, " +
 			"\"Resource\":\"Project\", " +
 			"\"Method\":\"Lookup\", " +
-			"\"SenderID\":\"loganga\", " +
-			"\"SenderToken\":\"test\", " +
+			"\"SenderID\":\"" + TestSenderID + "\", " +
+			"\"SenderToken\":\"" + testToken + "\", " +
 			"\"Timestamp\":1460839273, " +
 			"\"Data\":{\"ProjectIds\": [ 12345 ]}}")
 	req, err := createAbstractRequest(testJSON)
@@ -26,10 +30,10 @@ func TestCreateValidAbstractRequest(t *testing.T) {
 	if req.Method != "Lookup" {
 		t.Fatal(req.Method)
 	}
-	if req.SenderID != "loganga" {
+	if req.SenderID != TestSenderID {
 		t.Fatal(req.SenderID)
 	}
-	if req.SenderToken != "test" {
+	if req.SenderToken != testToken {
 		t.Fatal(req.SenderToken)
 	}
 	if req.Timestamp != 1460839273 {

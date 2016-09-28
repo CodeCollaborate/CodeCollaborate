@@ -104,6 +104,8 @@ func (di *DatabaseImpl) MySQLUserGetPass(username string) (password string, err 
 		return "", err
 	}
 
+	password = ""
+
 	for rows.Next() {
 		err = rows.Scan(&password)
 		if err != nil {

@@ -1,35 +1,12 @@
 package datahandling
 
 import (
-	"log"
 	"reflect"
 	"testing"
 
-	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
-
-func configSetup() {
-	config.SetConfigDir("../../config")
-	err := config.InitConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// NOTE: this is backup for the tests, and will likely fail on a
-	// non-local system unless the DB's have been set up to allow for this
-	if val := config.GetConfig().ConnectionConfig["MySQL"].Schema; val == "" {
-		tempCon := config.GetConfig().ConnectionConfig["MySQL"]
-		tempCon.Schema = "testing"
-		config.GetConfig().ConnectionConfig["MySQL"] = tempCon
-	}
-	if val := config.GetConfig().ConnectionConfig["Couchbase"].Schema; val == "" {
-		tempCon := config.GetConfig().ConnectionConfig["Couchbase"]
-		tempCon.Schema = "testing"
-		config.GetConfig().ConnectionConfig["Couchbase"] = tempCon
-	}
-}
 
 func setBaseFields(req request) {
 	req.setAbstractRequest(&abstractRequest{
@@ -45,7 +22,7 @@ var datahanly = DataHandler{
 }
 
 func TestProjectCreateRequest_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectCreateRequest)
 	setBaseFields(&req)
 
@@ -95,7 +72,7 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 }
 
 func TestProjectRenameRequest_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectRenameRequest)
 	setBaseFields(&req)
 
@@ -148,7 +125,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 // projectGetPermissionConstantsRequest.process is unimplemented
 
 func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectGrantPermissionsRequest)
 	setBaseFields(&req)
 
@@ -211,7 +188,7 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 }
 
 func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectRevokePermissionsRequest)
 	setBaseFields(&req)
 
@@ -276,7 +253,7 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 // projectGetOnlineClientsRequest.process is unimplemented
 
 func TestProjectLookupRequest_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectLookupRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -327,7 +304,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 }
 
 func TestProjectGetFilesRequest_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectGetFilesRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -381,7 +358,7 @@ func TestProjectGetFilesRequest_Process(t *testing.T) {
 }
 
 func TestProjectSubscribe_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectSubscribeRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -410,7 +387,7 @@ func TestProjectSubscribe_Process(t *testing.T) {
 }
 
 func TestProjectUnsubscribe_Process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectUnsubscribeRequest)
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
@@ -439,7 +416,7 @@ func TestProjectUnsubscribe_Process(t *testing.T) {
 }
 
 func TestProjectDeleteRequest_process(t *testing.T) {
-	configSetup()
+	configSetup(t)
 	req := *new(projectDeleteRequest)
 	setBaseFields(&req)
 
