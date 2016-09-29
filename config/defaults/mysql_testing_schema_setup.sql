@@ -1,10 +1,10 @@
-USE `cc`;
-# USE `testing`;
+# USE `cc`;
+USE `testing`;
 
 
 -- MySQL dump 10.13  Distrib 5.7.15, for Linux (x86_64)
 --
--- Host: localhost    Database: cc
+-- Host: localhost    Database: testing
 -- ------------------------------------------------------
 -- Server version	5.7.15
 
@@ -43,22 +43,6 @@ CREATE TABLE `File` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `PermissionValueMap`
---
-
-DROP TABLE IF EXISTS `PermissionValueMap`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `PermissionValueMap` (
-  `permission_name` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
-  `permission_value` tinyint(1) NOT NULL,
-  PRIMARY KEY (`permission_name`),
-  UNIQUE KEY `permission_name_UNIQUE` (`permission_name`),
-  UNIQUE KEY `permission_value_UNIQUE` (`permission_value`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `Permissions`
 --
 
@@ -74,10 +58,8 @@ CREATE TABLE `Permissions` (
   PRIMARY KEY (`ProjectID`,`Username`),
   KEY `fk_ProjectID_idx` (`ProjectID`),
   KEY `fk_Permissions_Username_idx` (`Username`),
-  KEY `fk_Permissions_Value_idx` (`PermissionLevel`),
   CONSTRAINT `fk_Permissions_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_Permissions_Username` FOREIGN KEY (`Username`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_Permissions_Value` FOREIGN KEY (`PermissionLevel`) REFERENCES `PermissionValueMap` (`permission_value`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_Permissions_Username` FOREIGN KEY (`Username`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -141,11 +123,11 @@ CREATE TABLE `User` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping events for database 'cc'
+-- Dumping events for database 'testing'
 --
 
 --
--- Dumping routines for database 'cc'
+-- Dumping routines for database 'testing'
 --
 /*!50003 DROP PROCEDURE IF EXISTS `file_create` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
