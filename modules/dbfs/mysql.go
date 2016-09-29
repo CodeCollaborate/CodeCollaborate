@@ -262,7 +262,7 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 }
 
 // MySQLProjectGrantPermission gives the user `grantUsername` the permission `permissionLevel` on project `projectID`
-func (di *DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error {
+func (di *DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int8, grantedByUsername string) error {
 	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
@@ -298,6 +298,34 @@ func (di *DatabaseImpl) MySQLProjectRevokePermission(projectID int64, revokeUser
 		return ErrNoDbChange
 	}
 	return nil
+}
+
+// MySQLUserProjectPermissionLookup returns the permission level of `username` on the project with the given projectID
+func (di *DatabaseImpl) MySQLUserProjectPermissionLookup(projectID int64, username string) (int8, error) {
+	mysql, err := di.getMySQLConn()
+	if err != nil {
+		return 0, err
+	}
+
+	rows, err := mysql.db.Query("CALL user_project_permission(?, ?)", username, projectID)
+	if err != nil {
+		return 0, err
+	}
+	var permission int8
+
+	result := false
+	for rows.Next() {
+		err = rows.Scan(&permission)
+		if err != nil {
+			return 0, err
+		}
+		result = true
+	}
+	if !result {
+		return 0, ErrNoData
+	}
+
+	return permission, nil
 }
 
 // MySQLProjectRename allows for you to rename projects

@@ -3,7 +3,24 @@ package dbfs
 import (
 	"testing"
 	"time"
+
+	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/stretchr/testify/assert"
 )
+
+var userAustin = UserMeta{
+	Username:  "fahslaj",
+	Password:  "secret",
+	Email:     "austin@codecollab.cc",
+	FirstName: "Austin",
+	LastName:  "Fahsl"}
+
+var userJoel = UserMeta{
+	Username:  "jshap70",
+	Password:  "secret",
+	Email:     "joel@codecollab.cc",
+	FirstName: "Joel",
+	LastName:  "Shapiro"}
 
 func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
 	configSetup(t)
@@ -48,14 +65,7 @@ func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 
 	di.MySQLUserDelete("jshap70", "secret")
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	err := di.MySQLUserRegister(user)
+	err := di.MySQLUserRegister(userJoel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,14 +80,7 @@ func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	err := di.MySQLUserRegister(user)
+	err := di.MySQLUserRegister(userJoel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,14 +101,7 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	err := di.MySQLUserRegister(user)
+	err := di.MySQLUserRegister(userJoel)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,14 +130,7 @@ func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete("jshap70", "secret")
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -167,14 +156,7 @@ func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -206,19 +188,12 @@ func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, err := di.MySQLProjectCreate(userJoel.Username, "codecollabcore")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,14 +223,7 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -288,20 +256,6 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-
-	userJoel := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	userAustin := UserMeta{
-		Username:  "fahslaj",
-		Password:  "secret",
-		Email:     "austin@codecollab.cc",
-		FirstName: "Austin",
-		LastName:  "Fahsl"}
 
 	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
@@ -346,20 +300,6 @@ func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-
-	userJoel := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	userAustin := UserMeta{
-		Username:  "fahslaj",
-		Password:  "secret",
-		Email:     "austin@codecollab.cc",
-		FirstName: "Austin",
-		LastName:  "Fahsl"}
 
 	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
@@ -416,20 +356,6 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	userJoel := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	userAustin := UserMeta{
-		Username:  "fahslaj",
-		Password:  "secret",
-		Email:     "austin@codecollab.cc",
-		FirstName: "Austin",
-		LastName:  "Fahsl"}
-
 	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
@@ -460,20 +386,52 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 	}
 }
 
+func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
+	configSetup(t)
+	di := new(DatabaseImpl)
+
+	di.MySQLUserDelete(userJoel.Username, "secret")
+	di.MySQLUserDelete(userAustin.Username, "secret")
+
+	defer func() {
+		di.MySQLUserDelete(userJoel.Username, "secret")
+		di.MySQLUserDelete(userAustin.Username, "secret")
+	}()
+
+	err := di.MySQLUserRegister(userJoel)
+	assert.Nil(t, err)
+
+	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	defer di.MySQLProjectDelete(projectID, "jshap70")
+
+	permlvl, err := di.MySQLUserProjectPermissionLookup(projectID, userJoel.Username)
+	assert.Nil(t, err, "unexpected error from mysql permission lookup")
+	ownerLevel, _ := config.GetPermissionLevel("Owner")
+	assert.Equal(t, ownerLevel, permlvl, "expected user to be owner")
+
+	err = di.MySQLUserRegister(userAustin)
+	assert.Nil(t, err)
+
+	permlvl, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
+	assert.NotNil(t, err, "expected error from mysql permission lookup")
+	assert.Equal(t, int8(0), permlvl, "expected user not have permission")
+
+	readLevel, _ := config.GetPermissionLevel("Read")
+	err = di.MySQLProjectGrantPermission(projectID, userAustin.Username, readLevel, userJoel.Username)
+	assert.Nil(t, err)
+
+	permlvl, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
+	assert.Nil(t, err, "unexpected error from mysql permission lookup")
+	assert.Equal(t, readLevel, permlvl, "expected user have read permission")
+}
+
 func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
 	di.MySQLUserDelete("jshap70", "secret")
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -498,14 +456,7 @@ func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -534,14 +485,7 @@ func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -566,14 +510,7 @@ func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -602,14 +539,7 @@ func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}
@@ -638,14 +568,7 @@ func TestDatabaseImpl_MySQLFileGetInfo(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	user := UserMeta{
-		Username:  "jshap70",
-		Password:  "secret",
-		Email:     "joel@codecollab.cc",
-		FirstName: "Joel",
-		LastName:  "Shapiro"}
-
-	erro := di.MySQLUserRegister(user)
+	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
 		t.Fatal(erro)
 	}

@@ -490,9 +490,13 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`%` PROCEDURE `user_project_permission`(username varchar(25), projectID bigint(20))
 BEGIN
-	SELECT PermissionLevel
+	SELECT Permissions.PermissionLevel
     FROM Permissions
-    WHERE Permissions.Username = username and Permissions.ProjectID = projectID;
+    WHERE Permissions.Username = username and Permissions.ProjectID = projectID
+    UNION
+    SELECT 10
+    FROM Project
+    WHERE Project.ProjectID = projectID and Project.Owner = username;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

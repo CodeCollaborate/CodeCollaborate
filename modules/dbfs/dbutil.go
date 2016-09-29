@@ -26,7 +26,7 @@ var ErrMaliciousRequest = errors.New("The request attempted to directly tamper w
 // ProjectPermission is the type which represents the permission relationship on projects
 type ProjectPermission struct {
 	Username        string
-	PermissionLevel int
+	PermissionLevel int8
 	GrantedBy       string
 	GrantedDate     time.Time
 }
@@ -35,7 +35,7 @@ type ProjectPermission struct {
 type ProjectMeta struct {
 	ProjectID       int64
 	Name            string
-	PermissionLevel int
+	PermissionLevel int8
 }
 
 // FileMeta is the type that contains all the metadata about a file

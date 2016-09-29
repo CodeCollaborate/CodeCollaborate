@@ -90,7 +90,7 @@ CREATE TABLE `Project` (
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-  /*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `cc`.`Project_BEFORE_DELETE` BEFORE DELETE ON `Project` FOR EACH ROW
+  /*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `testing`.`Project_BEFORE_DELETE` BEFORE DELETE ON `Project` FOR EACH ROW
   BEGIN
     DELETE FROM Permissions
     WHERE Permissions.ProjectID = OLD.ProjectID;
@@ -490,9 +490,13 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`%` PROCEDURE `user_project_permission`(username varchar(25), projectID bigint(20))
 BEGIN
-	SELECT PermissionLevel
+	SELECT Permissions.PermissionLevel
     FROM Permissions
-    WHERE Permissions.Username = username and Permissions.ProjectID = projectID;
+    WHERE Permissions.Username = username and Permissions.ProjectID = projectID
+    UNION
+    SELECT 10
+    FROM Project
+    WHERE Project.ProjectID = projectID and Project.Owner = username;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

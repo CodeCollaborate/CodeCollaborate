@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -129,10 +130,12 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	req := *new(projectGrantPermissionsRequest)
 	setBaseFields(&req)
 
+	permlvl, _ := config.GetPermissionLevel("Write")
+
 	req.Resource = "Project"
 	req.Method = "GrantPermissions"
 	req.GrantUsername = "notloganga"
-	req.PermissionLevel = 5
+	req.PermissionLevel = permlvl
 
 	db := dbfs.NewDBMock()
 	notgenemeta := dbfs.UserMeta{

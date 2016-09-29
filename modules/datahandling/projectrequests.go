@@ -152,7 +152,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure
 type projectGrantPermissionsRequest struct {
 	ProjectID       int64
 	GrantUsername   string
-	PermissionLevel int
+	PermissionLevel int8
 	abstractRequest
 }
 
@@ -171,7 +171,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		ResourceID: p.ProjectID,
 		Data: struct {
 			GrantUsername   string
-			PermissionLevel int
+			PermissionLevel int8
 		}{
 			GrantUsername:   p.GrantUsername,
 			PermissionLevel: p.PermissionLevel,
