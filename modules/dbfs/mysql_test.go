@@ -404,25 +404,25 @@ func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 	defer di.MySQLProjectDelete(projectID, "jshap70")
 
-	permlvl, err := di.MySQLUserProjectPermissionLookup(projectID, userJoel.Username)
+	permLevel, err := di.MySQLUserProjectPermissionLookup(projectID, userJoel.Username)
 	assert.Nil(t, err, "unexpected error from mysql permission lookup")
-	ownerLevel, _ := config.GetPermissionLevel("Owner")
-	assert.Equal(t, ownerLevel, permlvl, "expected user to be owner")
+	ownerPerm, _ := config.PermissionByLabel("Owner")
+	assert.Equal(t, ownerPerm.Level, permLevel, "expected user to be owner")
 
 	err = di.MySQLUserRegister(userAustin)
 	assert.Nil(t, err)
 
-	permlvl, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
+	permLevel, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
 	assert.NotNil(t, err, "expected error from mysql permission lookup")
-	assert.Equal(t, int8(0), permlvl, "expected user not have permission")
+	assert.Equal(t, int8(0), permLevel, "expected user not have permission")
 
-	readLevel, _ := config.GetPermissionLevel("Read")
-	err = di.MySQLProjectGrantPermission(projectID, userAustin.Username, readLevel, userJoel.Username)
+	readPerm, _ := config.PermissionByLabel("Read")
+	err = di.MySQLProjectGrantPermission(projectID, userAustin.Username, readPerm.Level, userJoel.Username)
 	assert.Nil(t, err)
 
-	permlvl, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
+	permLevel, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
 	assert.Nil(t, err, "unexpected error from mysql permission lookup")
-	assert.Equal(t, readLevel, permlvl, "expected user have read permission")
+	assert.Equal(t, readPerm.Level, permLevel, "expected user have read permission")
 }
 
 func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {

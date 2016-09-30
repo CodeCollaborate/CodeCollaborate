@@ -130,12 +130,12 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	req := *new(projectGrantPermissionsRequest)
 	setBaseFields(&req)
 
-	permlvl, _ := config.GetPermissionLevel("Write")
+	perm, _ := config.PermissionByLabel("Write")
 
 	req.Resource = "Project"
 	req.Method = "GrantPermissions"
 	req.GrantUsername = "notloganga"
-	req.PermissionLevel = permlvl
+	req.PermissionLevel = perm.Level
 
 	db := dbfs.NewDBMock()
 	notgenemeta := dbfs.UserMeta{

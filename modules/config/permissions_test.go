@@ -8,16 +8,16 @@ import (
 
 func TestGetPermissionLabel(t *testing.T) {
 	for _, perm := range permissions {
-		label, err := GetPermissionLabel(perm.Level)
+		permission, err := PermissionByLevel(perm.Level)
 		assert.Nil(t, err)
-		assert.Equal(t, perm.Label, label, "unexpected permission label")
+		assert.Equal(t, perm.Label, permission.Label, "unexpected permission label")
 	}
 }
 
 func TestGetPermissionLevel(t *testing.T) {
 	for _, perm := range permissions {
-		level, err := GetPermissionLevel(perm.Label)
+		permission, err := PermissionByLabel(perm.Label)
 		assert.Nil(t, err)
-		assert.Equal(t, perm.Level, level, "unexpected permission label")
+		assert.Equal(t, perm.Level, permission.Level, "unexpected permission label")
 	}
 }
