@@ -18,7 +18,7 @@ import (
 var config *Config
 var configDir = "./config"
 
-func init(){
+func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 }
 

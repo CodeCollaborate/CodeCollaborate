@@ -1,18 +1,18 @@
 package main
 
 import (
-	"os/exec"
 	"flag"
-	"os"
-	"time"
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
+	"time"
 )
 
 var (
-	prefix = flag.String("docker_prefix", "CodeCollaborate", "Prefix for all Docker images and volumes")
-	username = flag.String("username", "root", "Username for all required authentication")
-	password = flag.String("password", "password", "Password for all required authentication")
+	prefix     = flag.String("docker_prefix", "CodeCollaborate", "Prefix for all Docker images and volumes")
+	username   = flag.String("username", "root", "Username for all required authentication")
+	password   = flag.String("password", "password", "Password for all required authentication")
 	schemaName = flag.String("schema_name", "cc", "Name of created schemas for all databases")
 )
 
@@ -24,8 +24,8 @@ func imageName(name string) string {
 	return *prefix + "_" + name
 }
 
-func createAndStartDockerImage(iName string, args ...string) *exec.Cmd{
-	args = append([]string{"run", "--name",  imageName(iName)}, args...) // prepend docker-command and name to argument set
+func createAndStartDockerImage(iName string, args ...string) *exec.Cmd {
+	args = append([]string{"run", "--name", imageName(iName)}, args...) // prepend docker-command and name to argument set
 
 	c := exec.Command("docker", args...)
 	c.Stdout = os.Stdout
@@ -36,7 +36,7 @@ func createAndStartDockerImage(iName string, args ...string) *exec.Cmd{
 	return c
 }
 
-func createDockerVolume(vName string) *exec.Cmd{
+func createDockerVolume(vName string) *exec.Cmd {
 	c := exec.Command("docker", "volume", "create", "--name", volumeName(vName))
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stdout
@@ -46,7 +46,7 @@ func createDockerVolume(vName string) *exec.Cmd{
 	return c
 }
 
-func main(){
+func main() {
 	flag.Parse()
 
 	// Create volumes
@@ -69,7 +69,7 @@ func main(){
 	createAndStartDockerImage("Couchbase", "-d", "-v", volumeName("Couchbase")+":/opt/couchbase/var/lib/couchbase/data", "-p", "8091-8094:8091-8094", "-p", "11210-11300:11210-11300", "couchbase")
 
 	fmt.Println("\nWaiting for containers to start up:")
-	time.Sleep(15*time.Second)
+	time.Sleep(15 * time.Second)
 
 	fmt.Println("\nSetting up MySQL:")
 	f, err := os.Open("../config/defaults/mysqlSetup.sql")
