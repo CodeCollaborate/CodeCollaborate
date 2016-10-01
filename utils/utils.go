@@ -15,46 +15,20 @@ import (
  * Utility functions for the CodeCollaborate Server.
  */
 
-//// read is this application's translation to the message format, scanning from
-//// stdin.
-//func Read(r io.Reader) <-chan string {
-//	lines := make(chan string)
-//	go func() {
-//		defer close(lines)
-//		scan := bufio.NewScanner(r)
-//		for scan.Scan() {
-//			lines <- scan.Text()
-//		}
-//	}()
-//	return lines
-//}
+// LogFields is the logrus.Fields type, but wrapped for convenience.
+type LogFields log.Fields
 
-//// write is this application's subscriber of application messages, printing to
-//// stdout.
-//func Write(w io.Writer) chan<- string {
-//	lines := make(chan string)
-//	go func() {
-//		for line := range lines {
-//			fmt.Fprintln(w, line)
-//		}
-//	}()
-//	return lines
-//}
+func toLogrusFields(lf interface{}) log.Fields{
+	logrusFields, isCorrectType := lf.(log.Fields)
+	if !isCorrectType {
+		log.Errorf("Invalid fields provided: %+v", lf)
+	}
+	return logrusFields
+}
 
-//func LogWithFunc(fields log.Fields) *log.Entry {
-//	// pc[0] = runtime.Callers
-//	// pc[1] = LogWithFunc
-//	// pc[2] = caller of LogWithFunc
-//	pc := make([]uintptr, 1)
-//	runtime.Callers(2, pc)
-//	f := runtime.FuncForPC(pc[0])
-//	file, line := f.FileLine(pc[0])
-//	fields["Location"] = fmt.Sprintf("%s:%d", file, line)
-//	return log.WithFields(fields)
-//}
-func addFunc(fields log.Fields) log.Fields {
+func addFunc(fields LogFields) LogFields {
 	if fields == nil {
-		fields = log.Fields{}
+		fields = LogFields{}
 	}
 
 	// pc[0] = runtime.Callers
@@ -68,72 +42,49 @@ func addFunc(fields log.Fields) log.Fields {
 	return fields
 }
 
+func logWithFields(fields LogFields) *log.Entry {
+	return log.WithFields(toLogrusFields(fields))
+}
+
 // LogDebug logs the message, and fields given at DebugLevel
-func LogDebug(msg string, fields log.Fields) {
+func LogDebug(msg string, fields LogFields) {
 	funcFields := addFunc(fields)
-	log.WithFields(funcFields).Debug(msg)
+	logWithFields(funcFields).Debug(msg)
 }
 
 // LogInfo logs the message, and fields given at InfoLevel
-func LogInfo(msg string, fields log.Fields) {
+func LogInfo(msg string, fields LogFields) {
 	funcFields := addFunc(fields)
-	log.WithFields(funcFields).Info(msg)
+	logWithFields(funcFields).Info(msg)
 }
 
 // LogWarn logs the message, and fields given at WarnLevel
-func LogWarn(msg string, fields log.Fields) {
+func LogWarn(msg string, fields LogFields) {
 	funcFields := addFunc(fields)
-	log.WithFields(funcFields).Warn(msg)
+	logWithFields(funcFields).Warn(msg)
 }
 
-// LogError logs the message, error and fields given at ErrorLevel
-func LogError(msg string, err error, fields log.Fields) {
-	funcFields := addFunc(fields)
-	funcFields["error"] = err.Error()
-	log.WithFields(funcFields).Error(msg)
-}
-
-// LogIfError logs the message, error and fields given at ErrorLevel if the error != nil
-func LogIfError(msg string, err error, fields log.Fields) {
+// LogError logs the message, error and fields given at ErrorLevel if the error != nil
+func LogError(msg string, err error, fields LogFields) {
 	if err == nil {
 		return
 	}
 
-	LogError(msg, err, fields)
+	funcFields := addFunc(fields)
+	funcFields["error"] = err.Error()
+	logWithFields(funcFields).Error(msg)
 }
 
 // LogFatal logs the message, error and fields given at FatalLevel if the error != nil
-func LogFatal(msg string, err error, fields log.Fields) {
-	funcFields := addFunc(fields)
-	funcFields["error"] = err.Error()
-	log.WithFields(funcFields).Fatal(msg)
-}
-
-// LogIfFatal logs the message, error and fields given at FatalLevel if the error != nil
-func LogIfFatal(msg string, err error, fields log.Fields) {
+func LogFatal(msg string, err error, fields LogFields) {
 	if err == nil {
 		return
 	}
 
-	LogFatal(msg, err, fields)
+	funcFields := addFunc(fields)
+	funcFields["error"] = err.Error()
+	logWithFields(funcFields).Fatal(msg)
 }
-
-//// FailOnError will throw a panic if err is not nil, printing msg and err to log
-//// CAUTION: Will cause program to exit.
-//func FailOnError(err error, msg string) {
-//	if err != nil {
-//		log.Printf("%s: %s", msg, err)
-//		panic(err)
-//	}
-//}
-//
-//// LogOnError will print msg and err to log
-//// CAUTION: Will log, and do nothing else.
-//func LogOnError(err error, msg string) {
-//	if err != nil {
-//		log.Printf("%s: %s", msg, err)
-//	}
-//}
 
 // WaitTimeout will wait on the WaitGroup for a set amount of time,
 // returning an error if the wait timed out.

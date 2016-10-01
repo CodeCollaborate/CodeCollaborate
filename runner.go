@@ -10,7 +10,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/handlers"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
-	log "github.com/Sirupsen/logrus"
+	"fmt"
 )
 
 /**
@@ -18,7 +18,6 @@ import (
  */
 
 // changed from "0.0.0.0:80" because you need to be root to bind to that port
-var addr = flag.String("addr", "0.0.0.0:8000", "http service address")
 var logDir = flag.String("log_dir", "./data/logs/", "log file location")
 
 func main() {
@@ -32,15 +31,15 @@ func main() {
 	config.EnableLoggingToFile(*logDir)
 	err := config.LoadConfig()
 	if err != nil {
-		utils.LogIfFatal("Failed to load configuration", err, nil)
+		utils.LogFatal("Failed to load configuration", err, nil)
 	}
 	cfg := config.GetConfig()
 
 	// Get working directory
 	dir, err := os.Getwd()
-	utils.LogIfFatal("Could not get working directory", err, nil)
+	utils.LogFatal("Could not get working directory", err, nil)
 
-	utils.LogInfo("Working directory initalized", log.Fields{
+	utils.LogInfo("Working directory initalized", utils.LogFields{
 		"Working Directory": dir,
 	})
 
@@ -65,11 +64,12 @@ func main() {
 
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
-	utils.LogInfo("Starting server", log.Fields{
-		"Address": *addr,
+	addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port)
+	utils.LogInfo("Starting server", utils.LogFields{
+		"Address": addr,
 	})
-	err = http.ListenAndServe(*addr, nil)
-	utils.LogIfError("Could not bind to port", err, nil)
+	err = http.ListenAndServe(addr, nil)
+	utils.LogError("Could not bind to port", err, nil)
 
 	// Kill the SetupRabbitExchange thread (Multithreading control)
 	defer func() {

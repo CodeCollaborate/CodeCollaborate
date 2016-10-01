@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,14 +24,14 @@ func TestGetConfig(t *testing.T) {
 	}
 
 	tmpServerConfigFileName := filepath.Join(tmpDir, "server.cfg")
-	serverContent := fmt.Sprintf("{\"Name\": \"CodeCollaborate\",\"Port\": 80}")
+	serverContent := "{\"Name\": \"CodeCollaborate\",\"Port\": 80}"
 	err = ioutil.WriteFile(tmpServerConfigFileName, []byte(serverContent), 0777)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	tmpConnConfigFileName := filepath.Join(tmpDir, "conn.cfg")
-	connContent := fmt.Sprintf("{\"MySQL\": {\"Host\": \"mysqlHost\",\"Port\": 3306,\"Username\": \"user1\",\"Password\": \"pw1\"},\"Couchbase\": {\"Host\": \"couchbaseHost\",\"Port\": 8092,\"Username\": \"user2\",\"Password\": \"pw2\"}}")
+	connContent := "{\"MySQL\": {\"Host\": \"mysqlHost\",\"Port\": 3306,\"Username\": \"user1\",\"Password\": \"pw1\"},\"Couchbase\": {\"Host\": \"couchbaseHost\",\"Port\": 8092,\"Username\": \"user2\",\"Password\": \"pw2\"}}"
 	err = ioutil.WriteFile(tmpConnConfigFileName, []byte(connContent), 0777)
 	if err != nil {
 		t.Fatal(err)

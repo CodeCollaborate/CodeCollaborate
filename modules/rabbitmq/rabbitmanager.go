@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/CodeCollaborate/Server/utils"
-	log "github.com/Sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
@@ -58,7 +57,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 						Dial:      getNewDialer(cfg.Timeout),
 					})
 					if err != nil {
-						utils.LogError("Failed to connect to RabbitMQ", err, log.Fields{
+						utils.LogError("Failed to connect to RabbitMQ", err, utils.LogFields{
 							"Host": cfg.Host,
 							"Port": cfg.Port,
 						})
@@ -242,7 +241,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 					nil,                   // arguments
 				)
 				if err != nil {
-					utils.LogError("Error binding to key", err, log.Fields{
+					utils.LogError("Error binding to key", err, utils.LogFields{
 						"Queue":      cfg.QueueName(),
 						"RoutingKey": subscription.GetKey(),
 					})
@@ -256,7 +255,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 					nil,                   // arguments
 				)
 				if err != nil {
-					utils.LogError("Error unbinding from key", err, log.Fields{
+					utils.LogError("Error unbinding from key", err, utils.LogFields{
 						"Queue":      cfg.QueueName(),
 						"RoutingKey": subscription.GetKey(),
 					})
@@ -273,7 +272,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 			}
 			err := cfg.HandleMessageFunc(message)
 
-			utils.LogIfError("Message handler failed", err, nil)
+			utils.LogError("Message handler failed", err, nil)
 		}
 	}
 }
@@ -323,7 +322,7 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 				})
 
 			if err != nil {
-				utils.LogError("Failed to publish message", err, log.Fields{
+				utils.LogError("Failed to publish message", err, utils.LogFields{
 					"RoutingKey": message.RoutingKey,
 				})
 				// TODO (shapiro): decide on action at publish error: retry with count?

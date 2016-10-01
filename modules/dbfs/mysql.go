@@ -11,7 +11,6 @@ import (
 	// initialize sql driver mapping in sql.Open("mysql", ...)
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
-	log "github.com/Sirupsen/logrus"
 )
 
 type mysqlConn struct {
@@ -54,7 +53,7 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		}
 	}
 
-	utils.LogIfError("Unable to connect to MySQL", err, log.Fields{
+	utils.LogError("Unable to connect to MySQL", err, utils.LogFields{
 		"Host":   di.mysqldb.config.Host,
 		"Port":   di.mysqldb.config.Port,
 		"Schema": di.mysqldb.config.Schema,

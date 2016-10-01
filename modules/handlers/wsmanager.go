@@ -9,7 +9,6 @@ import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
-	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/websocket"
 )
 
@@ -101,7 +100,7 @@ func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *rabbitmq.Rabbit
 			Keys:         []string{},
 			IsWorkQueue:  false,
 			HandleMessageFunc: func(msg rabbitmq.AMQPMessage) error {
-				utils.LogDebug("Sending Message", logrus.Fields{
+				utils.LogDebug("Sending Message", utils.LogFields{
 					"Message": string(msg.Message),
 				})
 				return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
@@ -111,5 +110,5 @@ func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *rabbitmq.Rabbit
 	)
 
 	// TODO(wongb): Is this really supposed to die if we cannot subscribe?
-	utils.LogIfError("Failed to subscribe to RabbitMQ channel", err, nil)
+	utils.LogError("Failed to subscribe to RabbitMQ channel", err, nil)
 }

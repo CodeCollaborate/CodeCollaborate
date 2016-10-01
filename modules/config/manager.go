@@ -33,13 +33,13 @@ func SetConfigDir(dir string) {
 // a pointer to a Config struct, or error if it failed.
 func LoadConfig() error {
 	var err error
-	utils.LogInfo("Reading Configuration", log.Fields{
+	utils.LogInfo("Reading Configuration", utils.LogFields{
 		"ConfigDir": configDir,
 	})
 	config, err = parseConfig(configDir)
 
 	if err == nil {
-		utils.LogInfo("Loaded Configuration", log.Fields{
+		utils.LogInfo("Loaded Configuration", utils.LogFields{
 			"ServerConfig": pretty.Sprint(config.ServerConfig),
 		})
 		setLogLevel()
