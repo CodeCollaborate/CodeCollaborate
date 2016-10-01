@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"os"
 
+	"fmt"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/handlers"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
-	"fmt"
 )
 
 /**

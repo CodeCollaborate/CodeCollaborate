@@ -18,7 +18,7 @@ import (
 // LogFields is the logrus.Fields type, but wrapped for convenience.
 type LogFields log.Fields
 
-func toLogrusFields(lf interface{}) log.Fields{
+func toLogrusFields(lf interface{}) log.Fields {
 	logrusFields, isCorrectType := lf.(log.Fields)
 	if !isCorrectType {
 		log.Errorf("Invalid fields provided: %+v", lf)
