@@ -18,7 +18,6 @@ import (
  * Runner.go starts the server. It initializes processes and begins listening for websocket requests.
  */
 
-// changed from "0.0.0.0:80" because you need to be root to bind to that port
 var logDir = flag.String("log_dir", "./data/logs/", "log file location")
 
 func main() {
