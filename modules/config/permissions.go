@@ -33,14 +33,14 @@ func init() {
 	}
 }
 
-// ErrNoPermission is returned if a permission that does not exist is attempted to be accessed
-var ErrNoPermission = errors.New("Not a valid server permission level")
+// ErrNoMatchingPermission is returned if a permission that does not exist is attempted to be accessed
+var ErrNoMatchingPermission = errors.New("Not a valid server permission level")
 
 // PermissionByLevel returns the string representation of the provided level, if found
 func PermissionByLevel(level int8) (Permission, error) {
 	label, ok := byLevel[level]
 	if !ok {
-		return Permission{}, ErrNoPermission
+		return Permission{}, ErrNoMatchingPermission
 	}
 	return label, nil
 }
@@ -49,7 +49,7 @@ func PermissionByLevel(level int8) (Permission, error) {
 func PermissionByLabel(label string) (Permission, error) {
 	level, ok := byLabel[label]
 	if !ok {
-		return Permission{}, ErrNoPermission
+		return Permission{}, ErrNoMatchingPermission
 	}
 	return level, nil
 }

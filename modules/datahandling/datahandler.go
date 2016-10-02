@@ -50,7 +50,6 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	var closures []dhClosure
 
 	if err != nil {
-		// TODO(shapiro): create response and notification factory
 		if err == ErrAuthenticationFailed {
 			utils.LogDebug("User not logged in", utils.LogFields{
 				"Resource": req.Resource,

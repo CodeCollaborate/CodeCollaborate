@@ -65,9 +65,15 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (normal/required): check if permission high enough on project
+	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, f.ProjectID, "Write", db)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, nil
+	}
+	if !hasPermission {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, nil
+	}
 
-	_, err := db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
+	_, err = db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, nil
 	}
