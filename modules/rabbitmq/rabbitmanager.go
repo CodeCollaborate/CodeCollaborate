@@ -8,6 +8,7 @@ import (
 
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
+	"github.com/Sirupsen/logrus"
 )
 
 /**
@@ -57,7 +58,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 						Dial:      getNewDialer(cfg.Timeout),
 					})
 					if err != nil {
-						utils.LogError("Failed to connect to RabbitMQ", err, utils.LogFields{
+						utils.LogError("Failed to connect to RabbitMQ", err, logrus.Fields{
 							"Host": cfg.Host,
 							"Port": cfg.Port,
 						})
@@ -241,7 +242,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 					nil,                   // arguments
 				)
 				if err != nil {
-					utils.LogError("Error binding to key", err, utils.LogFields{
+					utils.LogError("Error binding to key", err, logrus.Fields{
 						"Queue":      cfg.QueueName(),
 						"RoutingKey": subscription.GetKey(),
 					})
@@ -255,7 +256,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 					nil,                   // arguments
 				)
 				if err != nil {
-					utils.LogError("Error unbinding from key", err, utils.LogFields{
+					utils.LogError("Error unbinding from key", err, logrus.Fields{
 						"Queue":      cfg.QueueName(),
 						"RoutingKey": subscription.GetKey(),
 					})
@@ -322,7 +323,7 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 				})
 
 			if err != nil {
-				utils.LogError("Failed to publish message", err, utils.LogFields{
+				utils.LogError("Failed to publish message", err, logrus.Fields{
 					"RoutingKey": message.RoutingKey,
 				})
 				// TODO (shapiro): decide on action at publish error: retry with count?

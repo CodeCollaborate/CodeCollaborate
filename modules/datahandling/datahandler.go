@@ -8,6 +8,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
+	"github.com/Sirupsen/logrus"
 )
 
 var privKey *ecdsa.PrivateKey
@@ -34,7 +35,7 @@ type DataHandler struct {
 // Handle takes the WebSocket Id, MessageType and message in byte-array form,
 // processing the data, and updating DB/FS/RabbitMQ as needed.
 func (dh DataHandler) Handle(messageType int, message []byte) error {
-	utils.LogDebug("Received Message", utils.LogFields{
+	utils.LogDebug("Received Message", logrus.Fields{
 		"Message": string(message),
 	})
 
@@ -52,13 +53,13 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	if err != nil {
 		// TODO(shapiro): create response and notification factory
 		if err == ErrAuthenticationFailed {
-			utils.LogDebug("User not logged in", utils.LogFields{
+			utils.LogDebug("User not logged in", logrus.Fields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
 			closures = []dhClosure{toSenderClosure{msg: newEmptyResponse(unauthorized, req.Tag)}}
 		} else {
-			utils.LogDebug("No such resource/method", utils.LogFields{
+			utils.LogDebug("No such resource/method", logrus.Fields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
@@ -67,7 +68,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	} else {
 		closures, err = fullRequest.process(dh.Db)
 		if err != nil {
-			utils.LogError("Failed to process request", err, utils.LogFields{
+			utils.LogError("Failed to process request", err, logrus.Fields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
@@ -78,7 +79,7 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	for _, closure := range closures {
 		err := closure.call(dh)
 		if err != nil {
-			utils.LogError("Failed to complete continuation", err, utils.LogFields{
+			utils.LogError("Failed to complete continuation", err, logrus.Fields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})

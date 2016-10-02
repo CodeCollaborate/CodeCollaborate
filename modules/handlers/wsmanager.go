@@ -10,6 +10,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
+	"github.com/Sirupsen/logrus"
 )
 
 /**
@@ -100,7 +101,7 @@ func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *rabbitmq.Rabbit
 			Keys:         []string{},
 			IsWorkQueue:  false,
 			HandleMessageFunc: func(msg rabbitmq.AMQPMessage) error {
-				utils.LogDebug("Sending Message", utils.LogFields{
+				utils.LogDebug("Sending Message", logrus.Fields{
 					"Message": string(msg.Message),
 				})
 				return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
