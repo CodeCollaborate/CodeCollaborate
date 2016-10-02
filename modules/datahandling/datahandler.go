@@ -1,8 +1,6 @@
 package datahandling
 
 import (
-	"fmt"
-
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -16,9 +14,7 @@ var privKey *ecdsa.PrivateKey
 
 func init() {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		panic("Could not generate temporary signing key")
-	}
+	utils.LogFatal("Failed to generate signing key", err, nil)
 
 	privKey = key
 }
@@ -38,11 +34,13 @@ type DataHandler struct {
 // Handle takes the WebSocket Id, MessageType and message in byte-array form,
 // processing the data, and updating DB/FS/RabbitMQ as needed.
 func (dh DataHandler) Handle(messageType int, message []byte) error {
-	fmt.Printf("Handling Message: %s\n", message)
+	utils.LogDebug("Received Message", utils.LogFields{
+		"Message": string(message),
+	})
 
 	req, err := createAbstractRequest(message)
 	if err != nil {
-		utils.LogOnError(err, "Failed to parse json")
+		utils.LogError("Failed to parse json", err, nil) // Do not log request since passwords may be sent
 		return err
 	}
 
@@ -54,16 +52,25 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	if err != nil {
 		// TODO(shapiro): create response and notification factory
 		if err == ErrAuthenticationFailed {
-			utils.LogOnError(err, "User not logged in")
+			utils.LogDebug("User not logged in", utils.LogFields{
+				"Resource": req.Resource,
+				"Method":   req.Method,
+			})
 			closures = []dhClosure{toSenderClosure{msg: newEmptyResponse(unauthorized, req.Tag)}}
 		} else {
-			utils.LogOnError(err, "Failed to construct full request")
+			utils.LogDebug("No such resource/method", utils.LogFields{
+				"Resource": req.Resource,
+				"Method":   req.Method,
+			})
 			closures = []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, req.Tag)}}
 		}
 	} else {
 		closures, err = fullRequest.process(dh.Db)
 		if err != nil {
-			utils.LogOnError(err, "Failed to handle process request")
+			utils.LogError("Failed to process request", err, utils.LogFields{
+				"Resource": req.Resource,
+				"Method":   req.Method,
+			})
 			// TODO: forward error message onto client? (or at least inform that error occurred)
 		}
 	}
@@ -71,7 +78,10 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 	for _, closure := range closures {
 		err := closure.call(dh)
 		if err != nil {
-			utils.LogOnError(err, "Failed to complete continuation")
+			utils.LogError("Failed to complete continuation", err, utils.LogFields{
+				"Resource": req.Resource,
+				"Method":   req.Method,
+			})
 		}
 	}
 

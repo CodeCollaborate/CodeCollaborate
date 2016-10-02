@@ -53,7 +53,11 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		}
 	}
 
-	utils.LogOnError(err, "Unable to connect to MySQL")
+	utils.LogError("Unable to connect to MySQL", err, utils.LogFields{
+		"Host":   di.mysqldb.config.Host,
+		"Port":   di.mysqldb.config.Port,
+		"Schema": di.mysqldb.config.Schema,
+	})
 	return di.mysqldb, err
 }
 

@@ -1,11 +1,11 @@
 package datahandling
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var projectRequestsSetup = false
@@ -142,7 +142,7 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 
 func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
-	fmt.Printf("Recieved project get permissions constants request from %s\n", p.SenderID)
+	utils.LogWarn("ProjectGetPermissionConstants not implemented", nil)
 
 	return []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, p.Tag)}}, nil
 }
@@ -226,7 +226,7 @@ type projectGetOnlineClientsRequest struct {
 
 func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO: implement on redis (and actually implement redis)
-	fmt.Printf("Recieved project get online clients request from %s\n", p.SenderID)
+	utils.LogWarn("ProjectGetOnlineClients not implemented", nil)
 
 	return []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, p.Tag)}}, nil
 }

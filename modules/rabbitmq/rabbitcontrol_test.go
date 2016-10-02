@@ -28,10 +28,10 @@ func TestNewControl(t *testing.T) {
 				if sub == subsci {
 					received <- true
 				} else {
-					t.Fatal("somehow the message was corrupted")
+					t.Fatal("Message was corrupted")
 				}
 			case <-control.Exit:
-				fmt.Println("received all jobs")
+				fmt.Println("All jobs completed")
 				doneTesting <- true
 				return
 			}
@@ -44,7 +44,7 @@ func TestNewControl(t *testing.T) {
 	case <-received:
 	// success
 	case <-time.After(time.Second * 5):
-		t.Fatal("control sygnal timed out")
+		t.Fatal("Control signal timed out")
 	}
 
 	control.Exit <- true
@@ -52,7 +52,7 @@ func TestNewControl(t *testing.T) {
 	case <-doneTesting:
 	// success
 	case <-time.After(time.Second * 5):
-		t.Fatal("control sygnal timed out")
+		t.Fatal("Control signal timed out")
 	}
 
 }

@@ -9,7 +9,7 @@ import (
 
 func configSetup(t *testing.T) {
 	config.SetConfigDir("../../config")
-	err := config.InitConfig()
+	err := config.LoadConfig()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -57,7 +57,10 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 						Dial:      getNewDialer(cfg.Timeout),
 					})
 					if err != nil {
-						utils.LogOnError(err, "Failed to connect to RabbitMQ")
+						utils.LogError("Failed to connect to RabbitMQ", err, utils.LogFields{
+							"Host": cfg.Host,
+							"Port": cfg.Port,
+						})
 						if retries >= cfg.NumRetries {
 							ready <- false
 							if channelQueue == nil {
@@ -83,7 +86,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 
 					ch, err := conn.Channel()
 					if err != nil {
-						utils.LogOnError(err, "Failed to open a channel")
+						utils.LogError("Failed to open a channel", err, nil)
 						conn.Close()
 						continue redialLoop
 					}
@@ -99,7 +102,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 							nil,                   // arguments
 						)
 						if err != nil {
-							utils.LogOnError(err, "Failed to declare an exchange")
+							utils.LogError("Failed to declare exchange", err, nil)
 							ch.Close()
 							conn.Close()
 							continue redialLoop
@@ -109,8 +112,8 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 
 					for {
 						ch, err = conn.Channel()
-						utils.LogOnError(err, "Failed to open a channel")
 						if err != nil {
+							utils.LogError("Failed to open a channel", err, nil)
 							break
 						}
 
@@ -179,7 +182,7 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 
 	ch, err := GetChannel()
 	if err != nil {
-		utils.LogOnError(err, "Failed to get RabbitMQ Channel")
+		utils.LogError("Failed to get new channel", err, nil)
 		return err
 	}
 	defer ch.Close()
@@ -238,7 +241,10 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 					nil,                   // arguments
 				)
 				if err != nil {
-					utils.LogOnError(err, "error subscribing from rabbit")
+					utils.LogError("Error binding to key", err, utils.LogFields{
+						"Queue":      cfg.QueueName(),
+						"RoutingKey": subscription.GetKey(),
+					})
 					cfg.Control.Exit <- true
 				}
 			} else {
@@ -249,7 +255,10 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 					nil,                   // arguments
 				)
 				if err != nil {
-					utils.LogOnError(err, "error unsubscribing from rabbit")
+					utils.LogError("Error unbinding from key", err, utils.LogFields{
+						"Queue":      cfg.QueueName(),
+						"RoutingKey": subscription.GetKey(),
+					})
 					cfg.Control.Exit <- true
 				}
 			}
@@ -262,7 +271,8 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 				Persistent:  (msg.DeliveryMode == 2),
 			}
 			err := cfg.HandleMessageFunc(message)
-			utils.LogOnError(err, "Failed to handle message")
+
+			utils.LogError("Message handler failed", err, nil)
 		}
 	}
 }
@@ -280,7 +290,7 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 
 	ch, err := GetChannel()
 	if err != nil {
-		utils.LogOnError(err, "Failed to get RabbitMQ Channel")
+		utils.LogError("Failed to get new channel", err, nil)
 		// panic so we shut down the subscriber too
 		panic(err) // TODO(shapiro): Think of a better way of having publisher and consumer be able to shut each other down
 	}
@@ -312,8 +322,10 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 				})
 
 			if err != nil {
-				utils.LogOnError(err, "Failed to publish a message")
-				// TODO (non-immediate/required): decide on action at publish error: retry with count?
+				utils.LogError("Failed to publish message", err, utils.LogFields{
+					"RoutingKey": message.RoutingKey,
+				})
+				// TODO (shapiro): decide on action at publish error: retry with count?
 			}
 		}
 	}
