@@ -18,14 +18,6 @@ import (
 // LogFields is the logrus.Fields type, but wrapped for convenience.
 type LogFields log.Fields
 
-func toLogrusFields(lf interface{}) log.Fields {
-	logrusFields, isCorrectType := lf.(log.Fields)
-	if !isCorrectType {
-		log.Errorf("Invalid fields provided: %+v", lf)
-	}
-	return logrusFields
-}
-
 func addFunc(fields LogFields) LogFields {
 	if fields == nil {
 		fields = LogFields{}
@@ -43,7 +35,9 @@ func addFunc(fields LogFields) LogFields {
 }
 
 func logWithFields(fields LogFields) *log.Entry {
-	return log.WithFields(toLogrusFields(fields))
+	// type assertion is not needed b/c type conversion to log.Fields works for LogFields
+	// see http://stackoverflow.com/questions/19577423/how-to-cast-to-a-type-alias-in-go
+	return log.WithFields(log.Fields(fields))
 }
 
 // LogDebug logs the message, and fields given at DebugLevel
