@@ -3,6 +3,7 @@ package datahandling
 import (
 	"time"
 
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -151,10 +152,17 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 }
 
 func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
-	utils.LogWarn("ProjectGetPermissionConstants not implemented", nil)
+	res := messages.Response{
+		Status: messages.StatusSuccess,
+		Tag:    p.Tag,
+		Data: struct {
+			Constants map[string]int8
+		}{
+			Constants: config.PermissionsByLabel,
+		},
+	}.Wrap()
 
-	return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, p.Tag)}}, nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 // Project.GrantPermissions

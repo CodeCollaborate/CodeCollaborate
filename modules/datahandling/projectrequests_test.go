@@ -8,6 +8,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/stretchr/testify/assert"
 )
 
 func setBaseFields(req request) {
@@ -123,7 +124,31 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 
 }
 
-// projectGetPermissionConstantsRequest.process is unimplemented
+func TestProjectGetPermissionConstantsRequest_Process(t *testing.T) {
+	configSetup(t)
+	req := *new(projectGetPermissionConstantsRequest)
+	setBaseFields(&req)
+	db := dbfs.NewDBMock()
+
+	closures, err := req.process(db)
+	assert.Nil(t, err)
+	assert.Zero(t, db.FunctionCallCount, "unexpected db calls for permission constants")
+
+	assert.Equal(t, 1, len(closures), "unexpected number of returned closures")
+	assert.IsType(t, toSenderClosure{}, closures[0], "incorrect closure type")
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+
+	assert.Equal(t, success, resp.Status, "unexpected response status")
+
+	mappy := reflect.ValueOf(resp.Data).FieldByName("Constants").Interface().(map[string]int8)
+	assert.Equal(t, len(config.PermissionsByLabel), len(mappy), "incorrect number of entries in map result")
+	for key, val := range mappy {
+		perm, err := config.PermissionByLabel(key)
+		assert.Nil(t, err, "unexpected error in retrieving permission label vale")
+		assert.Equal(t, perm.Level, val, "unexpected value in map")
+	}
+}
 
 func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	configSetup(t)
@@ -372,7 +397,6 @@ func TestProjectSubscribe_Process(t *testing.T) {
 
 	req.Resource = "Project"
 	req.Method = "Subscribe"
-	req.SenderID = geneMeta.Username
 	req.ProjectID = projectID
 
 	db.FunctionCallCount = 0
