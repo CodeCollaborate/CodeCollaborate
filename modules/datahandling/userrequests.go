@@ -3,6 +3,7 @@ package datahandling
 import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
 var userRequestsSetup = false
@@ -110,7 +111,17 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}}, nil
+	return []dhClosure{toSenderClosure{msg: res},
+		// Subscribe user to their own username channel
+		// TODO(wongb): What happens if they re-login? Or login as a different user?
+		rabbitCommandClosure{
+			Command:"Subscribe",
+			Tag: -1,
+			Data:rabbitQueueData{
+				Key: rabbitmq.RabbitUserQueueName(f.Username),
+			},
+		},
+	}, nil
 }
 
 // User.Lookup

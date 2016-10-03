@@ -154,7 +154,7 @@ func TestSendMessage(t *testing.T) {
 	publisherMessages := make(chan AMQPMessage, 1)
 	publisherMessages <- TestMessage
 	subscriberControl := NewControl()
-	publisherControl := utils.NewControl()
+	publisherControl := utils.NewControl(1)
 
 	var wg sync.WaitGroup
 	wg.Add(2)

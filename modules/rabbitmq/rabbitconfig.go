@@ -38,14 +38,28 @@ type AMQPExchCfg struct {
 	Durable      bool
 }
 
+type AMQPPubSubCfg struct {
+	ExchangeName string
+	PubCfg       *AMQPPubCfg
+	SubCfg       *AMQPSubCfg
+	Control      utils.Control // Used for shutting down both publisher and subscriber
+}
+
+func NewAMQPPubSubCfg(exchangeName string, pubCfg *AMQPPubCfg, subCfg *AMQPSubCfg) *AMQPPubSubCfg {
+	return &AMQPPubSubCfg{
+		ExchangeName: exchangeName,
+		PubCfg: pubCfg,
+		SubCfg: subCfg,
+		Control: *utils.NewControl(2),
+	}
+}
+
 // AMQPSubCfg represents the settings needed to create a new subscriber, including the queues and key bindings
 type AMQPSubCfg struct {
-	ExchangeName      string
 	QueueID           uint64
 	Keys              []string
 	IsWorkQueue       bool
 	HandleMessageFunc func(AMQPMessage) error
-	Control           *RabbitControl
 }
 
 // QueueName generates the Queue
@@ -53,9 +67,14 @@ func (cfg AMQPSubCfg) QueueName() string {
 	return RabbitWebsocketQueueName(cfg.QueueID)
 }
 
+// RabbitUserQueueName returns the name of the Queue a websocket for the given user would have
+func RabbitUserQueueName(username string) string {
+	return fmt.Sprintf("User-%s", username)
+}
+
 // RabbitWebsocketQueueName returns the name of the Queue a websocket with the given ID would have
 func RabbitWebsocketQueueName(queueID uint64) string {
-	return fmt.Sprintf("%s-%d", hostname, queueID)
+	return fmt.Sprintf("WS-%s-%d", hostname, queueID)
 }
 
 // RabbitProjectQueueName returns the name of the Queue a project with the given ID would have
@@ -65,17 +84,15 @@ func RabbitProjectQueueName(projectID int64) string {
 
 // AMQPPubCfg represents the settings needed to create a new publisher
 type AMQPPubCfg struct {
-	ExchangeName string
-	Messages     chan AMQPMessage
-	Control      *utils.Control
+	PubErrHandler func(AMQPMessage) // Handler for publish errors
+	Messages      chan AMQPMessage
 }
 
 // NewPubConfig creates a new AMQPPubCfg, initialized
-func NewPubConfig(exchangeName string) *AMQPPubCfg {
+func NewPubConfig(errHandler func(AMQPMessage)) *AMQPPubCfg {
 	return &AMQPPubCfg{
-		ExchangeName: exchangeName,
-		Messages:     make(chan AMQPMessage, 1),
-		Control:      utils.NewControl(),
+		PubErrHandler: errHandler,
+		Messages:     make(chan AMQPMessage, 16), // Buffer 16 messages to make sure a latency spike doesn't kill us.
 	}
 }
 
@@ -83,7 +100,13 @@ func NewPubConfig(exchangeName string) *AMQPPubCfg {
 type AMQPMessage struct {
 	Headers     map[string]interface{}
 	RoutingKey  string
-	ContentType string
+	ContentType int
 	Persistent  bool
 	Message     []byte
+	ErrHandler  func()
 }
+
+const (
+	ContentType_Msg = iota
+	ContentType_Cmd
+)

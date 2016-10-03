@@ -45,7 +45,7 @@ func main() {
 	})
 
 	// Creates a NewControl block for multithreading control
-	AMQPControl := utils.NewControl()
+	AMQPControl := utils.NewControl(1)
 
 	// RabbitMQ uses "Exchanges" as containers for Queues, and ours is initialized here.
 	rabbitmq.SetupRabbitExchange(

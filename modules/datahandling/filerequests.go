@@ -1,6 +1,9 @@
 package datahandling
 
-import "github.com/CodeCollaborate/Server/modules/dbfs"
+import (
+	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+)
 
 var fileRequestsSetup = false
 var newFileVersion int64 = 1
@@ -103,7 +106,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: f.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(f.ProjectID)}}, nil
 }
 
 // File.Rename
@@ -147,7 +150,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
 
 // File.Move
@@ -191,7 +194,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
 
 // File.Delete
@@ -237,7 +240,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	return []dhClosure{
 		toSenderClosure{msg: res},
-		toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID},
+		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)},
 	}, nil
 }
 
@@ -298,7 +301,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: fileMeta.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
 
 // File.Pull

@@ -8,6 +8,10 @@ import (
 
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
+
+	"fmt"
+	"strconv"
+	"github.com/kr/pretty"
 	"github.com/Sirupsen/logrus"
 )
 
@@ -15,7 +19,7 @@ import (
  * RabbitMq manager for CodeCollaborate Server.
  */
 const (
-	defaultHeartbeat         = 10 * time.Second
+	defaultHeartbeat = 10 * time.Second
 	defaultConnectionTimeout = 30
 )
 
@@ -37,7 +41,7 @@ func GetChannel() (*amqp.Channel, error) {
 // fail.
 func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 	if cfg.Control == nil {
-		cfg.Control = utils.NewControl()
+		cfg.Control = utils.NewControl(1)
 	}
 
 	success := true
@@ -51,7 +55,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 				// Loop; if connection drops, we should try to restore connection before creating new channels.
 				retries := uint16(0)
 
-			redialLoop:
+				redialLoop:
 				for {
 					conn, err := amqp.DialConfig(cfg.ConnectionString(), amqp.Config{
 						Heartbeat: defaultHeartbeat,
@@ -95,12 +99,12 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 					for _, exchange := range cfg.Exchanges {
 						err = ch.ExchangeDeclare(
 							exchange.ExchangeName, // name
-							"direct",              // type
-							exchange.Durable,      // durable
-							!exchange.Durable,     // auto-deleted
-							false,                 // internal
-							false,                 // no-wait
-							nil,                   // arguments
+							"direct", // type
+							exchange.Durable, // durable
+							!exchange.Durable, // auto-deleted
+							false, // internal
+							false, // no-wait
+							nil, // arguments
 						)
 						if err != nil {
 							utils.LogError("Failed to declare exchange", err, nil)
@@ -148,14 +152,13 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 }
 
 func getNewDialer(timeout uint16) func(network, addr string) (net.Conn, error) {
-
 	if timeout == 0 {
 		timeout = defaultConnectionTimeout
 	}
 
 	// returns dialer using timeout if non-zero, or dialer using default timeout otherwise.
 	return func(network, addr string) (net.Conn, error) {
-		conn, err := net.DialTimeout(network, addr, time.Duration(timeout)*time.Second)
+		conn, err := net.DialTimeout(network, addr, time.Duration(timeout) * time.Second)
 		if err != nil {
 			return nil, err
 		}
@@ -169,16 +172,33 @@ func getNewDialer(timeout uint16) func(network, addr string) (net.Conn, error) {
 	}
 }
 
+// BindQueue binds this queue to a key.
+func BindQueue(ch *amqp.Channel, queueName, key, exchangeName string) error {
+	return ch.QueueBind(
+		queueName, // queue name
+		key, // routing key
+		exchangeName, // exchange
+		false, // no-wait
+		nil, // arguments
+	)
+}
+
+// BindQueue unbinds this queue from a key.
+func UnbindQueue(ch *amqp.Channel, queueName, key, exchangeName string) error {
+	return ch.QueueUnbind(
+		queueName, // queue name
+		key, // routing key
+		exchangeName, // exchange
+		nil, // arguments
+	)
+}
+
 // RunSubscriber creates a new subscriber based on the QueueConfig provided. The RabbitMQ Channel used
 // is returned, along with a Go Channel of the pushed messages from the RabbitMQ Exchange. Developers should
 // remember to defer the closing of the RabbitMQ Channel.
-func RunSubscriber(cfg *AMQPSubCfg) error {
-	if cfg.Control == nil {
-		cfg.Control = NewControl()
-	}
+func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	defer func() {
-		close(cfg.Control.Exit)
-		close(cfg.Control.SubChan)
+		close(cfg.Control.Exit) // If subscriber exits, kill publisher as well.
 	}()
 
 	ch, err := GetChannel()
@@ -189,24 +209,22 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 	defer ch.Close()
 
 	_, err = ch.QueueDeclare(
-		cfg.QueueName(),  // name (routing key)
-		cfg.IsWorkQueue,  // durable - persist data upon restarts?
-		!cfg.IsWorkQueue, // delete when unused - no more clients attached
-		!cfg.IsWorkQueue, // exclusive - can only be used by this channel
-		false,            // no-wait - do not wait for server to confirm that the queue has been created
-		nil,              // arguments
+		cfg.SubCfg.QueueName(), // name (routing key)
+		cfg.SubCfg.IsWorkQueue, // durable - persist data upon restarts?
+		!cfg.SubCfg.IsWorkQueue, // delete when unused - no more clients attached
+		!cfg.SubCfg.IsWorkQueue, // exclusive - can only be used by this channel
+		false, // no-wait - do not wait for server to confirm that the queue has been created
+		nil, // arguments
 	)
 	if err != nil {
 		return err
 	}
 
-	for _, key := range append(cfg.Keys, cfg.QueueName()) {
-		err = ch.QueueBind(
-			cfg.QueueName(),  // queue name
-			key,              // routing key
+	for _, key := range append(cfg.SubCfg.Keys, cfg.SubCfg.QueueName()) {
+		err = BindQueue(ch,
+			cfg.SubCfg.QueueName(), // queue name
+			key, // routing key
 			cfg.ExchangeName, // exchange
-			false,            // no-wait
-			nil,              // arguments
 		)
 		if err != nil {
 			return err
@@ -214,13 +232,13 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 	}
 
 	msgs, err := ch.Consume(
-		cfg.QueueName(), // queue
-		"",              // consumer
-		true,            // auto ack
-		false,           // exclusive
-		false,           // no local
-		false,           // no wait
-		nil,             // args
+		cfg.SubCfg.QueueName(), // queue
+		"", // consumer
+		true, // auto ack
+		false, // exclusive
+		false, // no local
+		false, // no wait
+		nil, // args
 	)
 	if err != nil {
 		return err
@@ -232,46 +250,53 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 		select {
 		case <-cfg.Control.Exit:
 			return nil
-		case subscription := <-cfg.Control.SubChan:
-			if subscription.IsSubscribe {
-				err = ch.QueueBind(
-					cfg.QueueName(),       // queue name
-					subscription.GetKey(), // routing key
-					cfg.ExchangeName,      // exchange
-					false,                 // no-wait
-					nil,                   // arguments
-				)
-				if err != nil {
-					utils.LogError("Error binding to key", err, logrus.Fields{
-						"Queue":      cfg.QueueName(),
-						"RoutingKey": subscription.GetKey(),
-					})
-					cfg.Control.Exit <- true
-				}
-			} else {
-				err = ch.QueueUnbind(
-					cfg.QueueName(),       // queue name
-					subscription.GetKey(), // routing key
-					cfg.ExchangeName,      // exchange
-					nil,                   // arguments
-				)
-				if err != nil {
-					utils.LogError("Error unbinding from key", err, logrus.Fields{
-						"Queue":      cfg.QueueName(),
-						"RoutingKey": subscription.GetKey(),
-					})
-					cfg.Control.Exit <- true
-				}
-			}
+		//case subscription := <-cfg.Control.SubChan:
+		//	if subscription.IsSubscribe {
+		//		err = ch.QueueBind(
+		//			cfg.QueueName(), // queue name
+		//			subscription.GetKey(), // routing key
+		//			cfg.ExchangeName, // exchange
+		//			false, // no-wait
+		//			nil, // arguments
+		//		)
+		//		if err != nil {
+		//			utils.LogError("Error binding to key", err, utils.LogFields{
+		//				"Queue":      cfg.QueueName(),
+		//				"RoutingKey": subscription.GetKey(),
+		//			})
+		//			cfg.Control.Exit <- true
+		//		}
+		//	} else {
+		//		err = ch.QueueUnbind(
+		//			cfg.QueueName(), // queue name
+		//			subscription.GetKey(), // routing key
+		//			cfg.ExchangeName, // exchange
+		//			nil, // arguments
+		//		)
+		//		if err != nil {
+		//			utils.LogError("Error unbinding from key", err, utils.LogFields{
+		//				"Queue":      cfg.QueueName(),
+		//				"RoutingKey": subscription.GetKey(),
+		//			})
+		//			cfg.Control.Exit <- true
+		//		}
+		//	}
 		case msg := <-msgs:
+			contentType, err := strconv.Atoi(msg.ContentType)
+			if err != nil {
+				utils.LogError("ContentType not an int", err, logrus.Fields{
+					"AMQPMessage": pretty.Sprint(msg),
+				})
+			}
+
 			message := AMQPMessage{
 				Headers:     msg.Headers,
 				RoutingKey:  msg.RoutingKey,
-				ContentType: msg.ContentType,
+				ContentType: contentType,
 				Message:     msg.Body,
 				Persistent:  (msg.DeliveryMode == 2),
 			}
-			err := cfg.HandleMessageFunc(message)
+			err = cfg.SubCfg.HandleMessageFunc(message)
 
 			utils.LogError("Message handler failed", err, nil)
 		}
@@ -280,30 +305,26 @@ func RunSubscriber(cfg *AMQPSubCfg) error {
 
 // RunPublisher creates a new publisher, and continually pushes messages submitted to the Go channel
 // to RabbitMQ.
-func RunPublisher(cfg *AMQPPubCfg) error {
-	if cfg.Control == nil {
-		cfg.Control = utils.NewControl()
-	}
+func RunPublisher(cfg *AMQPPubSubCfg) error {
 	defer func() {
-		close(cfg.Messages)
+		close(cfg.PubCfg.Messages)
 		close(cfg.Control.Exit)
 	}()
 
 	ch, err := GetChannel()
 	if err != nil {
-		utils.LogError("Failed to get new channel", err, nil)
-		// panic so we shut down the subscriber too
-		panic(err) // TODO(shapiro): Think of a better way of having publisher and consumer be able to shut each other down
+		// Shut down subscriber if failed here.
+		return fmt.Errorf("RunPublisher: Failed to get new channel: %v", err)
 	}
 	defer ch.Close()
 
-	// Signal that this Subscriber is ready
+	// Signal that this Publisher is ready
 	cfg.Control.Ready.Done()
 	for {
 		select {
 		case <-cfg.Control.Exit:
 			return nil
-		case message := <-cfg.Messages:
+		case message := <-cfg.PubCfg.Messages:
 
 			deliveryMode := uint8(0)
 			if message.Persistent {
@@ -311,20 +332,21 @@ func RunPublisher(cfg *AMQPPubCfg) error {
 			}
 
 			err = ch.Publish(
-				cfg.ExchangeName,   // exchange
+				cfg.ExchangeName, // exchange
 				message.RoutingKey, // routing key
-				false,              // mandatory - must be placed on at least one queue, otherwise return to sender
-				false,              // immediate - must be delivered immediately. If no free workers, return to sender
+				false, // mandatory - must be placed on at least one queue, otherwise return to sender
+				false, // immediate - must be delivered immediately. If no free workers, return to sender
 				amqp.Publishing{
 					Headers:      message.Headers,
-					ContentType:  message.ContentType,
+					ContentType:  strconv.Itoa(message.ContentType),
 					DeliveryMode: deliveryMode, // 0, 1 for transient, 2 for persistent
 					Body:         message.Message,
 				})
 
 			if err != nil {
-				utils.LogError("Failed to publish message", err, logrus.Fields{
+				utils.LogError("Failed to publish AMQPMessage", err, logrus.Fields{
 					"RoutingKey": message.RoutingKey,
+					"Body": string(message.Message),
 				})
 				// TODO (shapiro): decide on action at publish error: retry with count?
 			}

@@ -11,6 +11,8 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
 	"github.com/Sirupsen/logrus"
+	"errors"
+	"github.com/kr/pretty"
 )
 
 /**
@@ -51,31 +53,51 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	// Generate unique ID for this websocket
 	wsID := atomic.AddUint64(&atomicIDCounter, 1)
 
-	// Run WSSendingHandler in a separate GoRoutine
-	sendingRoutineControl := rabbitmq.NewControl()
+	pubCfg := rabbitmq.NewPubConfig(func(msg rabbitmq.AMQPMessage) {
+		// TODO(wongb): Do we need to send errors back to the client on publishing fail? Can we just kill the socket?
+		msg.ErrHandler()
+	})
 
-	// we (probably) want to have 1 publisher per connection to prevent overload. Goroutines are cheap.
-	pubCfg := rabbitmq.NewPubConfig(cfg.ServerConfig.Name)
+	subCfg := &rabbitmq.AMQPSubCfg{
+		QueueID:      wsID,
+		Keys:         []string{},
+		IsWorkQueue:  false,
+	}
 
-	defer func() {
-		// this prevents a channel leak on an unplanned exit
-		sendingRoutineControl.Exit <- true
-		pubCfg.Control.Exit <- true
-		// we want to recover here so that the server doesn't die
-		if r := recover(); r != nil {
-			// TODO(shapiro): Make sure this gets properly logged.
-			// the most likely cause is that we tried to close an already closed channel
-			utils.LogError("Recovered from WSManager panic", nil, nil)
+	pubSubCfg := rabbitmq.NewAMQPPubSubCfg(cfg.ServerConfig.Name, pubCfg, subCfg)
+
+	subCfg.HandleMessageFunc = newAMQPMessageHandler(pubSubCfg, wsConn);
+
+	//defer func() {
+	//	// this prevents a channel leak on an unplanned exit
+	//	sendingRoutineControl.Exit <- true
+	//	pubCfg.Control.Exit <- true
+	//	// we want to recover here so that the server doesn't die
+	//	if r := recover(); r != nil {
+	//		// TODO(shapiro): Make sure this gets properly logged.
+	//		// the most likely cause is that we tried to close an already closed channel
+	//		utils.LogError("Recovered from WSManager panic", nil, nil)
+	//	}
+	//}()
+
+	go func() {
+		err := rabbitmq.RunPublisher(pubSubCfg)
+		if err != nil {
+			utils.LogError("Publisher error encountered. Exiting", err, nil)
+			close(pubSubCfg.Control.Exit)
 		}
 	}()
-
-	go rabbitmq.RunPublisher(pubCfg)
-	go WSSendingRoutine(wsID, wsConn, sendingRoutineControl)
+	go func() {
+		err := rabbitmq.RunSubscriber(pubSubCfg)
+		if err != nil {
+			utils.LogError("Subscriber error encountered. Exiting", err, nil)
+			close(pubSubCfg.Control.Exit)
+		}
+	}()
 
 	// we don't actually need more than 1 datahandler per websocket
 	dh := datahandling.DataHandler{
 		MessageChan:      pubCfg.Messages,
-		SubscriptionChan: sendingRoutineControl.SubChan,
 		WebsocketID:      wsID,
 		Db:               dbfs.Dbfs,
 	}
@@ -90,26 +112,27 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 }
 
-// WSSendingRoutine receives messages from the RabbitMq subscriber and passes them to the WebSocket.
-func WSSendingRoutine(wsID uint64, wsConn *websocket.Conn, ctrl *rabbitmq.RabbitControl) {
-	cfg := config.GetConfig()
-
-	err := rabbitmq.RunSubscriber(
-		&rabbitmq.AMQPSubCfg{
-			ExchangeName: cfg.ServerConfig.Name,
-			QueueID:      wsID,
-			Keys:         []string{},
-			IsWorkQueue:  false,
-			HandleMessageFunc: func(msg rabbitmq.AMQPMessage) error {
-				utils.LogDebug("Sending Message", logrus.Fields{
-					"Message": string(msg.Message),
-				})
-				return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
-			},
-			Control: ctrl,
-		},
-	)
-
-	// TODO(wongb): Is this really supposed to die if we cannot subscribe?
-	utils.LogError("Failed to subscribe to RabbitMQ channel", err, nil)
+func newAMQPMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) (func(rabbitmq.AMQPMessage) error) {
+	return func(msg rabbitmq.AMQPMessage) error {
+		switch (msg.ContentType){
+		case rabbitmq.ContentType_Msg:
+			utils.LogDebug("Sending Message", logrus.Fields{
+				"Message": string(msg.Message),
+			})
+			return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
+		case rabbitmq.ContentType_Cmd:
+			rch := datahandling.RabbitCommandHandler{
+				ExchangeName: cfg.ExchangeName,
+				WSConn: wsConn,
+				WSID: cfg.SubCfg.QueueID,
+			}
+			return rch.HandleCommand(msg)
+		default:
+			err := errors.New("No such ContentType")
+			utils.LogError("Invalid ContentType", err, logrus.Fields{
+				"AMQPMessage": pretty.Sprint(msg),
+			})
+			return err
+		}
+	}
 }

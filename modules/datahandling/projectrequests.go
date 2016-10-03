@@ -128,7 +128,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)}}, nil
 }
 
 // Project.GetPermissionConstants
@@ -177,7 +177,10 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
+	return []dhClosure{
+		toSenderClosure{msg: res},
+		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)},
+		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitUserQueueName(p.GrantUsername)}}, nil
 }
 
 func (p *projectGrantPermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -211,7 +214,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 		},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)}}, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -417,11 +420,14 @@ type projectSubscribeRequest struct {
 }
 
 func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	subscribeClosure := rabbitChannelSubscribeClosure{
-		key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
-		tag: p.Tag,
+	cmdClosure := rabbitCommandClosure{
+		Command: "Subscribe",
+		Tag: p.Tag,
+		Data: rabbitQueueData{
+			Key:rabbitmq.RabbitProjectQueueName(p.ProjectID),
+		},
 	}
-	return []dhClosure{subscribeClosure}, nil
+	return []dhClosure{cmdClosure}, nil
 }
 
 func (p *projectSubscribeRequest) setAbstractRequest(req *abstractRequest) {
@@ -435,11 +441,14 @@ type projectUnsubscribeRequest struct {
 }
 
 func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	unsubscribeClosure := rabbitChannelUnsubscribeClosure{
-		key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
-		tag: p.Tag,
+	cmdClosure := rabbitCommandClosure{
+		Command: "Unsubscribe",
+		Tag: p.Tag,
+		Data: rabbitQueueData{
+			Key:rabbitmq.RabbitProjectQueueName(p.ProjectID),
+		},
 	}
-	return []dhClosure{unsubscribeClosure}, nil
+	return []dhClosure{cmdClosure}, nil
 }
 
 func (p *projectUnsubscribeRequest) setAbstractRequest(req *abstractRequest) {
@@ -470,7 +479,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Data:       struct{}{},
 	}.wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, projectID: p.ProjectID}}, nil
+	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)}}, nil
 }
 
 func (p *projectDeleteRequest) setAbstractRequest(req *abstractRequest) {
