@@ -87,7 +87,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 	projectmeta := dbfs.ProjectMeta{
 		ProjectID:       req.ProjectID,
 		Name:            "new stuff",
-		PermissionLevel: 10,
+		PermissionLevel: config.PermissionsByLabel["owner"],
 	}
 	db.Projects["loganga"] = []dbfs.ProjectMeta{projectmeta}
 	db.ProjectIDCounter = 2
@@ -130,7 +130,7 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	req := *new(projectGrantPermissionsRequest)
 	setBaseFields(&req)
 
-	perm, _ := config.PermissionByLabel("Write")
+	perm, _ := config.PermissionByLabel("write")
 
 	req.Resource = "Project"
 	req.Method = "GrantPermissions"
@@ -367,9 +367,15 @@ func TestProjectSubscribe_Process(t *testing.T) {
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
 
+	db.MySQLUserRegister(geneMeta)
+	projectID, _ := db.MySQLProjectCreate("loganga", "new stuff")
+
 	req.Resource = "Project"
 	req.Method = "Subscribe"
-	req.ProjectID = 1
+	req.SenderID = geneMeta.Username
+	req.ProjectID = projectID
+
+	db.FunctionCallCount = 0
 
 	closures, err := req.process(db)
 	if err != nil {

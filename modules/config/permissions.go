@@ -2,14 +2,12 @@ package config
 
 import "errors"
 
-/**
- * Permission constants for API access levels
- */
-var permissions = []Permission{
-	{Label: "Read", Level: 1},
-	{Label: "Write", Level: 4},
-	{Label: "Admin", Level: 8},
-	{Label: "Owner", Level: 10},
+// PermissionsByLabel is the permission constants for API access levels
+var PermissionsByLabel = map[string]int8{
+	"read":  1,
+	"write": 4,
+	"admin": 8,
+	"owner": 10,
 }
 
 // Permission is the struct representation of an API permission level
@@ -18,18 +16,14 @@ type Permission struct {
 	Label string
 }
 
-// internal storage maps
-var byLabel map[string]Permission
-var byLevel map[int8]Permission
+// internal map in other direction
+var byLevel map[int8]string
 
 // initialize maps
 func init() {
-	byLabel = make(map[string]Permission)
-	byLevel = make(map[int8]Permission)
-
-	for _, perm := range permissions {
-		byLabel[perm.Label] = perm
-		byLevel[perm.Level] = perm
+	byLevel = make(map[int8]string)
+	for label, level := range PermissionsByLabel {
+		byLevel[level] = label
 	}
 }
 
@@ -42,14 +36,20 @@ func PermissionByLevel(level int8) (Permission, error) {
 	if !ok {
 		return Permission{}, ErrNoMatchingPermission
 	}
-	return label, nil
+	return Permission{
+		Label: label,
+		Level: level,
+	}, nil
 }
 
 // PermissionByLabel returns the int8 representation of the provided label, if found
 func PermissionByLabel(label string) (Permission, error) {
-	level, ok := byLabel[label]
+	level, ok := PermissionsByLabel[label]
 	if !ok {
 		return Permission{}, ErrNoMatchingPermission
 	}
-	return level, nil
+	return Permission{
+		Level: level,
+		Label: label,
+	}, nil
 }

@@ -406,7 +406,7 @@ func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
 
 	permLevel, err := di.MySQLUserProjectPermissionLookup(projectID, userJoel.Username)
 	assert.Nil(t, err, "unexpected error from mysql permission lookup")
-	ownerPerm, _ := config.PermissionByLabel("Owner")
+	ownerPerm, _ := config.PermissionByLabel("owner")
 	assert.Equal(t, ownerPerm.Level, permLevel, "expected user to be owner")
 
 	err = di.MySQLUserRegister(userAustin)
@@ -416,7 +416,7 @@ func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
 	assert.NotNil(t, err, "expected error from mysql permission lookup")
 	assert.Equal(t, int8(0), permLevel, "expected user not have permission")
 
-	readPerm, _ := config.PermissionByLabel("Read")
+	readPerm, _ := config.PermissionByLabel("read")
 	err = di.MySQLProjectGrantPermission(projectID, userAustin.Username, readPerm.Level, userJoel.Username)
 	assert.Nil(t, err)
 

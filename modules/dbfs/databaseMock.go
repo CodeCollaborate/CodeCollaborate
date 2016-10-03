@@ -141,7 +141,7 @@ func (dm *DatabaseMock) MySQLUserProjects(username string) ([]ProjectMeta, error
 func (dm *DatabaseMock) MySQLProjectCreate(username string, projectName string) (int64, error) {
 	dm.FunctionCallCount++
 
-	perm, _ := config.PermissionByLabel("Owner")
+	perm, _ := config.PermissionByLabel("owner")
 	proj := ProjectMeta{
 		PermissionLevel: perm.Level,
 		ProjectID:       dm.ProjectIDCounter,
