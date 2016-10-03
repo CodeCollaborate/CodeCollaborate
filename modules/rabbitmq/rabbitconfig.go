@@ -38,6 +38,8 @@ type AMQPExchCfg struct {
 	Durable      bool
 }
 
+// AMQPPubSubCfg aggregates the publisher and subscriber into a single configuration, allowing them to shut each other
+// down in the event of a unhandled error.
 type AMQPPubSubCfg struct {
 	ExchangeName string
 	PubCfg       *AMQPPubCfg
@@ -45,12 +47,13 @@ type AMQPPubSubCfg struct {
 	Control      utils.Control // Used for shutting down both publisher and subscriber
 }
 
+// NewAMQPPubSubCfg creates a new AMQPPubSubCfg struct, and returns the pointer.
 func NewAMQPPubSubCfg(exchangeName string, pubCfg *AMQPPubCfg, subCfg *AMQPSubCfg) *AMQPPubSubCfg {
 	return &AMQPPubSubCfg{
 		ExchangeName: exchangeName,
-		PubCfg: pubCfg,
-		SubCfg: subCfg,
-		Control: *utils.NewControl(2),
+		PubCfg:       pubCfg,
+		SubCfg:       subCfg,
+		Control:      *utils.NewControl(2),
 	}
 }
 
@@ -92,7 +95,7 @@ type AMQPPubCfg struct {
 func NewPubConfig(errHandler func(AMQPMessage)) *AMQPPubCfg {
 	return &AMQPPubCfg{
 		PubErrHandler: errHandler,
-		Messages:     make(chan AMQPMessage, 16), // Buffer 16 messages to make sure a latency spike doesn't kill us.
+		Messages:      make(chan AMQPMessage, 16), // Buffer 16 messages to make sure a latency spike doesn't kill us.
 	}
 }
 
@@ -107,6 +110,9 @@ type AMQPMessage struct {
 }
 
 const (
-	ContentType_Msg = iota
-	ContentType_Cmd
+	// ContentTypeMsg is the message content-type for an AMQPMessage
+	ContentTypeMsg = iota
+
+	// ContentTypeCmd is the command content-type for an AMQPMessage
+	ContentTypeCmd
 )

@@ -422,9 +422,9 @@ type projectSubscribeRequest struct {
 func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	cmdClosure := rabbitCommandClosure{
 		Command: "Subscribe",
-		Tag: p.Tag,
+		Tag:     p.Tag,
 		Data: rabbitQueueData{
-			Key:rabbitmq.RabbitProjectQueueName(p.ProjectID),
+			Key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		},
 	}
 	return []dhClosure{cmdClosure}, nil
@@ -443,9 +443,9 @@ type projectUnsubscribeRequest struct {
 func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	cmdClosure := rabbitCommandClosure{
 		Command: "Unsubscribe",
-		Tag: p.Tag,
+		Tag:     p.Tag,
 		Data: rabbitQueueData{
-			Key:rabbitmq.RabbitProjectQueueName(p.ProjectID),
+			Key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		},
 	}
 	return []dhClosure{cmdClosure}, nil

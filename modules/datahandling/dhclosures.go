@@ -24,7 +24,7 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
 		RoutingKey:  rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
-		ContentType: rabbitmq.ContentType_Msg,
+		ContentType: rabbitmq.ContentTypeMsg,
 		Persistent:  false,
 		Message:     msgJSON,
 	}
@@ -45,7 +45,7 @@ func (cont toRabbitChannelClosure) call(dh DataHandler) error {
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
 		RoutingKey:  cont.key,
-		ContentType: rabbitmq.ContentType_Msg,
+		ContentType: rabbitmq.ContentTypeMsg,
 		Persistent:  false,
 		Message:     msgJSON,
 	}
@@ -67,9 +67,9 @@ func (cont rabbitCommandClosure) call(dh DataHandler) error {
 	dh.MessageChan <- rabbitmq.AMQPMessage{
 		Headers:     make(map[string]interface{}),
 		RoutingKey:  rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
-		ContentType: rabbitmq.ContentType_Cmd,
+		ContentType: rabbitmq.ContentTypeCmd,
 		Persistent:  false,
-		Message: msgJSON,
+		Message:     msgJSON,
 	}
 	return nil
 }

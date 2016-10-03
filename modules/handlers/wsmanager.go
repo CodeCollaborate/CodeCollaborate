@@ -4,14 +4,14 @@ import (
 	"net/http"
 	"sync/atomic"
 
+	"errors"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
-	"github.com/Sirupsen/logrus"
-	"errors"
 	"github.com/kr/pretty"
 )
 
@@ -59,14 +59,14 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	})
 
 	subCfg := &rabbitmq.AMQPSubCfg{
-		QueueID:      wsID,
-		Keys:         []string{},
-		IsWorkQueue:  false,
+		QueueID:     wsID,
+		Keys:        []string{},
+		IsWorkQueue: false,
 	}
 
 	pubSubCfg := rabbitmq.NewAMQPPubSubCfg(cfg.ServerConfig.Name, pubCfg, subCfg)
 
-	subCfg.HandleMessageFunc = newAMQPMessageHandler(pubSubCfg, wsConn);
+	subCfg.HandleMessageFunc = newAMQPMessageHandler(pubSubCfg, wsConn)
 
 	//defer func() {
 	//	// this prevents a channel leak on an unplanned exit
@@ -97,9 +97,9 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 
 	// we don't actually need more than 1 datahandler per websocket
 	dh := datahandling.DataHandler{
-		MessageChan:      pubCfg.Messages,
-		WebsocketID:      wsID,
-		Db:               dbfs.Dbfs,
+		MessageChan: pubCfg.Messages,
+		WebsocketID: wsID,
+		Db:          dbfs.Dbfs,
 	}
 
 	for {
@@ -112,24 +112,24 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func newAMQPMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) (func(rabbitmq.AMQPMessage) error) {
+func newAMQPMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
 	return func(msg rabbitmq.AMQPMessage) error {
-		switch (msg.ContentType){
-		case rabbitmq.ContentType_Msg:
-			utils.LogDebug("Sending Message", logrus.Fields{
+		switch msg.ContentType {
+		case rabbitmq.ContentTypeMsg:
+			utils.LogDebug("Sending Message", utils.LogFields{
 				"Message": string(msg.Message),
 			})
 			return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
-		case rabbitmq.ContentType_Cmd:
+		case rabbitmq.ContentTypeCmd:
 			rch := datahandling.RabbitCommandHandler{
 				ExchangeName: cfg.ExchangeName,
-				WSConn: wsConn,
-				WSID: cfg.SubCfg.QueueID,
+				WSConn:       wsConn,
+				WSID:         cfg.SubCfg.QueueID,
 			}
 			return rch.HandleCommand(msg)
 		default:
 			err := errors.New("No such ContentType")
-			utils.LogError("Invalid ContentType", err, logrus.Fields{
+			utils.LogError("Invalid ContentType", err, utils.LogFields{
 				"AMQPMessage": pretty.Sprint(msg),
 			})
 			return err

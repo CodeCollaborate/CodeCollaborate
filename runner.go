@@ -12,7 +12,6 @@ import (
 	"github.com/CodeCollaborate/Server/modules/handlers"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
-	"github.com/Sirupsen/logrus"
 )
 
 /**
@@ -40,7 +39,7 @@ func main() {
 	dir, err := os.Getwd()
 	utils.LogFatal("Could not get working directory", err, nil)
 
-	utils.LogInfo("Working directory initalized", logrus.Fields{
+	utils.LogInfo("Working directory initalized", utils.LogFields{
 		"Working Directory": dir,
 	})
 
@@ -66,7 +65,7 @@ func main() {
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
 	addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port)
-	utils.LogInfo("Starting server", logrus.Fields{
+	utils.LogInfo("Starting server", utils.LogFields{
 		"Address": addr,
 	})
 	err = http.ListenAndServe(addr, nil)

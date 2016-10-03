@@ -1,20 +1,22 @@
 package datahandling
 
 import (
-	"github.com/gorilla/websocket"
-	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"encoding/json"
-	"github.com/CodeCollaborate/Server/utils"
 	"errors"
-	"github.com/Sirupsen/logrus"
+
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
+	"github.com/gorilla/websocket"
 )
 
+// RabbitCommandHandler handles all rabbit commands (sub/unsub)
 type RabbitCommandHandler struct {
 	WSConn       *websocket.Conn
 	WSID         uint64
 	ExchangeName string
 }
 
+// HandleCommand handles an individual command
 func (r RabbitCommandHandler) HandleCommand(msg rabbitmq.AMQPMessage) error {
 	var cmd rabbitCommand
 
@@ -23,14 +25,14 @@ func (r RabbitCommandHandler) HandleCommand(msg rabbitmq.AMQPMessage) error {
 		return err
 	}
 
-	switch(cmd.Command){
+	switch cmd.Command {
 	case "Subscribe":
 		return r.handleSubscribe(cmd)
 	case "Unsubscribe":
 		return r.handleUnsubscribe(cmd)
 	default:
 		err := errors.New("Invalid rabbit command given")
-		utils.LogError("Invalid rabbit command given", err, logrus.Fields{
+		utils.LogError("Invalid rabbit command given", err, utils.LogFields{
 			"RabbitCommand": cmd.Command,
 		})
 		return err
@@ -49,7 +51,7 @@ func (r RabbitCommandHandler) handleSubscribe(cmd rabbitCommand) error {
 		return err
 	}
 
-	var msg *serverMessageWrapper = newEmptyResponse(success, cmd.Tag)
+	msg := newEmptyResponse(success, cmd.Tag)
 	err = rabbitmq.BindQueue(ch, rabbitmq.RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
 	if err != nil {
 		msg = newEmptyResponse(fail, cmd.Tag)
@@ -81,7 +83,7 @@ func (r RabbitCommandHandler) handleUnsubscribe(cmd rabbitCommand) error {
 		return err
 	}
 
-	var msg *serverMessageWrapper = newEmptyResponse(success, cmd.Tag)
+	msg := newEmptyResponse(success, cmd.Tag)
 	err = rabbitmq.UnbindQueue(ch, rabbitmq.RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
 	if err != nil {
 		msg = newEmptyResponse(fail, cmd.Tag)

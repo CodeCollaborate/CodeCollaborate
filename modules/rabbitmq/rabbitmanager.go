@@ -2,24 +2,22 @@ package rabbitmq
 
 import (
 	"errors"
+	"fmt"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/CodeCollaborate/Server/utils"
-	"github.com/streadway/amqp"
-
-	"fmt"
-	"strconv"
 	"github.com/kr/pretty"
-	"github.com/Sirupsen/logrus"
+	"github.com/streadway/amqp"
 )
 
 /**
  * RabbitMq manager for CodeCollaborate Server.
- */
+ //*/
 const (
-	defaultHeartbeat = 10 * time.Second
+	defaultHeartbeat         = 10 * time.Second
 	defaultConnectionTimeout = 30
 )
 
@@ -55,14 +53,14 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 				// Loop; if connection drops, we should try to restore connection before creating new channels.
 				retries := uint16(0)
 
-				redialLoop:
+			redialLoop:
 				for {
 					conn, err := amqp.DialConfig(cfg.ConnectionString(), amqp.Config{
 						Heartbeat: defaultHeartbeat,
 						Dial:      getNewDialer(cfg.Timeout),
 					})
 					if err != nil {
-						utils.LogError("Failed to connect to RabbitMQ", err, logrus.Fields{
+						utils.LogError("Failed to connect to RabbitMQ", err, utils.LogFields{
 							"Host": cfg.Host,
 							"Port": cfg.Port,
 						})
@@ -99,12 +97,12 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 					for _, exchange := range cfg.Exchanges {
 						err = ch.ExchangeDeclare(
 							exchange.ExchangeName, // name
-							"direct", // type
-							exchange.Durable, // durable
-							!exchange.Durable, // auto-deleted
-							false, // internal
-							false, // no-wait
-							nil, // arguments
+							"direct",              // type
+							exchange.Durable,      // durable
+							!exchange.Durable,     // auto-deleted
+							false,                 // internal
+							false,                 // no-wait
+							nil,                   // arguments
 						)
 						if err != nil {
 							utils.LogError("Failed to declare exchange", err, nil)
@@ -158,7 +156,7 @@ func getNewDialer(timeout uint16) func(network, addr string) (net.Conn, error) {
 
 	// returns dialer using timeout if non-zero, or dialer using default timeout otherwise.
 	return func(network, addr string) (net.Conn, error) {
-		conn, err := net.DialTimeout(network, addr, time.Duration(timeout) * time.Second)
+		conn, err := net.DialTimeout(network, addr, time.Duration(timeout)*time.Second)
 		if err != nil {
 			return nil, err
 		}
@@ -175,21 +173,21 @@ func getNewDialer(timeout uint16) func(network, addr string) (net.Conn, error) {
 // BindQueue binds this queue to a key.
 func BindQueue(ch *amqp.Channel, queueName, key, exchangeName string) error {
 	return ch.QueueBind(
-		queueName, // queue name
-		key, // routing key
+		queueName,    // queue name
+		key,          // routing key
 		exchangeName, // exchange
-		false, // no-wait
-		nil, // arguments
+		false,        // no-wait
+		nil,          // arguments
 	)
 }
 
-// BindQueue unbinds this queue from a key.
+// UnbindQueue unbinds this queue from a key.
 func UnbindQueue(ch *amqp.Channel, queueName, key, exchangeName string) error {
 	return ch.QueueUnbind(
-		queueName, // queue name
-		key, // routing key
+		queueName,    // queue name
+		key,          // routing key
 		exchangeName, // exchange
-		nil, // arguments
+		nil,          // arguments
 	)
 }
 
@@ -209,12 +207,12 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	defer ch.Close()
 
 	_, err = ch.QueueDeclare(
-		cfg.SubCfg.QueueName(), // name (routing key)
-		cfg.SubCfg.IsWorkQueue, // durable - persist data upon restarts?
+		cfg.SubCfg.QueueName(),  // name (routing key)
+		cfg.SubCfg.IsWorkQueue,  // durable - persist data upon restarts?
 		!cfg.SubCfg.IsWorkQueue, // delete when unused - no more clients attached
 		!cfg.SubCfg.IsWorkQueue, // exclusive - can only be used by this channel
 		false, // no-wait - do not wait for server to confirm that the queue has been created
-		nil, // arguments
+		nil,   // arguments
 	)
 	if err != nil {
 		return err
@@ -223,7 +221,7 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	for _, key := range append(cfg.SubCfg.Keys, cfg.SubCfg.QueueName()) {
 		err = BindQueue(ch,
 			cfg.SubCfg.QueueName(), // queue name
-			key, // routing key
+			key,              // routing key
 			cfg.ExchangeName, // exchange
 		)
 		if err != nil {
@@ -233,12 +231,12 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 
 	msgs, err := ch.Consume(
 		cfg.SubCfg.QueueName(), // queue
-		"", // consumer
-		true, // auto ack
+		"",    // consumer
+		true,  // auto ack
 		false, // exclusive
 		false, // no local
 		false, // no wait
-		nil, // args
+		nil,   // args
 	)
 	if err != nil {
 		return err
@@ -284,7 +282,7 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 		case msg := <-msgs:
 			contentType, err := strconv.Atoi(msg.ContentType)
 			if err != nil {
-				utils.LogError("ContentType not an int", err, logrus.Fields{
+				utils.LogError("ContentType not an int", err, utils.LogFields{
 					"AMQPMessage": pretty.Sprint(msg),
 				})
 			}
@@ -332,10 +330,10 @@ func RunPublisher(cfg *AMQPPubSubCfg) error {
 			}
 
 			err = ch.Publish(
-				cfg.ExchangeName, // exchange
+				cfg.ExchangeName,   // exchange
 				message.RoutingKey, // routing key
-				false, // mandatory - must be placed on at least one queue, otherwise return to sender
-				false, // immediate - must be delivered immediately. If no free workers, return to sender
+				false,              // mandatory - must be placed on at least one queue, otherwise return to sender
+				false,              // immediate - must be delivered immediately. If no free workers, return to sender
 				amqp.Publishing{
 					Headers:      message.Headers,
 					ContentType:  strconv.Itoa(message.ContentType),
@@ -344,9 +342,9 @@ func RunPublisher(cfg *AMQPPubSubCfg) error {
 				})
 
 			if err != nil {
-				utils.LogError("Failed to publish AMQPMessage", err, logrus.Fields{
+				utils.LogError("Failed to publish AMQPMessage", err, utils.LogFields{
 					"RoutingKey": message.RoutingKey,
-					"Body": string(message.Message),
+					"Body":       string(message.Message),
 				})
 				// TODO (shapiro): decide on action at publish error: retry with count?
 			}
