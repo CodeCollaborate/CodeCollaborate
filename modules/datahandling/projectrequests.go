@@ -28,7 +28,7 @@ func initProjectRequests() {
 		return commonJSON(new(projectRenameRequest), req)
 	}
 
-	authenticatedRequestMap["Project.GetPermissionsConstants"] = func(req *abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.GetPermissionConstants"] = func(req *abstractRequest) (request, error) {
 		return commonJSON(new(projectGetPermissionConstantsRequest), req)
 	}
 
