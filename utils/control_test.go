@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewControl(t *testing.T) {
-	control := NewControl()
+	control := NewControl(1)
 
 	select {
 	case control.Exit <- true:
@@ -33,7 +33,7 @@ func TestNewControl(t *testing.T) {
 }
 
 func TestControlTooManyDoneCalls(t *testing.T) {
-	control := NewControl()
+	control := NewControl(1)
 
 	defer func() {
 		if r := recover(); r == nil {

@@ -68,18 +68,6 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 
 	subCfg.HandleMessageFunc = newAMQPMessageHandler(pubSubCfg, wsConn)
 
-	//defer func() {
-	//	// this prevents a channel leak on an unplanned exit
-	//	sendingRoutineControl.Exit <- true
-	//	pubCfg.Control.Exit <- true
-	//	// we want to recover here so that the server doesn't die
-	//	if r := recover(); r != nil {
-	//		// TODO(shapiro): Make sure this gets properly logged.
-	//		// the most likely cause is that we tried to close an already closed channel
-	//		utils.LogError("Recovered from WSManager panic", nil, nil)
-	//	}
-	//}()
-
 	go func() {
 		err := rabbitmq.RunPublisher(pubSubCfg)
 		if err != nil {
@@ -106,6 +94,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		messageType, message, err := wsConn.ReadMessage()
 		if err != nil {
 			utils.LogError("Failed to read message, terminating connection", err, nil)
+			close(pubSubCfg.Control.Exit)
 			break
 		}
 		go dh.Handle(messageType, message)
@@ -121,7 +110,7 @@ func newAMQPMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) 
 			})
 			return wsConn.WriteMessage(websocket.TextMessage, msg.Message)
 		case rabbitmq.ContentTypeCmd:
-			rch := datahandling.RabbitCommandHandler{
+			rch := rabbitmq.RabbitCommandHandler{
 				ExchangeName: cfg.ExchangeName,
 				WSConn:       wsConn,
 				WSID:         cfg.SubCfg.QueueID,

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"sync"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 )
@@ -44,7 +46,8 @@ type AMQPPubSubCfg struct {
 	ExchangeName string
 	PubCfg       *AMQPPubCfg
 	SubCfg       *AMQPSubCfg
-	Control      utils.Control // Used for shutting down both publisher and subscriber
+	Control      *utils.Control // Used for shutting down both publisher and subscriber
+	shutdown     sync.Once
 }
 
 // NewAMQPPubSubCfg creates a new AMQPPubSubCfg struct, and returns the pointer.
@@ -53,7 +56,7 @@ func NewAMQPPubSubCfg(exchangeName string, pubCfg *AMQPPubCfg, subCfg *AMQPSubCf
 		ExchangeName: exchangeName,
 		PubCfg:       pubCfg,
 		SubCfg:       subCfg,
-		Control:      *utils.NewControl(2),
+		Control:      utils.NewControl(2),
 	}
 }
 

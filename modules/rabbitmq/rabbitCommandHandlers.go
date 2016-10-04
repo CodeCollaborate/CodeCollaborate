@@ -1,10 +1,10 @@
-package datahandling
+package rabbitmq
 
 import (
 	"encoding/json"
 	"errors"
 
-	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/modules/messages"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
 )
@@ -17,8 +17,8 @@ type RabbitCommandHandler struct {
 }
 
 // HandleCommand handles an individual command
-func (r RabbitCommandHandler) HandleCommand(msg rabbitmq.AMQPMessage) error {
-	var cmd rabbitCommand
+func (r RabbitCommandHandler) HandleCommand(msg AMQPMessage) error {
+	var cmd RabbitCommandJSON
 
 	err := json.Unmarshal(msg.Message, &cmd)
 	if err != nil {
@@ -39,27 +39,27 @@ func (r RabbitCommandHandler) HandleCommand(msg rabbitmq.AMQPMessage) error {
 	}
 }
 
-func (r RabbitCommandHandler) handleSubscribe(cmd rabbitCommand) error {
-	var data rabbitQueueData
+func (r RabbitCommandHandler) handleSubscribe(cmd RabbitCommandJSON) error {
+	var data RabbitQueueData
 	err := json.Unmarshal(cmd.Data, &data)
 	if err != nil {
 		return err
 	}
 
-	ch, err := rabbitmq.GetChannel()
+	ch, err := GetChannel()
 	if err != nil {
 		return err
 	}
 
-	msg := newEmptyResponse(success, cmd.Tag)
-	err = rabbitmq.BindQueue(ch, rabbitmq.RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
+	msg := messages.NewEmptyResponse(messages.StatusSuccess, cmd.Tag)
+	err = BindQueue(ch, RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
 	if err != nil {
-		msg = newEmptyResponse(fail, cmd.Tag)
+		msg = messages.NewEmptyResponse(messages.StatusFail, cmd.Tag)
 	}
 
 	// If no tag, do not send a response
 	// This is used in cases where we auto-register a client (ie, for username)
-	if cmd.Tag < 0 {
+	if cmd.Tag < 0 || r.WSConn == nil {
 		return nil
 	}
 
@@ -71,27 +71,27 @@ func (r RabbitCommandHandler) handleSubscribe(cmd rabbitCommand) error {
 	return r.WSConn.WriteMessage(websocket.TextMessage, msgJSON)
 }
 
-func (r RabbitCommandHandler) handleUnsubscribe(cmd rabbitCommand) error {
-	var data rabbitQueueData
+func (r RabbitCommandHandler) handleUnsubscribe(cmd RabbitCommandJSON) error {
+	var data RabbitQueueData
 	err := json.Unmarshal(cmd.Data, &data)
 	if err != nil {
 		return err
 	}
 
-	ch, err := rabbitmq.GetChannel()
+	ch, err := GetChannel()
 	if err != nil {
 		return err
 	}
 
-	msg := newEmptyResponse(success, cmd.Tag)
-	err = rabbitmq.UnbindQueue(ch, rabbitmq.RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
+	msg := messages.NewEmptyResponse(messages.StatusSuccess, cmd.Tag)
+	err = UnbindQueue(ch, RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
 	if err != nil {
-		msg = newEmptyResponse(fail, cmd.Tag)
+		msg = messages.NewEmptyResponse(messages.StatusFail, cmd.Tag)
 	}
 
 	// If no tag, do not send a response
 	// This is used in cases where we auto-register a client (ie, for username)
-	if cmd.Tag < 0 {
+	if cmd.Tag < 0 || r.WSConn == nil {
 		return nil
 	}
 

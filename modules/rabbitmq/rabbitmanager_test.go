@@ -8,6 +8,9 @@ import (
 
 	"time"
 
+	"encoding/json"
+	"errors"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/streadway/amqp"
@@ -28,7 +31,6 @@ func getRabbitMQConfig(t *testing.T) config.ConnCfg {
 }
 
 func TestGetChannel(t *testing.T) {
-
 	var wg sync.WaitGroup
 
 	_, err := GetChannel()
@@ -135,7 +137,7 @@ func TestSendMessage(t *testing.T) {
 	}
 
 	queueID := uint64(0)
-	routingKey := fmt.Sprintf("%s-%d", hostname, queueID)
+	routingKey := fmt.Sprintf("WS-%s-%d", hostname, queueID)
 	doneTesting := make(chan bool, 1)
 	defer close(doneTesting)
 
@@ -146,53 +148,53 @@ func TestSendMessage(t *testing.T) {
 			"Header3": "Value3",
 		},
 		RoutingKey:  routingKey,
-		ContentType: "ContentType1",
+		ContentType: ContentTypeMsg,
 		Persistent:  false,
 		Message:     []byte("TestMessage1"),
 	}
 
-	publisherMessages := make(chan AMQPMessage, 1)
-	publisherMessages <- TestMessage
-	subscriberControl := NewControl()
-	publisherControl := utils.NewControl(1)
+	pubSubCtrl := utils.NewControl(2)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-
-		RunSubscriber(&AMQPSubCfg{
-			ExchangeName: testExchange.ExchangeName,
-			QueueID:      queueID,
-			Keys:         []string{},
-			IsWorkQueue:  false,
+	pubSubCfg := &AMQPPubSubCfg{
+		ExchangeName: testExchange.ExchangeName,
+		SubCfg: &AMQPSubCfg{
+			QueueID:     queueID,
+			Keys:        []string{},
+			IsWorkQueue: false,
 			HandleMessageFunc: func(msg AMQPMessage) error {
-				subscriberControl.Exit <- true
-				publisherControl.Exit <- true
+				pubSubCtrl.Exit <- true
 				if !reflect.DeepEqual(msg, TestMessage) {
 					t.Fatal("Sent message does not equal received message")
 				}
 				doneTesting <- true
 				return nil
 			},
-			Control: subscriberControl,
-		})
+		},
+		PubCfg: &AMQPPubCfg{
+			Messages: make(chan AMQPMessage, 1),
+		},
+		Control: pubSubCtrl,
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		RunSubscriber(pubSubCfg)
 	}()
-	subscriberControl.Ready.Wait()
 
 	go func() {
 		defer wg.Done()
-		RunPublisher(&AMQPPubCfg{
-			ExchangeName: testExchange.ExchangeName,
-			Messages:     publisherMessages,
-			Control:      publisherControl,
-		})
+		RunPublisher(pubSubCfg)
 	}()
-	wg.Wait()
+	pubSubCfg.Control.Ready.Wait()
+
+	// Send message
+	pubSubCfg.PubCfg.Messages <- TestMessage
 
 	select {
 	case <-doneTesting:
-		// success
+	// success
 	case <-time.After(time.Second * 5):
 		t.Fatal("control signal timed out")
 	}
@@ -215,7 +217,7 @@ func TestSubscription(t *testing.T) {
 	}
 
 	queueID := uint64(0)
-	subscriptionChannel := "gene's project"
+	subChanKey := "gene's project"
 
 	doneTesting := make(chan bool, 1)
 	defer close(doneTesting)
@@ -226,55 +228,95 @@ func TestSubscription(t *testing.T) {
 			"Header2": "Value2",
 			"Header3": "Value3",
 		},
-		RoutingKey:  subscriptionChannel,
-		ContentType: "ContentType1",
+		RoutingKey:  subChanKey,
+		ContentType: ContentTypeMsg,
 		Persistent:  false,
 		Message:     []byte("TestMessage1"),
 	}
 
-	publisherMessages := make(chan AMQPMessage, 1)
-	subscriberControl := NewControl()
-	publisherControl := utils.NewControl()
+	msgJSON, err := json.Marshal(&RabbitCommandStruct{
+		Command: "Subscribe",
+		Tag:     1,
+		Data: &RabbitQueueData{
+			Key: subChanKey,
+		},
+	})
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		wg.Done()
-		RunSubscriber(&AMQPSubCfg{
-			ExchangeName: testExchange.ExchangeName,
-			QueueID:      queueID,
-			Keys:         []string{},
-			IsWorkQueue:  false,
-			HandleMessageFunc: func(msg AMQPMessage) error {
-				subscriberControl.Exit <- true
-				publisherControl.Exit <- true
-				if !reflect.DeepEqual(msg, TestMessage) {
-					t.Fatal("Sent message does not equal received message")
-				}
-				doneTesting <- true
-				return nil
-			},
-			Control: subscriberControl,
-		})
-	}()
-
-	subscriberControl.SubChan <- Subscription{
-		Channel:     subscriptionChannel,
-		IsSubscribe: true,
+	TestSubscription := AMQPMessage{
+		Headers: map[string]interface{}{
+			"Header1": "Value1",
+			"Header2": "Value2",
+			"Header3": "Value3",
+		},
+		RoutingKey:  RabbitWebsocketQueueName(queueID),
+		ContentType: ContentTypeCmd,
+		Persistent:  false,
+		Message:     msgJSON,
 	}
-	subscriberControl.Ready.Wait()
+
+	pubSubCtrl := utils.NewControl(2)
+	subWg := &sync.WaitGroup{}
+	subWg.Add(1)
+
+	pubSubCfg := &AMQPPubSubCfg{
+		ExchangeName: testExchange.ExchangeName,
+		SubCfg: &AMQPSubCfg{
+			QueueID:     queueID,
+			Keys:        []string{},
+			IsWorkQueue: false,
+			HandleMessageFunc: func(msg AMQPMessage) error {
+				switch msg.ContentType {
+				case ContentTypeCmd:
+					defer subWg.Done()
+					rch := RabbitCommandHandler{
+						ExchangeName: testExchange.ExchangeName,
+						WSConn:       nil,
+						WSID:         queueID,
+					}
+					return rch.HandleCommand(msg)
+				default:
+					t.Fatalf("Unexpected message type: %d", msg.ContentType)
+					return errors.New("Unexpected message type")
+				}
+			},
+		},
+		PubCfg: &AMQPPubCfg{
+			Messages: make(chan AMQPMessage, 1),
+		},
+		Control: pubSubCtrl,
+	}
 
 	go func() {
-		wg.Done()
-		RunPublisher(&AMQPPubCfg{
-			ExchangeName: testExchange.ExchangeName,
-			Messages:     publisherMessages,
-			Control:      publisherControl,
-		})
+		RunSubscriber(pubSubCfg)
 	}()
-	wg.Wait()
+	go func() {
+		RunPublisher(pubSubCfg)
+	}()
+	pubSubCfg.Control.Ready.Wait() // wait for subscribers and publishers to have started up.
 
-	publisherMessages <- TestMessage
+	// Send subscribe command
+	pubSubCfg.PubCfg.Messages <- TestSubscription
+	if err := utils.WaitTimeout(subWg, 5*time.Second); err != nil {
+		t.Fatal("Timed out waiting for subscribe command")
+	}
+
+	// Change incoming message handler
+	pubSubCfg.SubCfg.HandleMessageFunc = func(msg AMQPMessage) error {
+		switch msg.ContentType {
+		case ContentTypeMsg:
+			pubSubCtrl.Exit <- true
+			if !reflect.DeepEqual(msg, TestMessage) {
+				t.Fatal("Sent message does not equal received message")
+			}
+			doneTesting <- true
+			return nil
+		default:
+			t.Fatalf("Unexpected message type: %d", msg.ContentType)
+			return errors.New("Unexpected message type")
+		}
+	}
+
+	pubSubCfg.PubCfg.Messages <- TestMessage
 
 	select {
 	case <-doneTesting:

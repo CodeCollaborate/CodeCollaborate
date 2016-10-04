@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/messages"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 )
@@ -55,13 +56,13 @@ func (dh DataHandler) Handle(messageType int, message []byte) error {
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
-			closures = []dhClosure{toSenderClosure{msg: newEmptyResponse(unauthorized, req.Tag)}}
+			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, req.Tag)}}
 		} else {
 			utils.LogDebug("No such resource/method", utils.LogFields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
-			closures = []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, req.Tag)}}
+			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, req.Tag)}}
 		}
 	} else {
 		closures, err = fullRequest.process(dh.Db)

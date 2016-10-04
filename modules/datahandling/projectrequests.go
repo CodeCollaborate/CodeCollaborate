@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/messages"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 )
@@ -81,18 +82,18 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		//if err == project already exists {
 		// TODO(shapiro): implement a specific error for this on the mysql.go side
 		//}
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    p.Tag,
 		Data: struct {
 			ProjectID int64
 		}{
 			ProjectID: projectID,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
@@ -113,11 +114,11 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err := db.MySQLProjectRename(p.ProjectID, p.NewName)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 	}
 
-	res := newEmptyResponse(success, p.Tag)
-	not := notification{
+	res := messages.NewEmptyResponse(messages.StatusSuccess, p.Tag)
+	not := messages.Notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
@@ -126,7 +127,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewName: p.NewName,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)}}, nil
 }
@@ -144,7 +145,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure
 	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
 	utils.LogWarn("ProjectGetPermissionConstants not implemented", nil)
 
-	return []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, p.Tag)}}, nil
+	return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, p.Tag)}}, nil
 }
 
 // Project.GrantPermissions
@@ -160,11 +161,11 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 
 	err := db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 	}
 
-	res := newEmptyResponse(success, p.Tag)
-	not := notification{
+	res := messages.NewEmptyResponse(messages.StatusSuccess, p.Tag)
+	not := messages.Notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
@@ -175,7 +176,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			GrantUsername:   p.GrantUsername,
 			PermissionLevel: p.PermissionLevel,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{
 		toSenderClosure{msg: res},
@@ -199,11 +200,11 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 	err := db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 	}
 
-	res := newEmptyResponse(success, p.Tag)
-	not := notification{
+	res := messages.NewEmptyResponse(messages.StatusSuccess, p.Tag)
+	not := messages.Notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
@@ -212,7 +213,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 		}{
 			RevokeUsername: p.RevokeUsername,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)}}, nil
 }
@@ -231,7 +232,7 @@ func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 	// TODO: implement on redis (and actually implement redis)
 	utils.LogWarn("ProjectGetOnlineClients not implemented", nil)
 
-	return []dhClosure{toSenderClosure{msg: newEmptyResponse(unimplemented, p.Tag)}}, nil
+	return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, p.Tag)}}, nil
 }
 
 func (p *projectGetOnlineClientsRequest) setAbstractRequest(req *abstractRequest) {
@@ -279,38 +280,38 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	if errOut != nil {
 		if len(resultData) == 0 {
-			res := response{
-				Status: fail,
+			res := messages.Response{
+				Status: messages.StatusFail,
 				Tag:    p.Tag,
 				Data: struct {
 					Projects []projectLookupResult
 				}{
 					Projects: resultData,
 				},
-			}.wrap()
+			}.Wrap()
 			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
-		res := response{
-			Status: partialfail,
+		res := messages.Response{
+			Status: messages.StatusPartialfail,
 			Tag:    p.Tag,
 			Data: struct {
 				Projects []projectLookupResult
 			}{
 				Projects: resultData,
 			},
-		}.wrap()
+		}.Wrap()
 		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    p.Tag,
 		Data: struct {
 			Projects []projectLookupResult
 		}{
 			Projects: resultData,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
@@ -337,15 +338,15 @@ type fileLookupResult struct {
 func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	files, err := db.MySQLProjectGetFiles(p.ProjectID)
 	if err != nil {
-		res := response{
-			Status: fail,
+		res := messages.Response{
+			Status: messages.StatusFail,
 			Tag:    p.Tag,
 			Data: struct {
 				Files []fileLookupResult
 			}{
 				Files: make([]fileLookupResult, 0),
 			},
-		}.wrap()
+		}.Wrap()
 
 		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
@@ -374,37 +375,37 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	if errOut != nil {
 		if len(resultData) == 0 {
-			res := response{
-				Status: fail,
+			res := messages.Response{
+				Status: messages.StatusFail,
 				Tag:    p.Tag,
 				Data: struct {
 					Files []fileLookupResult
 				}{
 					Files: resultData,
 				},
-			}.wrap()
+			}.Wrap()
 			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
-		res := response{
-			Status: partialfail,
+		res := messages.Response{
+			Status: messages.StatusPartialfail,
 			Tag:    p.Tag,
 			Data: struct {
 				Files []fileLookupResult
 			}{
 				Files: resultData,
 			},
-		}.wrap()
+		}.Wrap()
 		return []dhClosure{toSenderClosure{msg: res}}, nil
 	}
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    p.Tag,
 		Data: struct {
 			Files []fileLookupResult
 		}{
 			Files: resultData,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
@@ -423,7 +424,7 @@ func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	cmdClosure := rabbitCommandClosure{
 		Command: "Subscribe",
 		Tag:     p.Tag,
-		Data: rabbitQueueData{
+		Data: rabbitmq.RabbitQueueData{
 			Key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		},
 	}
@@ -444,7 +445,7 @@ func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	cmdClosure := rabbitCommandClosure{
 		Command: "Unsubscribe",
 		Tag:     p.Tag,
-		Data: rabbitQueueData{
+		Data: rabbitmq.RabbitQueueData{
 			Key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
 		},
 	}
@@ -465,19 +466,19 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	err := db.MySQLProjectDelete(p.ProjectID, p.SenderID)
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
-			return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, p.Tag)}}, err
+			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, err
 		}
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 
 	}
 
-	res := newEmptyResponse(success, p.Tag)
-	not := notification{
+	res := messages.NewEmptyResponse(messages.StatusSuccess, p.Tag)
+	not := messages.Notification{
 		Resource:   p.Resource,
 		Method:     p.Method,
 		ResourceID: p.ProjectID,
 		Data:       struct{}{},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)}}, nil
 }

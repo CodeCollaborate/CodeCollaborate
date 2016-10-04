@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/messages"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
@@ -16,9 +17,8 @@ func setBaseFields(req request) {
 }
 
 var datahanly = DataHandler{
-	MessageChan:      make(chan rabbitmq.AMQPMessage, 1),
-	SubscriptionChan: make(chan rabbitmq.Subscription, 1),
-	WebsocketID:      1,
+	MessageChan: make(chan rabbitmq.AMQPMessage, 1),
+	WebsocketID: 1,
 }
 
 func TestProjectCreateRequest_Process(t *testing.T) {
@@ -49,9 +49,9 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 	// is the data actually correct
@@ -108,10 +108,10 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(notification)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
@@ -161,16 +161,17 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	}
 
 	// are we notifying the right people
-	if len(closures) != 2 ||
+	if len(closures) != 3 ||
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
+		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" ||
+		reflect.TypeOf(closures[2]).String() != "datahandling.toRabbitChannelClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(notification)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
@@ -230,10 +231,10 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(notification)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
@@ -285,9 +286,9 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
@@ -339,9 +340,9 @@ func TestProjectGetFilesRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
@@ -374,15 +375,15 @@ func TestProjectSubscribe_Process(t *testing.T) {
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
-		reflect.TypeOf(closures[0]).String() != "datahandling.rabbitChannelSubscribeClosure" {
+		reflect.TypeOf(closures[0]).String() != "datahandling.rabbitCommandClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	sub := closures[0].(rabbitChannelSubscribeClosure)
+	sub := closures[0].(rabbitCommandClosure)
 	// did the server return success status
 	channelKey := rabbitmq.RabbitProjectQueueName(req.ProjectID)
-	if sub.key != channelKey {
-		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %s, got: %s", channelKey, sub.key)
+	if sub.Data.(rabbitmq.RabbitQueueData).Key != channelKey {
+		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %s, got: %s", channelKey, sub.Data.(rabbitmq.RabbitQueueData).Key)
 	}
 }
 
@@ -403,15 +404,15 @@ func TestProjectUnsubscribe_Process(t *testing.T) {
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
-		reflect.TypeOf(closures[0]).String() != "datahandling.rabbitChannelUnsubscribeClosure" {
+		reflect.TypeOf(closures[0]).String() != "datahandling.rabbitCommandClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	sub := closures[0].(rabbitChannelUnsubscribeClosure)
+	sub := closures[0].(rabbitCommandClosure)
 	// did the server return success status
 	channelKey := rabbitmq.RabbitProjectQueueName(req.ProjectID)
-	if sub.key != channelKey {
-		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %s, got: %s", channelKey, sub.key)
+	if sub.Data.(rabbitmq.RabbitQueueData).Key != channelKey {
+		t.Fatalf("Subscribe function wanted to subscribe to the wrong channel\n expected: %s, got: %s", channelKey, sub.Data.(rabbitmq.RabbitQueueData).Key)
 	}
 }
 
@@ -447,10 +448,10 @@ func TestProjectDeleteRequest_process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
-	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(notification)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 

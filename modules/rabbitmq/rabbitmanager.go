@@ -196,7 +196,9 @@ func UnbindQueue(ch *amqp.Channel, queueName, key, exchangeName string) error {
 // remember to defer the closing of the RabbitMQ Channel.
 func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	defer func() {
-		close(cfg.Control.Exit) // If subscriber exits, kill publisher as well.
+		cfg.shutdown.Do(func() {
+			close(cfg.Control.Exit) // If subscriber exits, kill publisher as well.
+		})
 	}()
 
 	ch, err := GetChannel()
@@ -248,37 +250,6 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 		select {
 		case <-cfg.Control.Exit:
 			return nil
-		//case subscription := <-cfg.Control.SubChan:
-		//	if subscription.IsSubscribe {
-		//		err = ch.QueueBind(
-		//			cfg.QueueName(), // queue name
-		//			subscription.GetKey(), // routing key
-		//			cfg.ExchangeName, // exchange
-		//			false, // no-wait
-		//			nil, // arguments
-		//		)
-		//		if err != nil {
-		//			utils.LogError("Error binding to key", err, utils.LogFields{
-		//				"Queue":      cfg.QueueName(),
-		//				"RoutingKey": subscription.GetKey(),
-		//			})
-		//			cfg.Control.Exit <- true
-		//		}
-		//	} else {
-		//		err = ch.QueueUnbind(
-		//			cfg.QueueName(), // queue name
-		//			subscription.GetKey(), // routing key
-		//			cfg.ExchangeName, // exchange
-		//			nil, // arguments
-		//		)
-		//		if err != nil {
-		//			utils.LogError("Error unbinding from key", err, utils.LogFields{
-		//				"Queue":      cfg.QueueName(),
-		//				"RoutingKey": subscription.GetKey(),
-		//			})
-		//			cfg.Control.Exit <- true
-		//		}
-		//	}
 		case msg := <-msgs:
 			contentType, err := strconv.Atoi(msg.ContentType)
 			if err != nil {
@@ -306,7 +277,9 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 func RunPublisher(cfg *AMQPPubSubCfg) error {
 	defer func() {
 		close(cfg.PubCfg.Messages)
-		close(cfg.Control.Exit)
+		cfg.shutdown.Do(func() { // Make sure this is only ever called once.
+			close(cfg.Control.Exit) // If subscriber exits, kill publisher as well.
+		})
 	}()
 
 	ch, err := GetChannel()

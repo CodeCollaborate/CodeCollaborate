@@ -2,6 +2,7 @@ package datahandling
 
 import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/messages"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
@@ -68,29 +69,29 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	_, err := db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, nil
 	}
 
 	fileID, err := db.MySQLFileCreate(f.SenderID, f.Name, f.RelativePath, f.ProjectID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, nil
 	}
 
 	err = db.CBInsertNewFile(fileID, newFileVersion, make([]string, 0))
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, nil
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
 			FileID int64
 		}{
 			FileID: fileID,
 		},
-	}.wrap()
-	not := notification{
+	}.Wrap()
+	not := messages.Notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.ProjectID,
@@ -104,7 +105,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Version:      newFileVersion,
 			},
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(f.ProjectID)}}, nil
 }
@@ -125,21 +126,21 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	err = db.MySQLFileRename(f.FileID, f.NewName)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, fileMeta.RelativePath, f.NewName, fileMeta.ProjectID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	res := newEmptyResponse(success, f.Tag)
-	not := notification{
+	res := messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)
+	not := messages.Notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.FileID,
@@ -148,7 +149,7 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewName: f.NewName,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
@@ -169,21 +170,21 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	err = db.MySQLFileMove(f.FileID, f.NewPath)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, f.NewPath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	res := newEmptyResponse(success, f.Tag)
-	not := notification{
+	res := messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)
+	not := messages.Notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.FileID,
@@ -192,7 +193,7 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		}{
 			NewPath: f.NewPath,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
@@ -212,31 +213,31 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	err = db.MySQLFileDelete(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	err = db.CBDeleteFile(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	res := newEmptyResponse(success, f.Tag)
-	not := notification{
+	res := messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)
+	not := messages.Notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data:       struct{}{},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{
 		toSenderClosure{msg: res},
@@ -263,30 +264,30 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// Specifically, this prevents CouchBase from incrementing a version number without the notifications being sent out.
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	// TODO (normal/required): verify changes are valid changes
 	version, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
 	if err != nil {
 		if err == dbfs.ErrVersionOutOfDate {
-			return []dhClosure{toSenderClosure{msg: newEmptyResponse(versionOutOfDate, f.Tag)}}, err
+			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusVersionOutOfDate, f.Tag)}}, err
 		} else if err == dbfs.ErrResourceNotFound {
-			return []dhClosure{toSenderClosure{msg: newEmptyResponse(notFound, f.Tag)}}, err
+			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusNotFound, f.Tag)}}, err
 		}
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
 			FileVersion int64
 		}{
 			FileVersion: version,
 		},
-	}.wrap()
-	not := notification{
+	}.Wrap()
+	not := messages.Notification{
 		Resource:   f.Resource,
 		Method:     f.Method,
 		ResourceID: f.FileID,
@@ -299,7 +300,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			FileVersion:     version,
 			Changes:         f.Changes,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
@@ -319,21 +320,21 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	rawFile, err := db.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	changes, err := db.CBGetFileChanges(f.FileID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
 			FileBytes []byte
@@ -342,7 +343,7 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			FileBytes: *rawFile,
 			Changes:   changes,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }

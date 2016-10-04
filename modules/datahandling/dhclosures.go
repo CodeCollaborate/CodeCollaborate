@@ -3,6 +3,7 @@ package datahandling
 import (
 	"encoding/json"
 
+	"github.com/CodeCollaborate/Server/modules/messages"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 )
 
@@ -11,7 +12,7 @@ type dhClosure interface {
 }
 
 type toSenderClosure struct {
-	msg *serverMessageWrapper
+	msg *messages.ServerMessageWrapper
 }
 
 // toSenderClosure.call is the function that will forward a server message back to the client
@@ -32,7 +33,7 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 }
 
 type toRabbitChannelClosure struct {
-	msg *serverMessageWrapper
+	msg *messages.ServerMessageWrapper
 	key string
 }
 
