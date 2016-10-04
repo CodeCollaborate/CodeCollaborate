@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/CodeCollaborate/Server/modules/messages"
+	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
 )

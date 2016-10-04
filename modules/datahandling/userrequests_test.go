@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
-	"github.com/CodeCollaborate/Server/modules/messages"
 )
 
 func TestUserRegisterRequest_Process(t *testing.T) {

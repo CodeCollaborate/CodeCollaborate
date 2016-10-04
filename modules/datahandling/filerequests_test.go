@@ -6,8 +6,8 @@ import (
 
 	"fmt"
 
+	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
-	"github.com/CodeCollaborate/Server/modules/messages"
 )
 
 var geneMeta = dbfs.UserMeta{
