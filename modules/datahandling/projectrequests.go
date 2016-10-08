@@ -184,6 +184,20 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		})
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
+	requestPerm, err := config.PermissionByLevel(p.PermissionLevel)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, p.Tag)}}, nil
+	}
+
+	ownerPerm, err := config.PermissionByLabel("owner")
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, nil
+	}
+
+	if requestPerm == ownerPerm {
+		// TODO(shapiro): implement changing ownership
+		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, p.Tag)}}, nil
+	}
 
 	err = db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 	if err != nil {
