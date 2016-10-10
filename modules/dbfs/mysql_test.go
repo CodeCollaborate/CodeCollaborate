@@ -63,13 +63,13 @@ func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	di.MySQLUserDelete("jshap70", "secret")
+	di.MySQLUserDelete("jshap70")
 
 	err := di.MySQLUserRegister(userJoel)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = di.MySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70")
 	if err == ErrNoDbChange {
 		t.Fatal("No user added")
 	}
@@ -78,7 +78,7 @@ func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-	di.MySQLUserDelete("jshap70", "secret")
+	di.MySQLUserDelete("jshap70")
 
 	err := di.MySQLUserRegister(userJoel)
 	if err != nil {
@@ -93,13 +93,13 @@ func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 		t.Fatal("Wrong password returned")
 	}
 
-	err = di.MySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70")
 }
 
 func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-	di.MySQLUserDelete("jshap70", "secret")
+	di.MySQLUserDelete("jshap70")
 
 	err := di.MySQLUserRegister(userJoel)
 	if err != nil {
@@ -119,7 +119,7 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 		t.Fatal("Expected lookup with incorrect username to fail, but it did not")
 	}
 
-	err = di.MySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-	di.MySQLUserDelete("jshap70", "secret")
+	di.MySQLUserDelete("jshap70")
 
 	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
@@ -139,7 +139,7 @@ func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 
 	projects, err := di.MySQLUserProjects("jshap70")
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err, projectID)
 	}
-	err = di.MySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +213,7 @@ func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
 		t.Fatal("project delete succeded 2x on the same projectID")
 	}
 
-	err = di.MySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +234,7 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 	files, err := di.MySQLProjectGetFiles(projectID)
 
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 
 	if err != nil {
 		t.Fatal(err)
@@ -287,11 +287,11 @@ func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = di.MySQLUserDelete("fahslaj", "secret")
+	err = di.MySQLUserDelete("fahslaj")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = di.MySQLUserDelete("jshap70", "secret")
+	err = di.MySQLUserDelete("jshap70")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -310,8 +310,8 @@ func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 
 	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
 
-	defer di.MySQLUserDelete("fahslaj", "secret")
-	defer di.MySQLUserDelete("jshap70", "secret")
+	defer di.MySQLUserDelete("fahslaj")
+	defer di.MySQLUserDelete("jshap70")
 	defer di.MySQLProjectDelete(projectID, "jshap70")
 
 	name, perms, err := di.MySQLProjectLookup(projectID, "fahslaj")
@@ -377,8 +377,8 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 
 	di.MySQLProjectRevokePermission(projectID, "fahslaj", "jshap70")
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
-	_ = di.MySQLUserDelete("fahslaj", "secret")
+	_ = di.MySQLUserDelete("jshap70")
+	_ = di.MySQLUserDelete("fahslaj")
 
 	projects, _ = di.MySQLUserProjects("fahslaj")
 	if len(projects) > 0 {
@@ -390,12 +390,12 @@ func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	di.MySQLUserDelete(userJoel.Username, "secret")
-	di.MySQLUserDelete(userAustin.Username, "secret")
+	di.MySQLUserDelete(userJoel.Username)
+	di.MySQLUserDelete(userAustin.Username)
 
 	defer func() {
-		di.MySQLUserDelete(userJoel.Username, "secret")
-		di.MySQLUserDelete(userAustin.Username, "secret")
+		di.MySQLUserDelete(userJoel.Username)
+		di.MySQLUserDelete(userAustin.Username)
 	}()
 
 	err := di.MySQLUserRegister(userJoel)
@@ -429,7 +429,7 @@ func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	di.MySQLUserDelete("jshap70", "secret")
+	di.MySQLUserDelete("jshap70")
 
 	erro := di.MySQLUserRegister(userJoel)
 	if erro != nil {
@@ -445,7 +445,7 @@ func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 
 	projects, err := di.MySQLUserProjects("jshap70")
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 
 	if projects[0].ProjectID != projectID || projects[0].Name != "newName" {
 		t.Fatalf("Wrong return, got project:%v %v", projects[0].Name, projects[0].ProjectID)
@@ -467,7 +467,7 @@ func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 	files, _ := di.MySQLProjectGetFiles(projectID)
 
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 
 	if err != nil {
 		t.Fatal(err)
@@ -496,7 +496,7 @@ func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 
 	if err != nil {
 		t.Fatal(err)
@@ -522,7 +522,7 @@ func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 
 	if err != nil {
 		t.Fatal(err)
@@ -551,7 +551,7 @@ func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 
 	if err != nil {
 		t.Fatal(err)
@@ -581,7 +581,7 @@ func TestDatabaseImpl_MySQLFileGetInfo(t *testing.T) {
 	fileafter, err := di.MySQLFileGetInfo(fileID)
 
 	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70", "secret")
+	_ = di.MySQLUserDelete("jshap70")
 
 	if err != nil {
 		t.Fatal(err)

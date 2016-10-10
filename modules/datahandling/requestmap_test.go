@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 /*
@@ -399,6 +401,19 @@ func TestUserProjectsRequest(t *testing.T) {
 	if reflect.TypeOf(newRequest).String() != "*datahandling.userProjectsRequest" {
 		t.Fatalf("wrong request type, got: %s", reflect.TypeOf(newRequest))
 	}
+}
+
+func TestUserDeleteRequest(t *testing.T) {
+	req := *new(abstractRequest)
+	req.Resource = "User"
+	req.Method = "Delete"
+	req.SenderID = TestSenderID
+	req.SenderToken = testToken(t, TestSenderID)
+	req.Data = json.RawMessage("{}")
+	newRequest, err := getFullRequest(&req)
+	assert.Nil(t, err, "error getting User.Delete request")
+
+	assert.IsType(t, &userDeleteRequest{}, newRequest, "returned wrong request type")
 }
 
 /*

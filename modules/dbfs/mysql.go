@@ -121,14 +121,11 @@ func (di *DatabaseImpl) MySQLUserGetPass(username string) (password string, err 
 }
 
 // MySQLUserDelete deletes a user from MySQL
-// technically not part of the official API
-func (di *DatabaseImpl) MySQLUserDelete(username string, pass string) error {
+func (di *DatabaseImpl) MySQLUserDelete(username string) error {
 	mysql, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
-
-	// FIXME (optional): use MySQLUserGetPass to verify the password is correct before deleting
 
 	result, err := mysql.db.Exec("CALL user_delete(?)", username)
 	if err != nil {

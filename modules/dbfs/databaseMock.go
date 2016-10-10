@@ -113,7 +113,7 @@ func (dm *DatabaseMock) MySQLUserGetPass(username string) (string, error) {
 }
 
 // MySQLUserDelete is a mock of the real implementation
-func (dm *DatabaseMock) MySQLUserDelete(username string, pass string) error {
+func (dm *DatabaseMock) MySQLUserDelete(username string) error {
 	dm.FunctionCallCount++
 	if _, ok := dm.Users[username]; ok {
 		delete(dm.Users, username)

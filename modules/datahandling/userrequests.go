@@ -23,6 +23,10 @@ func initUserRequests() {
 		return commonJSON(new(userLoginRequest), req)
 	}
 
+	unauthenticatedRequestMap["User.Delete"] = func(req *abstractRequest) (request, error) {
+		return commonJSON(new(userDeleteRequest), req)
+	}
+
 	authenticatedRequestMap["User.Lookup"] = func(req *abstractRequest) (request, error) {
 		return commonJSON(new(userLookupRequest), req)
 	}
@@ -123,6 +127,26 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			},
 		},
 	}, nil
+}
+
+// User.Delete
+type userDeleteRequest struct {
+	abstractRequest
+}
+
+func (f *userDeleteRequest) setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
+}
+
+func (f userDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	// TODO (shapiro): get list of user's owned projects and then send out project_delete notifications for all of them on success
+
+	if err := db.MySQLUserDelete(f.SenderID); err != nil {
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
+	}
+	// TODO (shapiro): invalidate token
+
+	return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)}}, nil
 }
 
 // User.Lookup

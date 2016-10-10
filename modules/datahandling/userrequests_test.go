@@ -6,6 +6,7 @@ import (
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUserRegisterRequest_Process(t *testing.T) {
@@ -57,6 +58,31 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 }
 
 // userLoginRequest.process is unimplemented
+
+func TestUserDeleteRequest_Process(t *testing.T) {
+	configSetup(t)
+
+	req := *new(userRegisterRequest)
+	setBaseFields(&req)
+
+	req.Resource = "User"
+	req.Method = "Delete"
+
+	db := dbfs.NewDBMock()
+	db.MySQLUserRegister(geneMeta)
+	db.FunctionCallCount = 0
+
+	closures, err := req.process(db)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, db.FunctionCallCount, "unexpected db calls for user delete")
+
+	assert.Equal(t, 1, len(closures), "unexpected number of returned closures")
+	assert.IsType(t, toSenderClosure{}, closures[0], "incorrect closure type")
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+
+	assert.Equal(t, messages.StatusSuccess, resp.Status, "unexpected response status")
+}
 
 func TestUserLookupRequest_Process(t *testing.T) {
 	configSetup(t)
