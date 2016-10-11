@@ -54,13 +54,12 @@ func TestQueueName(t *testing.T) {
 		queueID := i
 
 		queueCfg := AMQPSubCfg{
-			ExchangeName: "Exchange",
-			QueueID:      queueID,
-			Keys:         []string{"Key1", "Key2"},
-			IsWorkQueue:  false,
+			QueueID:     queueID,
+			Keys:        []string{"Key1", "Key2"},
+			IsWorkQueue: false,
 		}
 
-		expected := hostname + "-" + strconv.FormatUint(queueID, 10)
+		expected := "WS-" + hostname + "-" + strconv.FormatUint(queueID, 10)
 		if queueCfg.QueueName() != expected {
 			t.Fatalf("QueueName incorrect; expected [%s], got [%s]", expected, queueCfg.QueueName())
 		}

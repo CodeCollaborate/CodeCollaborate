@@ -1,7 +1,9 @@
 package datahandling
 
 import (
+	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -50,7 +52,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(f.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	newUser := dbfs.UserMeta{
@@ -67,11 +69,11 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
-			return []dhClosure{toSenderClosure{msg: newEmptyResponse(notFound, f.Tag)}}, err
+			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusNotFound, f.Tag)}}, err
 		}
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
-	return []dhClosure{toSenderClosure{msg: newEmptyResponse(success, f.Tag)}}, err
+	return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)}}, err
 }
 
 // User.Login
@@ -88,29 +90,39 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	hashed, err := db.MySQLUserGetPass(f.Username)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(f.Password)); err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(unauthorized, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, err
 	}
 
 	signed, err := newAuthToken(f.Username)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
 			Token string
 		}{
 			Token: signed,
 		},
-	}.wrap()
+	}.Wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}}, nil
+	return []dhClosure{toSenderClosure{msg: res},
+		// Subscribe user to their own username channel
+		// TODO(wongb): What happens if they re-login? Or login as a different user?
+		rabbitCommandClosure{
+			Command: "Subscribe",
+			Tag:     -1,
+			Data: rabbitmq.RabbitQueueData{
+				Key: rabbitmq.RabbitUserQueueName(f.Username),
+			},
+		},
+	}, nil
 }
 
 // User.Lookup
@@ -140,32 +152,32 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	users = users[:index]
 
 	if len(users) < 0 {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, f.Tag)}}, erro
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, erro
 	} else if erro != nil {
 		// at least 1 value failed
 		// return what we can but
 		// tell the client whatever they don't get back failed
-		res := response{
-			Status: partialfail,
+		res := messages.Response{
+			Status: messages.StatusPartialfail,
 			Tag:    f.Tag,
 			Data: struct {
 				Users []dbfs.UserMeta
 			}{
 				Users: users,
 			},
-		}.wrap()
+		}.Wrap()
 		return []dhClosure{toSenderClosure{msg: res}}, erro
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
 			Users []dbfs.UserMeta
 		}{
 			Users: users,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, erro
 }
@@ -182,27 +194,27 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	projects, err := db.MySQLUserProjects(f.SenderID)
 	if err != nil {
-		res := response{
-			Status: partialfail,
+		res := messages.Response{
+			Status: messages.StatusPartialfail,
 			Tag:    f.Tag,
 			Data: struct {
 				Projects []dbfs.ProjectMeta
 			}{
 				Projects: projects,
 			},
-		}.wrap()
+		}.Wrap()
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
-	res := response{
-		Status: success,
+	res := messages.Response{
+		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
 			Projects []dbfs.ProjectMeta
 		}{
 			Projects: projects,
 		},
-	}.wrap()
+	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, err
 }

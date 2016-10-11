@@ -24,10 +24,11 @@ func addFunc(fields LogFields) LogFields {
 	}
 
 	// pc[0] = runtime.Callers
-	// pc[1] = LogWithFunc
-	// pc[2] = caller of LogWithFunc
+	// pc[1] = addFunc
+	// pc[2] = caller of addFunc (LogDebug, LogInfo, LogWarn...)
+	// pc[3] = caller of logging functions
 	pc := make([]uintptr, 1)
-	runtime.Callers(2, pc)
+	runtime.Callers(3, pc)
 	f := runtime.FuncForPC(pc[0])
 	file, line := f.FileLine(pc[0])
 	fields["Location"] = fmt.Sprintf("%s:%d", file, line)
