@@ -197,7 +197,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 
 	if requestPerm == ownerPerm {
 		// TODO(shapiro): implement changing ownership
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, p.Tag)}}, nil
 	}
 
 	err = db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
