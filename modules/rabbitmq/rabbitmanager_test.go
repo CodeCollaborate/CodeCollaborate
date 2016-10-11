@@ -162,7 +162,7 @@ func TestSendMessage(t *testing.T) {
 			Keys:        []string{},
 			IsWorkQueue: false,
 			HandleMessageFunc: func(msg AMQPMessage) error {
-				pubSubCtrl.Exit <- true
+				pubSubCtrl.Shutdown()
 				if !reflect.DeepEqual(msg, TestMessage) {
 					t.Fatal("Sent message does not equal received message")
 				}
@@ -304,7 +304,7 @@ func TestSubscription(t *testing.T) {
 	pubSubCfg.SubCfg.HandleMessageFunc = func(msg AMQPMessage) error {
 		switch msg.ContentType {
 		case ContentTypeMsg:
-			pubSubCtrl.Exit <- true
+			pubSubCtrl.Shutdown()
 			if !reflect.DeepEqual(msg, TestMessage) {
 				t.Fatal("Sent message does not equal received message")
 			}
