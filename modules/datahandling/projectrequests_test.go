@@ -137,9 +137,9 @@ func TestProjectGetPermissionConstantsRequest_Process(t *testing.T) {
 	assert.Equal(t, 1, len(closures), "unexpected number of returned closures")
 	assert.IsType(t, toSenderClosure{}, closures[0], "incorrect closure type")
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 
-	assert.Equal(t, success, resp.Status, "unexpected response status")
+	assert.Equal(t, messages.StatusSuccess, resp.Status, "unexpected response status")
 
 	mappy := reflect.ValueOf(resp.Data).FieldByName("Constants").Interface().(map[string]int8)
 	assert.Equal(t, len(config.PermissionsByLabel), len(mappy), "incorrect number of entries in map result")

@@ -119,7 +119,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
 	err = db.MySQLProjectRename(p.ProjectID, p.NewName)
@@ -182,21 +182,21 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 	requestPerm, err := config.PermissionByLevel(p.PermissionLevel)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, p.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
 	}
 
 	ownerPerm, err := config.PermissionByLabel("owner")
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(servfail, p.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
 	}
 
 	if requestPerm == ownerPerm {
 		// TODO(shapiro): implement changing ownership
-		return []dhClosure{toSenderClosure{msg: newEmptyResponse(fail, p.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
 	}
 
 	err = db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
@@ -244,7 +244,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
 	err = db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
@@ -406,7 +406,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
 	files, err := db.MySQLProjectGetFiles(p.ProjectID)
@@ -502,7 +502,7 @@ func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
 	cmdClosure := rabbitCommandClosure{
@@ -555,7 +555,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
 	err = db.MySQLProjectDelete(p.ProjectID, p.SenderID)
