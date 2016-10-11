@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"sync"
-
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 )
@@ -47,7 +45,6 @@ type AMQPPubSubCfg struct {
 	PubCfg       *AMQPPubCfg
 	SubCfg       *AMQPSubCfg
 	Control      *utils.Control // Used for shutting down both publisher and subscriber
-	shutdown     sync.Once
 }
 
 // NewAMQPPubSubCfg creates a new AMQPPubSubCfg struct, and returns the pointer.

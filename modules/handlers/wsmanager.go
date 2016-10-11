@@ -72,14 +72,14 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		err := rabbitmq.RunPublisher(pubSubCfg)
 		if err != nil {
 			utils.LogError("Publisher error encountered. Exiting", err, nil)
-			close(pubSubCfg.Control.Exit)
+			pubSubCfg.Control.Shutdown()
 		}
 	}()
 	go func() {
 		err := rabbitmq.RunSubscriber(pubSubCfg)
 		if err != nil {
 			utils.LogError("Subscriber error encountered. Exiting", err, nil)
-			close(pubSubCfg.Control.Exit)
+			pubSubCfg.Control.Shutdown()
 		}
 	}()
 
@@ -94,7 +94,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		messageType, message, err := wsConn.ReadMessage()
 		if err != nil {
 			utils.LogError("Failed to read message, terminating connection", err, nil)
-			close(pubSubCfg.Control.Exit)
+			pubSubCfg.Control.Shutdown()
 			break
 		}
 		go dh.Handle(messageType, message)
