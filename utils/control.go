@@ -15,11 +15,11 @@ type Control struct {
 
 // NewControl creates a new control group, initialized to the not ready state
 // (Ready WaitGroup semaphore to 1). Exit Go Channel is also created with a buffer of 1.
-func NewControl() *Control {
+func NewControl(wgCount int) *Control {
 	control := Control{
 		Ready: sync.WaitGroup{},
 		Exit:  make(chan bool, 1),
 	}
-	control.Ready.Add(1)
+	control.Ready.Add(wgCount)
 	return &control
 }

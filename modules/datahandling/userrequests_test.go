@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 )
 
@@ -44,8 +45,8 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 	// did the server return success status
-	cont := closures[0].(toSenderClosure).msg.ServerMessage.(response).Status
-	if cont != success {
+	cont := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response).Status
+	if cont != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", cont)
 	}
 
@@ -92,9 +93,9 @@ func TestUserLookupRequest_Process(t *testing.T) {
 		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
-	response := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	response := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	// did the server return success status
-	if response.Status != success {
+	if response.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", response.Status)
 	}
 	// is the data actually correct
@@ -155,9 +156,9 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 	// is the data actually correct
@@ -181,9 +182,9 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp = closures[0].(toSenderClosure).msg.ServerMessage.(response)
+	resp = closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	// did the server return success status
-	if resp.Status != success {
+	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 	// is the data actually correct
