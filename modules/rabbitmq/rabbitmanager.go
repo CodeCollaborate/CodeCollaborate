@@ -15,7 +15,7 @@ import (
 
 /**
  * RabbitMq manager for CodeCollaborate Server.
- //*/
+ */
 const (
 	defaultHeartbeat         = 10 * time.Second
 	defaultConnectionTimeout = 30
