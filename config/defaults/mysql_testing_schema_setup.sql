@@ -38,7 +38,7 @@ CREATE TABLE `File` (
   KEY `fk_File_Username_idx` (`Creator`),
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
-  CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE NO ACTION ON UPDATE CASCADE
+  CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
