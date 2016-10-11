@@ -184,6 +184,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		})
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
+
 	requestPerm, err := config.PermissionByLevel(p.PermissionLevel)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
@@ -237,13 +238,17 @@ type projectRevokePermissionsRequest struct {
 
 func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "admin", db)
-	if err != nil || !hasPermission {
+	if err != nil {
 		utils.LogError("API permission error", err, utils.LogFields{
 			"Resource":  p.Resource,
 			"Method":    p.Method,
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
+	}
+	// allow case where user is removing themselves from a project
+	if !hasPermission && p.SenderID != p.RevokeUsername {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
