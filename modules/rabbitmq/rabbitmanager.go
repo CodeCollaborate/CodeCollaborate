@@ -196,9 +196,7 @@ func UnbindQueue(ch *amqp.Channel, queueName, key, exchangeName string) error {
 // remember to defer the closing of the RabbitMQ Channel.
 func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	defer func() {
-		cfg.shutdown.Do(func() {
-			close(cfg.Control.Exit) // If subscriber exits, kill publisher as well.
-		})
+		cfg.Control.Shutdown()
 	}()
 
 	ch, err := GetChannel()
@@ -277,9 +275,7 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 func RunPublisher(cfg *AMQPPubSubCfg) error {
 	defer func() {
 		close(cfg.PubCfg.Messages)
-		cfg.shutdown.Do(func() { // Make sure this is only ever called once.
-			close(cfg.Control.Exit) // If subscriber exits, kill publisher as well.
-		})
+		cfg.Control.Shutdown()
 	}()
 
 	ch, err := GetChannel()
