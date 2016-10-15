@@ -3,6 +3,7 @@ package datahandling
 import (
 	"time"
 
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -27,7 +28,7 @@ func initProjectRequests() {
 		return commonJSON(new(projectRenameRequest), req)
 	}
 
-	authenticatedRequestMap["Project.GetPermissionsConstants"] = func(req *abstractRequest) (request, error) {
+	authenticatedRequestMap["Project.GetPermissionConstants"] = func(req *abstractRequest) (request, error) {
 		return commonJSON(new(projectGetPermissionConstantsRequest), req)
 	}
 
@@ -110,9 +111,18 @@ func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO: check if permission high enough on project
+	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "write", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  p.Resource,
+			"Method":    p.Method,
+			"SenderID":  p.SenderID,
+			"ProjectID": p.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
+	}
 
-	err := db.MySQLProjectRename(p.ProjectID, p.NewName)
+	err = db.MySQLProjectRename(p.ProjectID, p.NewName)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 	}
@@ -142,24 +152,55 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 }
 
 func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (non-immediate/required): figure out how we want to do projectGetPermissionConstantsRequest
-	utils.LogWarn("ProjectGetPermissionConstants not implemented", nil)
+	res := messages.Response{
+		Status: messages.StatusSuccess,
+		Tag:    p.Tag,
+		Data: struct {
+			Constants map[string]int8
+		}{
+			Constants: config.PermissionsByLabel,
+		},
+	}.Wrap()
 
-	return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, p.Tag)}}, nil
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
 // Project.GrantPermissions
 type projectGrantPermissionsRequest struct {
 	ProjectID       int64
 	GrantUsername   string
-	PermissionLevel int
+	PermissionLevel int8
 	abstractRequest
 }
 
 func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO: check if permission high enough on project
+	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "admin", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  p.Resource,
+			"Method":    p.Method,
+			"SenderID":  p.SenderID,
+			"ProjectID": p.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
+	}
 
-	err := db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
+	requestPerm, err := config.PermissionByLevel(p.PermissionLevel)
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
+	}
+
+	ownerPerm, err := config.PermissionByLabel("owner")
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
+	}
+
+	if requestPerm.Level == ownerPerm.Level {
+		// TODO(shapiro): implement changing ownership
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, p.Tag)}}, nil
+	}
+
+	err = db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 	}
@@ -171,7 +212,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		ResourceID: p.ProjectID,
 		Data: struct {
 			GrantUsername   string
-			PermissionLevel int
+			PermissionLevel int8
 		}{
 			GrantUsername:   p.GrantUsername,
 			PermissionLevel: p.PermissionLevel,
@@ -196,10 +237,46 @@ type projectRevokePermissionsRequest struct {
 }
 
 func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO: check if permission high enough on project
-	err := db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
+	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "admin", db)
+	if err != nil {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  p.Resource,
+			"Method":    p.Method,
+			"SenderID":  p.SenderID,
+			"ProjectID": p.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
+	}
+	// allow case where user is removing themselves from a project
+	if !hasPermission && p.SenderID != p.RevokeUsername {
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
+	}
+
+	err = db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
 	if err != nil {
+		if err == dbfs.ErrNoDbChange {
+			ownerPerm, err := config.PermissionByLabel("owner")
+			if err != nil {
+				return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
+			}
+
+			_, permissions, err := db.MySQLProjectLookup(p.ProjectID, p.SenderID)
+			if err != nil {
+				return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, err
+			}
+			for username, lvl := range permissions {
+				if lvl.PermissionLevel == ownerPerm.Level && username == p.RevokeUsername {
+					// request is trying to remove owner, we can be more specific in errors
+					if p.SenderID == username {
+						// the owner is trying to remove themselves
+						// NOTE: we could do a project delete here? but seems weird
+						return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusWrongRequest, p.Tag)}}, err
+					}
+					return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, err
+				}
+			}
+		}
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 	}
 
@@ -263,6 +340,18 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	var errOut error
 	i := 0
 	for _, id := range p.ProjectIDs {
+		// it's better to do a cheap lookup and then an expensive one if required than an expensive one every time
+		hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, id, "read", db)
+		if err != nil || !hasPermission {
+			utils.LogError("API permission error", err, utils.LogFields{
+				"Resource":  p.Resource,
+				"Method":    p.Method,
+				"SenderID":  p.SenderID,
+				"ProjectID": id,
+			})
+			continue
+		}
+
 		// TODO: see note at modules/dbfs/mysql.go:307
 		name, permissions, err := db.MySQLProjectLookup(id, p.SenderID)
 		if err != nil {
@@ -336,6 +425,17 @@ type fileLookupResult struct {
 }
 
 func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "read", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  p.Resource,
+			"Method":    p.Method,
+			"SenderID":  p.SenderID,
+			"ProjectID": p.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
+	}
+
 	files, err := db.MySQLProjectGetFiles(p.ProjectID)
 	if err != nil {
 		res := messages.Response{
@@ -421,6 +521,17 @@ type projectSubscribeRequest struct {
 }
 
 func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "read", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  p.Resource,
+			"Method":    p.Method,
+			"SenderID":  p.SenderID,
+			"ProjectID": p.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
+	}
+
 	cmdClosure := rabbitCommandClosure{
 		Command: "Subscribe",
 		Tag:     p.Tag,
@@ -463,7 +574,18 @@ type projectDeleteRequest struct {
 }
 
 func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	err := db.MySQLProjectDelete(p.ProjectID, p.SenderID)
+	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "owner", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  p.Resource,
+			"Method":    p.Method,
+			"SenderID":  p.SenderID,
+			"ProjectID": p.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
+	}
+
+	err = db.MySQLProjectDelete(p.ProjectID, p.SenderID)
 	if err != nil {
 		if err == dbfs.ErrNoDbChange {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, err

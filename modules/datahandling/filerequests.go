@@ -4,6 +4,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var fileRequestsSetup = false
@@ -65,9 +66,18 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (normal/required): check if permission high enough on project
+	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, f.ProjectID, "write", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  f.Resource,
+			"Method":    f.Method,
+			"SenderID":  f.SenderID,
+			"ProjectID": f.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
+	}
 
-	_, err := db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
+	_, err = db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, nil
 	}
@@ -122,11 +132,20 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
-
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
+	}
+
+	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, fileMeta.ProjectID, "write", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  f.Resource,
+			"Method":    f.Method,
+			"SenderID":  f.SenderID,
+			"ProjectID": fileMeta.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
 	err = db.MySQLFileRename(f.FileID, f.NewName)
@@ -166,11 +185,20 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
-
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
+	}
+
+	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, fileMeta.ProjectID, "write", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  f.Resource,
+			"Method":    f.Method,
+			"SenderID":  f.SenderID,
+			"ProjectID": fileMeta.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
 	err = db.MySQLFileMove(f.FileID, f.NewPath)
@@ -209,11 +237,20 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
-
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
+	}
+
+	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, fileMeta.ProjectID, "write", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  f.Resource,
+			"Method":    f.Method,
+			"SenderID":  f.SenderID,
+			"ProjectID": fileMeta.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
 	err = db.MySQLFileDelete(f.FileID)
@@ -258,13 +295,22 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (normal/required): check if permission high enough on project (fileMeta.ProjectID)
-
 	// This has to be before the CouchBase append, to make sure that the the two databases are kept in sync.
 	// Specifically, this prevents CouchBase from incrementing a version number without the notifications being sent out.
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
+	}
+
+	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, fileMeta.ProjectID, "write", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  f.Resource,
+			"Method":    f.Method,
+			"SenderID":  f.SenderID,
+			"ProjectID": fileMeta.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
 	// TODO (normal/required): verify changes are valid changes
@@ -316,11 +362,20 @@ func (f *filePullRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (normal/required): check if permission high enough on project
-
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
+	}
+
+	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, fileMeta.ProjectID, "read", db)
+	if err != nil || !hasPermission {
+		utils.LogError("API permission error", err, utils.LogFields{
+			"Resource":  f.Resource,
+			"Method":    f.Method,
+			"SenderID":  f.SenderID,
+			"ProjectID": fileMeta.ProjectID,
+		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
 	rawFile, err := db.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)

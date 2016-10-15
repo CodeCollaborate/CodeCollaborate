@@ -59,7 +59,7 @@ func TestProjectRenameRequest(t *testing.T) {
 func TestProjectGetPermissionConstantsRequest(t *testing.T) {
 	req := *new(abstractRequest)
 	req.Resource = "Project"
-	req.Method = "GetPermissionsConstants"
+	req.Method = "GetPermissionConstants"
 	req.SenderID = TestSenderID
 	req.SenderToken = testToken(t, TestSenderID)
 	req.Data = json.RawMessage("{}")
