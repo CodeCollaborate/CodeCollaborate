@@ -195,7 +195,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
 	}
 
-	if requestPerm == ownerPerm {
+	if requestPerm.Level == ownerPerm.Level {
 		// TODO(shapiro): implement changing ownership
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, p.Tag)}}, nil
 	}
@@ -255,6 +255,28 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 	err = db.MySQLProjectRevokePermission(p.ProjectID, p.RevokeUsername, p.SenderID)
 
 	if err != nil {
+		if err == dbfs.ErrNoDbChange {
+			ownerPerm, err := config.PermissionByLabel("owner")
+			if err != nil {
+				return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
+			}
+
+			_, permissions, err := db.MySQLProjectLookup(p.ProjectID, p.SenderID)
+			if err != nil {
+				return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, err
+			}
+			for username, lvl := range permissions {
+				if lvl.PermissionLevel == ownerPerm.Level && username == p.RevokeUsername {
+					// request is trying to remove owner, we can be more specific in errors
+					if p.SenderID == username {
+						// the owner is trying to remove themselves
+						// NOTE: we could do a project delete here? but seems weird
+						return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusWrongRequest, p.Tag)}}, err
+					}
+					return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, err
+				}
+			}
+		}
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
 	}
 
@@ -319,7 +341,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	i := 0
 	for _, id := range p.ProjectIDs {
 		// it's better to do a cheap lookup and then an expensive one if required than an expensive one every time
-		hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, id, "write", db)
+		hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, id, "read", db)
 		if err != nil || !hasPermission {
 			utils.LogError("API permission error", err, utils.LogFields{
 				"Resource":  p.Resource,
