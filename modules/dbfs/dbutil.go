@@ -3,6 +3,8 @@ package dbfs
 import (
 	"errors"
 	"time"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 // ErrNoDbChange : No rows or values in the DB were changed, which was an unexpected result
@@ -26,7 +28,7 @@ var ErrMaliciousRequest = errors.New("The request attempted to directly tamper w
 // ProjectPermission is the type which represents the permission relationship on projects
 type ProjectPermission struct {
 	Username        string
-	PermissionLevel int
+	PermissionLevel int8
 	GrantedBy       string
 	GrantedDate     time.Time
 }
@@ -35,7 +37,7 @@ type ProjectPermission struct {
 type ProjectMeta struct {
 	ProjectID       int64
 	Name            string
-	PermissionLevel int
+	PermissionLevel int8
 }
 
 // FileMeta is the type that contains all the metadata about a file
@@ -55,4 +57,17 @@ type UserMeta struct {
 	Email     string
 	FirstName string
 	LastName  string
+}
+
+// PermissionAtLeast is a helper to verify a user has at least the given permission on the given project
+func PermissionAtLeast(username string, projectID int64, label string, db DBFS) (bool, error) {
+	required, err := config.PermissionByLabel(label)
+	if err != nil {
+		return false, err
+	}
+	actual, err := db.MySQLUserProjectPermissionLookup(projectID, username)
+	if err != nil {
+		return false, err
+	}
+	return required.Level <= actual, nil
 }

@@ -4,9 +4,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/stretchr/testify/assert"
 )
 
 func setBaseFields(req request) {
@@ -86,7 +88,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 	projectmeta := dbfs.ProjectMeta{
 		ProjectID:       req.ProjectID,
 		Name:            "new stuff",
-		PermissionLevel: 10,
+		PermissionLevel: config.PermissionsByLabel["owner"],
 	}
 	db.Projects["loganga"] = []dbfs.ProjectMeta{projectmeta}
 	db.ProjectIDCounter = 2
@@ -122,17 +124,43 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 
 }
 
-// projectGetPermissionConstantsRequest.process is unimplemented
+func TestProjectGetPermissionConstantsRequest_Process(t *testing.T) {
+	configSetup(t)
+	req := *new(projectGetPermissionConstantsRequest)
+	setBaseFields(&req)
+	db := dbfs.NewDBMock()
+
+	closures, err := req.process(db)
+	assert.Nil(t, err)
+	assert.Zero(t, db.FunctionCallCount, "unexpected db calls for permission constants")
+
+	assert.Equal(t, 1, len(closures), "unexpected number of returned closures")
+	assert.IsType(t, toSenderClosure{}, closures[0], "incorrect closure type")
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+
+	assert.Equal(t, messages.StatusSuccess, resp.Status, "unexpected response status")
+
+	mappy := reflect.ValueOf(resp.Data).FieldByName("Constants").Interface().(map[string]int8)
+	assert.Equal(t, len(config.PermissionsByLabel), len(mappy), "incorrect number of entries in map result")
+	for key, val := range mappy {
+		perm, err := config.PermissionByLabel(key)
+		assert.Nil(t, err, "unexpected error in retrieving permission label vale")
+		assert.Equal(t, perm.Level, val, "unexpected value in map")
+	}
+}
 
 func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	configSetup(t)
 	req := *new(projectGrantPermissionsRequest)
 	setBaseFields(&req)
 
+	perm, _ := config.PermissionByLabel("write")
+
 	req.Resource = "Project"
 	req.Method = "GrantPermissions"
 	req.GrantUsername = "notloganga"
-	req.PermissionLevel = 5
+	req.PermissionLevel = perm.Level
 
 	db := dbfs.NewDBMock()
 	notgenemeta := dbfs.UserMeta{
@@ -364,9 +392,14 @@ func TestProjectSubscribe_Process(t *testing.T) {
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
 
+	db.MySQLUserRegister(geneMeta)
+	projectID, _ := db.MySQLProjectCreate("loganga", "new stuff")
+
 	req.Resource = "Project"
 	req.Method = "Subscribe"
-	req.ProjectID = 1
+	req.ProjectID = projectID
+
+	db.FunctionCallCount = 0
 
 	closures, err := req.process(db)
 	if err != nil {

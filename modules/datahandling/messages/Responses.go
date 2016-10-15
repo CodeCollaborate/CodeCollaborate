@@ -47,6 +47,9 @@ func NewEmptyResponse(status int, tag int64) *ServerMessageWrapper {
 // StatusSuccess represents a successful outcome
 const StatusSuccess int = 200
 
+// StatusWrongRequest represents the case where a request was made incorrectly called in favor of the correct one
+const StatusWrongRequest int = 301
+
 // StatusFail represents a outcome that failed to process
 const StatusFail int = 400
 

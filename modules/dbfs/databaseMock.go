@@ -4,6 +4,8 @@ import (
 	"errors"
 	"path/filepath"
 	"time"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 // DatabaseMock is a mock used for testing.
@@ -138,8 +140,10 @@ func (dm *DatabaseMock) MySQLUserProjects(username string) ([]ProjectMeta, error
 // MySQLProjectCreate is a mock of the real implementation
 func (dm *DatabaseMock) MySQLProjectCreate(username string, projectName string) (int64, error) {
 	dm.FunctionCallCount++
+
+	perm, _ := config.PermissionByLabel("owner")
 	proj := ProjectMeta{
-		PermissionLevel: 10,
+		PermissionLevel: perm.Level,
 		ProjectID:       dm.ProjectIDCounter,
 		Name:            projectName,
 	}
@@ -176,7 +180,7 @@ func (dm *DatabaseMock) MySQLProjectGetFiles(projectID int64) ([]FileMeta, error
 }
 
 // MySQLProjectGrantPermission is a mock of the real implementation
-func (dm *DatabaseMock) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error {
+func (dm *DatabaseMock) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int8, grantedByUsername string) error {
 	dm.FunctionCallCount++
 	found := false
 
@@ -227,6 +231,16 @@ func (dm *DatabaseMock) MySQLProjectRevokePermission(projectID int64, revokeUser
 		dm.Projects[revokeUsername] = dm.Projects[revokeUsername][:index]
 	}
 	return nil
+}
+
+// MySQLUserProjectPermissionLookup returns the permission level of `username` on the project with the given projectID
+func (dm *DatabaseMock) MySQLUserProjectPermissionLookup(projectID int64, username string) (int8, error) {
+	for _, proj := range dm.Projects[username] {
+		if proj.ProjectID == projectID {
+			return proj.PermissionLevel, nil
+		}
+	}
+	return 0, ErrNoData
 }
 
 // MySQLProjectRename is a mock of the real implementation

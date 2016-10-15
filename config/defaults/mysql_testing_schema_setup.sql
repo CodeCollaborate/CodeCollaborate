@@ -2,11 +2,11 @@
 USE `testing`;
 
 
--- MySQL dump 10.13  Distrib 5.7.12, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.15, for Linux (x86_64)
 --
 -- Host: localhost    Database: testing
 -- ------------------------------------------------------
--- Server version	5.7.12
+-- Server version	5.7.15
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -38,8 +38,8 @@ CREATE TABLE `File` (
   KEY `fk_File_Username_idx` (`Creator`),
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
-  CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE NO ACTION ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=153 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -78,8 +78,8 @@ CREATE TABLE `Project` (
   UNIQUE KEY `ProjectID_UNIQUE` (`ProjectID`),
   UNIQUE KEY `NameOwner_UNIQUE` (`Name`,`Owner`),
   KEY `fk_Project_Username_idx` (`Owner`),
-  CONSTRAINT `fk_Project_Username` FOREIGN KEY (`Owner`) REFERENCES `User` (`Username`) ON DELETE NO ACTION ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=346 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+  CONSTRAINT `fk_Project_Username` FOREIGN KEY (`Owner`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -473,6 +473,31 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `user_projects`(IN username varchar(
     FROM `Project`
     WHERE `Project`.`Owner` = username;
   END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `user_project_permission` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `user_project_permission`(username varchar(25), projectID bigint(20))
+BEGIN
+	SELECT Permissions.PermissionLevel
+    FROM Permissions
+    WHERE Permissions.Username = username and Permissions.ProjectID = projectID
+    UNION
+    SELECT 10
+    FROM Project
+    WHERE Project.ProjectID = projectID and Project.Owner = username;
+END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
