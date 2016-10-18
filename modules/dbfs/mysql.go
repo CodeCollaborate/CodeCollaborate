@@ -121,23 +121,38 @@ func (di *DatabaseImpl) MySQLUserGetPass(username string) (password string, err 
 }
 
 // MySQLUserDelete deletes a user from MySQL
-func (di *DatabaseImpl) MySQLUserDelete(username string) error {
+func (di *DatabaseImpl) MySQLUserDelete(username string) ([]int64, error) {
 	mysql, err := di.getMySQLConn()
 	if err != nil {
-		return err
+		return make([]int64, 0), err
+	}
+
+	rows, err := mysql.db.Query("Call user_get_projectids(?)", username)
+
+	var projectIDs []int64
+	for rows.Next() {
+		projectID := int64(-1)
+		err = rows.Scan(&projectID)
+		if err != nil {
+			return make([]int64, 0), err
+		}
+		if projectID == -1 {
+			return make([]int64, 0), ErrNoData
+		}
+		projectIDs = append(projectIDs, projectID)
 	}
 
 	result, err := mysql.db.Exec("CALL user_delete(?)", username)
 	if err != nil {
-		return err
+		return make([]int64, 0), err
 	}
 	numrows, err := result.RowsAffected()
 
 	if err != nil || numrows == 0 {
-		return ErrNoDbChange
+		return make([]int64, 0), ErrNoDbChange
 	}
 
-	return nil
+	return projectIDs, nil
 }
 
 // MySQLUserLookup returns user information about a user with the username 'username'

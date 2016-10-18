@@ -39,7 +39,7 @@ type DBFS interface {
 	MySQLUserGetPass(username string) (password string, err error)
 
 	// MySQLUserDelete deletes a user from MySQL
-	MySQLUserDelete(username string) error
+	MySQLUserDelete(username string) ([]int64, error)
 
 	// MySQLUserLookup returns user information about a user with the username 'username'
 	MySQLUserLookup(username string) (user UserMeta, err error)

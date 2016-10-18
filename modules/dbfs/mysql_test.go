@@ -8,19 +8,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var userAustin = UserMeta{
-	Username:  "fahslaj",
+var userOne = UserMeta{
+	Username:  "_test_user1",
 	Password:  "secret",
-	Email:     "austin@codecollab.cc",
-	FirstName: "Austin",
-	LastName:  "Fahsl"}
-
-var userJoel = UserMeta{
-	Username:  "jshap70",
-	Password:  "secret",
-	Email:     "joel@codecollab.cc",
+	Email:     "_test_email1@codecollab.cc",
 	FirstName: "Joel",
 	LastName:  "Shapiro"}
+
+var userTwo = UserMeta{
+	Username:  "_test_user2",
+	Password:  "secret",
+	Email:     "_test_email2@codecollab.cc",
+	FirstName: "Austin",
+	LastName:  "Fahsl"}
 
 func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
 	configSetup(t)
@@ -63,13 +63,13 @@ func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	di.MySQLUserDelete("jshap70")
+	di.MySQLUserDelete(userOne.Username)
 
-	err := di.MySQLUserRegister(userJoel)
+	err := di.MySQLUserRegister(userOne)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = di.MySQLUserDelete("jshap70")
+	_, err = di.MySQLUserDelete(userOne.Username)
 	if err == ErrNoDbChange {
 		t.Fatal("No user added")
 	}
@@ -78,39 +78,98 @@ func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-	di.MySQLUserDelete("jshap70")
+	di.MySQLUserDelete(userOne.Username)
 
-	err := di.MySQLUserRegister(userJoel)
+	err := di.MySQLUserRegister(userOne)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	pass, err := di.MySQLUserGetPass("jshap70")
+	pass, err := di.MySQLUserGetPass(userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pass != "secret" {
+	if pass != userOne.Password {
 		t.Fatal("Wrong password returned")
 	}
 
-	err = di.MySQLUserDelete("jshap70")
+	di.MySQLUserDelete(userOne.Username)
+}
+
+func TestDatabaseImpl_MySQLUserDelete(t *testing.T) {
+	configSetup(t)
+	di := new(DatabaseImpl)
+	di.MySQLUserDelete(userOne.Username)
+	di.MySQLUserDelete(userTwo.Username)
+
+	//db.MySQLUserRegister(geneMeta)
+	err := di.MySQLUserRegister(userOne)
+	assert.NoError(t, err)
+
+	//closures, err := req.process(db)
+	projectIDs, err := di.MySQLUserDelete(userOne.Username)
+	assert.NoError(t, err)
+
+	assert.Empty(t, projectIDs, "expected 0 projects to be deleted")
+
+	// check user actually deleted
+	returnedUser, err := di.MySQLUserLookup(userOne.Username)
+	assert.EqualError(t, err, ErrNoData.Error(), "expected no user to be returned")
+	assert.Equal(t, UserMeta{}, returnedUser, "expected no user to be returned, also no error was thrown on empty data")
+
+	// test with projects for notifications
+	err = di.MySQLUserRegister(userOne)
+	assert.NoError(t, err)
+	err = di.MySQLUserRegister(userTwo)
+	assert.NoError(t, err)
+
+	projectID1, err := di.MySQLProjectCreate(userOne.Username, "_test_project_1")
+	projectID2, err := di.MySQLProjectCreate(userOne.Username, "_test_project_2")
+
+	writePerm, err := config.PermissionByLabel("write")
+	assert.NoError(t, err, "api permissions error")
+
+	err = di.MySQLProjectGrantPermission(projectID1, userTwo.Username, writePerm.Level, userOne.Username)
+	assert.NoError(t, err, "project grant permission error")
+	err = di.MySQLProjectGrantPermission(projectID2, userTwo.Username, writePerm.Level, userOne.Username)
+	assert.NoError(t, err, "project grant permission error")
+
+	projectIDs, err = di.MySQLUserDelete(userOne.Username)
+	assert.NoError(t, err)
+
+	// check that it claims to have deleted both owned projects
+	assert.Len(t, projectIDs, 2, "expected 2 projects to be deleted")
+	assert.Contains(t, projectIDs, projectID1, "didn't delete _test_project_1")
+	assert.Contains(t, projectIDs, projectID2, "didn't delete _test_project_2")
+
+	// check user actually deleted
+	returnedUser, err = di.MySQLUserLookup(userOne.Username)
+	assert.EqualError(t, err, ErrNoData.Error(), "expected no user to be returned")
+	assert.Equal(t, UserMeta{}, returnedUser, "expected no user to be returned, also no error was thrown on empty data")
+
+	// check projects actually deleted
+	_, _, err = di.MySQLProjectLookup(projectID1, userTwo.Username)
+	assert.EqualError(t, err, ErrNoData.Error(), "expected project1 to not exist")
+
+	_, _, err = di.MySQLProjectLookup(projectID2, userTwo.Username)
+	assert.EqualError(t, err, ErrNoData.Error(), "expected project2 to not exist")
 }
 
 func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-	di.MySQLUserDelete("jshap70")
+	di.MySQLUserDelete(userOne.Username)
 
-	err := di.MySQLUserRegister(userJoel)
+	err := di.MySQLUserRegister(userOne)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	userRet, err := di.MySQLUserLookup("jshap70")
+	userRet, err := di.MySQLUserLookup(userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if userRet.FirstName != "Joel" || userRet.LastName != "Shapiro" || userRet.Email != "joel@codecollab.cc" {
+	if userRet.FirstName != userOne.FirstName || userRet.LastName != userOne.LastName || userRet.Email != userOne.Email {
 		t.Fatalf("Wrong return, got: %v %v, email: %v", userRet.FirstName, userRet.LastName, userRet.Email)
 	}
 
@@ -119,7 +178,7 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 		t.Fatal("Expected lookup with incorrect username to fail, but it did not")
 	}
 
-	err = di.MySQLUserDelete("jshap70")
+	_, err = di.MySQLUserDelete(userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,18 +187,18 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
-	di.MySQLUserDelete("jshap70")
+	di.MySQLUserDelete(userOne.Username)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 
-	projects, err := di.MySQLUserProjects("jshap70")
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	projects, err := di.MySQLUserProjects(userOne.Username)
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,12 +215,12 @@ func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, err := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,16 +228,16 @@ func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 		t.Fatal("incorrect ProjectID")
 	}
 
-	_, err = di.MySQLProjectCreate("jshap70", "codecollabcore")
+	_, err = di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 	if err == nil {
 		t.Fatal("unexpected opperation allowed")
 	}
 
-	err = di.MySQLProjectDelete(projectID, "jshap70")
+	err = di.MySQLProjectDelete(projectID, userOne.Username)
 	if err != nil {
 		t.Fatal(err, projectID)
 	}
-	err = di.MySQLUserDelete("jshap70")
+	_, err = di.MySQLUserDelete(userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,32 +247,32 @@ func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, err := di.MySQLProjectCreate(userJoel.Username, "codecollabcore")
+	projectID, err := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// test trying to delete a project that contains files
-	_, err = di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	_, err = di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = di.MySQLProjectDelete(projectID, "jshap70")
+	err = di.MySQLProjectDelete(projectID, userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = di.MySQLProjectDelete(projectID, "jshap70")
+	err = di.MySQLProjectDelete(projectID, userOne.Username)
 	if err == nil {
 		t.Fatal("project delete succeded 2x on the same projectID")
 	}
 
-	err = di.MySQLUserDelete("jshap70")
+	_, err = di.MySQLUserDelete(userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,18 +282,18 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, err := di.MySQLProjectCreate("jshap70", "codecollabcore")
-	di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, err := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
+	di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
 
 	files, err := di.MySQLProjectGetFiles(projectID)
 
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	_, _ = di.MySQLUserDelete(userOne.Username)
 
 	if err != nil {
 		t.Fatal(err)
@@ -243,7 +302,7 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 	if len(files) != 1 {
 		t.Fatalf("Project %v returned not the correct length, expected: 1, actual: %v", projectID, len(files))
 	}
-	if files[0].FileID == -1 || files[0].Creator != "jshap70" || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
+	if files[0].FileID == -1 || files[0].Creator != userOne.Username || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
 
@@ -257,21 +316,24 @@ func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
-	if erro != nil {
-		t.Fatal(erro)
+	err := di.MySQLUserRegister(userOne)
+	if err != nil {
+		di.MySQLUserDelete(userOne.Username)
+		di.MySQLUserDelete(userTwo.Username)
+		err = di.MySQLUserRegister(userOne)
+		assert.NoError(t, err)
 	}
 
-	di.MySQLUserRegister(userAustin)
+	di.MySQLUserRegister(userTwo)
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 
-	err := di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+	err = di.MySQLProjectGrantPermission(projectID, userTwo.Username, 5, userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	projects, err := di.MySQLUserProjects("fahslaj")
+	projects, err := di.MySQLUserProjects(userTwo.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,15 +345,15 @@ func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
-	err = di.MySQLProjectDelete(projectID, "jshap70")
+	err = di.MySQLProjectDelete(projectID, userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = di.MySQLUserDelete("fahslaj")
+	_, err = di.MySQLUserDelete(userTwo.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = di.MySQLUserDelete("jshap70")
+	_, err = di.MySQLUserDelete(userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,30 +363,30 @@ func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	di.MySQLUserRegister(userAustin)
+	di.MySQLUserRegister(userTwo)
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 
-	defer di.MySQLUserDelete("fahslaj")
-	defer di.MySQLUserDelete("jshap70")
-	defer di.MySQLProjectDelete(projectID, "jshap70")
+	defer di.MySQLUserDelete(userTwo.Username)
+	defer di.MySQLUserDelete(userOne.Username)
+	defer di.MySQLProjectDelete(projectID, userOne.Username)
 
-	name, perms, err := di.MySQLProjectLookup(projectID, "fahslaj")
+	name, perms, err := di.MySQLProjectLookup(projectID, userTwo.Username)
 	if err == nil {
 		t.Fatal("Expected failure when given a projectID you don't have access to")
 	}
 
-	err = di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+	err = di.MySQLProjectGrantPermission(projectID, userTwo.Username, 5, userOne.Username)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	name, perms, err = di.MySQLProjectLookup(projectID, "fahslaj")
+	name, perms, err = di.MySQLProjectLookup(projectID, userTwo.Username)
 
 	if err != nil {
 		t.Fatal(err)
@@ -336,17 +398,17 @@ func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(perms))
 	}
 
-	if perms["jshap70"].PermissionLevel != 10 {
-		t.Fatalf("jshap70 had permision level: %v", perms["jshap70"].PermissionLevel)
+	if perms[userOne.Username].PermissionLevel != 10 {
+		t.Fatalf("jshap70 had permision level: %v", perms[userOne.Username].PermissionLevel)
 	}
-	if perms["fahslaj"].PermissionLevel != 5 {
-		t.Fatalf("fahslaj had permision level: %v", perms["fahslaj"].PermissionLevel)
+	if perms[userTwo.Username].PermissionLevel != 5 {
+		t.Fatalf("fahslaj had permision level: %v", perms[userTwo.Username].PermissionLevel)
 	}
-	if perms["fahslaj"].GrantedDate == time.Unix(0, 0) {
+	if perms[userTwo.Username].GrantedDate == time.Unix(0, 0) {
 		t.Fatal("time did not correctly parse")
 	}
 
-	name, perms, err = di.MySQLProjectLookup(projectID+1000, "fahslaj")
+	name, perms, err = di.MySQLProjectLookup(projectID+1000, userTwo.Username)
 	if err == nil {
 		t.Fatal("Expected failure when given a non-existant projectID")
 	}
@@ -356,18 +418,18 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	di.MySQLUserRegister(userAustin)
+	di.MySQLUserRegister(userTwo)
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 
-	di.MySQLProjectGrantPermission(projectID, "fahslaj", 5, "jshap70")
+	di.MySQLProjectGrantPermission(projectID, userTwo.Username, 5, userOne.Username)
 
-	projects, _ := di.MySQLUserProjects("fahslaj")
+	projects, _ := di.MySQLUserProjects(userTwo.Username)
 	if len(projects) != 1 {
 		t.Fatalf("Projects returned not the correct length, expected: 1, actual: %v", len(projects))
 	}
@@ -375,12 +437,12 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 		t.Fatalf("Wrong return, got project:%v %v, perm: %v", projects[0].Name, projects[0].ProjectID, projects[0].PermissionLevel)
 	}
 
-	di.MySQLProjectRevokePermission(projectID, "fahslaj", "jshap70")
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
-	_ = di.MySQLUserDelete("fahslaj")
+	di.MySQLProjectRevokePermission(projectID, userTwo.Username, userOne.Username)
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
+	di.MySQLUserDelete(userTwo.Username)
 
-	projects, _ = di.MySQLUserProjects("fahslaj")
+	projects, _ = di.MySQLUserProjects(userTwo.Username)
 	if len(projects) > 0 {
 		t.Fatalf("Projects returned not the correct length, expected: 0, actual: %v", len(projects))
 	}
@@ -390,37 +452,37 @@ func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	di.MySQLUserDelete(userJoel.Username)
-	di.MySQLUserDelete(userAustin.Username)
+	di.MySQLUserDelete(userOne.Username)
+	di.MySQLUserDelete(userTwo.Username)
 
 	defer func() {
-		di.MySQLUserDelete(userJoel.Username)
-		di.MySQLUserDelete(userAustin.Username)
+		di.MySQLUserDelete(userOne.Username)
+		di.MySQLUserDelete(userTwo.Username)
 	}()
 
-	err := di.MySQLUserRegister(userJoel)
+	err := di.MySQLUserRegister(userOne)
 	assert.Nil(t, err)
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
-	defer di.MySQLProjectDelete(projectID, "jshap70")
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
+	defer di.MySQLProjectDelete(projectID, userOne.Username)
 
-	permLevel, err := di.MySQLUserProjectPermissionLookup(projectID, userJoel.Username)
+	permLevel, err := di.MySQLUserProjectPermissionLookup(projectID, userOne.Username)
 	assert.Nil(t, err, "unexpected error from mysql permission lookup")
 	ownerPerm, _ := config.PermissionByLabel("owner")
 	assert.Equal(t, ownerPerm.Level, permLevel, "expected user to be owner")
 
-	err = di.MySQLUserRegister(userAustin)
+	err = di.MySQLUserRegister(userTwo)
 	assert.Nil(t, err)
 
-	permLevel, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
+	permLevel, err = di.MySQLUserProjectPermissionLookup(projectID, userTwo.Username)
 	assert.NotNil(t, err, "expected error from mysql permission lookup")
 	assert.Equal(t, int8(0), permLevel, "expected user not have permission")
 
 	readPerm, _ := config.PermissionByLabel("read")
-	err = di.MySQLProjectGrantPermission(projectID, userAustin.Username, readPerm.Level, userJoel.Username)
+	err = di.MySQLProjectGrantPermission(projectID, userTwo.Username, readPerm.Level, userOne.Username)
 	assert.Nil(t, err)
 
-	permLevel, err = di.MySQLUserProjectPermissionLookup(projectID, userAustin.Username)
+	permLevel, err = di.MySQLUserProjectPermissionLookup(projectID, userTwo.Username)
 	assert.Nil(t, err, "unexpected error from mysql permission lookup")
 	assert.Equal(t, readPerm.Level, permLevel, "expected user have read permission")
 }
@@ -429,23 +491,23 @@ func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	di.MySQLUserDelete("jshap70")
+	di.MySQLUserDelete(userOne.Username)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
 
 	err := di.MySQLProjectRename(projectID, "newName")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	projects, err := di.MySQLUserProjects("jshap70")
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	projects, err := di.MySQLUserProjects(userOne.Username)
+	di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
 
 	if projects[0].ProjectID != projectID || projects[0].Name != "newName" {
 		t.Fatalf("Wrong return, got project:%v %v", projects[0].Name, projects[0].ProjectID)
@@ -456,18 +518,18 @@ func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, err := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
+	fileID, err := di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
 
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
 
 	if err != nil {
 		t.Fatal(err)
@@ -476,7 +538,7 @@ func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 	if len(files) != 1 {
 		t.Fatalf("Project %v returned not the correct length, expected: 1, actual: %v", projectID, len(files))
 	}
-	if files[0].FileID != fileID || files[0].Creator != "jshap70" || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
+	if files[0].FileID != fileID || files[0].Creator != userOne.Username || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
 		t.Fatalf("Wrong return, got project: %v", files[0])
 	}
 }
@@ -485,18 +547,18 @@ func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
+	fileID, _ := di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
 	err := di.MySQLFileDelete(fileID)
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
 
 	if err != nil {
 		t.Fatal(err)
@@ -510,19 +572,19 @@ func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
+	fileID, _ := di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
 
 	err := di.MySQLFileMove(fileID, "cc")
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
 
 	if err != nil {
 		t.Fatal(err)
@@ -539,19 +601,19 @@ func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
+	fileID, _ := di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
 
 	err := di.MySQLFileRename(fileID, "file-z")
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
 
 	if err != nil {
 		t.Fatal(err)
@@ -568,20 +630,20 @@ func TestDatabaseImpl_MySQLFileGetInfo(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	erro := di.MySQLUserRegister(userJoel)
+	erro := di.MySQLUserRegister(userOne)
 	if erro != nil {
 		t.Fatal(erro)
 	}
 
-	projectID, _ := di.MySQLProjectCreate("jshap70", "codecollabcore")
-	fileID, _ := di.MySQLFileCreate("jshap70", "file-y", ".", projectID)
+	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
+	fileID, _ := di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
 
 	filebefore, err := di.MySQLFileGetInfo(fileID)
 	_ = di.MySQLFileMove(fileID, "cc")
 	fileafter, err := di.MySQLFileGetInfo(fileID)
 
-	_ = di.MySQLProjectDelete(projectID, "jshap70")
-	_ = di.MySQLUserDelete("jshap70")
+	_ = di.MySQLProjectDelete(projectID, userOne.Username)
+	di.MySQLUserDelete(userOne.Username)
 
 	if err != nil {
 		t.Fatal(err)

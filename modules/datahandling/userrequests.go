@@ -141,12 +141,26 @@ func (f *userDeleteRequest) setAbstractRequest(req *abstractRequest) {
 func (f userDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	// TODO (shapiro): get list of user's owned projects and then send out project_delete notifications for all of them on success
 
-	if err := db.MySQLUserDelete(f.SenderID); err != nil {
+	deletedIDs, err := db.MySQLUserDelete(f.SenderID)
+
+	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
-	// TODO (shapiro): invalidate token
+	closures := []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)}}
 
-	return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)}}, nil
+	// TODO (shapiro): invalidate token
+	for _, projectID := range deletedIDs {
+		not := messages.Notification{
+			Resource:   "Project",
+			Method:     "Delete",
+			ResourceID: projectID,
+			Data:       struct{}{},
+		}.Wrap()
+
+		closures = append(closures, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(projectID)})
+	}
+
+	return closures, nil
 }
 
 // User.Lookup
