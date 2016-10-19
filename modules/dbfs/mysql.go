@@ -45,10 +45,14 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		di.mysqldb.config.Timeout)
 	db, err := sql.Open("mysql", connString)
 	if err == nil {
-		if err = db.Ping(); err != nil {
-			err = ErrDbNotInitialized
-		} else {
-			di.mysqldb.db = db
+		for i := uint16(1); i < di.mysqldb.config.NumRetries; i++ {
+			if err = db.Ping(); err != nil {
+				err = ErrDbNotInitialized
+			} else {
+				di.mysqldb.db = db
+				err = nil
+				break
+			}
 		}
 	}
 
