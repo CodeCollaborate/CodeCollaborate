@@ -6,6 +6,7 @@ import (
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestUserRegisterRequest_Process(t *testing.T) {
@@ -57,6 +58,67 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 }
 
 // userLoginRequest.process is unimplemented
+
+func TestUserDeleteRequest_Process(t *testing.T) {
+	configSetup(t)
+
+	req := *new(userDeleteRequest)
+	setBaseFields(&req)
+
+	req.Resource = "User"
+	req.Method = "Delete"
+
+	db := dbfs.NewDBMock()
+	db.MySQLUserRegister(geneMeta)
+	db.FunctionCallCount = 0
+
+	closures, err := req.process(db)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, db.FunctionCallCount, "unexpected db calls for user delete")
+
+	assert.Equal(t, 1, len(closures), "unexpected number of returned closures")
+	assert.IsType(t, toSenderClosure{}, closures[0], "incorrect closure type")
+
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+
+	assert.Equal(t, messages.StatusSuccess, resp.Status, "unexpected response status")
+
+	// test with projects
+	req = *new(userDeleteRequest)
+	setBaseFields(&req)
+
+	req.Resource = "User"
+	req.Method = "Delete"
+
+	db = dbfs.NewDBMock()
+	db.MySQLUserRegister(geneMeta)
+	projectID1, _ := db.MySQLProjectCreate(geneMeta.Username, "_test_project1")
+	projectID2, _ := db.MySQLProjectCreate(geneMeta.Username, "_test_project2")
+
+	db.FunctionCallCount = 0
+
+	closures, err = req.process(db)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, db.FunctionCallCount, "unexpected db calls for user delete")
+
+	assert.Equal(t, 3, len(closures), "unexpected number of returned closures")
+	assert.IsType(t, toSenderClosure{}, closures[0], "incorrect closure type")
+	assert.IsType(t, toRabbitChannelClosure{}, closures[1], "incorrect closure type")
+	assert.IsType(t, toRabbitChannelClosure{}, closures[2], "incorrect closure type")
+
+	resp = closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
+	assert.Equal(t, messages.StatusSuccess, resp.Status, "unexpected response status")
+
+	not1 := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
+	assert.Equal(t, "Project", not1.Resource, "unexpected notification resource")
+	assert.Equal(t, "Delete", not1.Method, "unexpected notification method")
+	assert.Equal(t, projectID1, not1.ResourceID, "unexpected projectID deleted")
+
+	not2 := closures[2].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
+	assert.Equal(t, "Project", not2.Resource, "unexpected notification resource")
+	assert.Equal(t, "Delete", not2.Method, "unexpected notification method")
+	assert.Equal(t, projectID2, not2.ResourceID, "unexpected projectID deleted")
+}
 
 func TestUserLookupRequest_Process(t *testing.T) {
 	configSetup(t)
