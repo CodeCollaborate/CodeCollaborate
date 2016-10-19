@@ -139,8 +139,6 @@ func (f *userDeleteRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f userDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	// TODO (shapiro): get list of user's owned projects and then send out project_delete notifications for all of them on success
-
 	deletedIDs, err := db.MySQLUserDelete(f.SenderID)
 
 	if err != nil {

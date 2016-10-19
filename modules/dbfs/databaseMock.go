@@ -131,7 +131,7 @@ func (dm *DatabaseMock) MySQLUserDelete(username string) ([]int64, error) {
 	if _, ok := dm.Users[username]; ok {
 		delete(dm.Users, username)
 	} else {
-		return make([]int64, 0), ErrNoDbChange
+		return []int64{}, ErrNoDbChange
 	}
 
 	// go through everyone's projects and delete ones which were owned by `username`

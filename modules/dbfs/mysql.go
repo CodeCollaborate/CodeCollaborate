@@ -124,7 +124,7 @@ func (di *DatabaseImpl) MySQLUserGetPass(username string) (password string, err 
 func (di *DatabaseImpl) MySQLUserDelete(username string) ([]int64, error) {
 	mysql, err := di.getMySQLConn()
 	if err != nil {
-		return make([]int64, 0), err
+		return []int64{}, err
 	}
 
 	rows, err := mysql.db.Query("Call user_get_projectids(?)", username)
@@ -134,22 +134,22 @@ func (di *DatabaseImpl) MySQLUserDelete(username string) ([]int64, error) {
 		projectID := int64(-1)
 		err = rows.Scan(&projectID)
 		if err != nil {
-			return make([]int64, 0), err
+			return []int64{}, err
 		}
 		if projectID == -1 {
-			return make([]int64, 0), ErrNoData
+			return []int64{}, ErrNoData
 		}
 		projectIDs = append(projectIDs, projectID)
 	}
 
 	result, err := mysql.db.Exec("CALL user_delete(?)", username)
 	if err != nil {
-		return make([]int64, 0), err
+		return []int64{}, err
 	}
 	numrows, err := result.RowsAffected()
 
 	if err != nil || numrows == 0 {
-		return make([]int64, 0), ErrNoDbChange
+		return []int64{}, ErrNoDbChange
 	}
 
 	return projectIDs, nil
