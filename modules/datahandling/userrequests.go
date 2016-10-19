@@ -23,6 +23,10 @@ func initUserRequests() {
 		return commonJSON(new(userLoginRequest), req)
 	}
 
+	unauthenticatedRequestMap["User.Delete"] = func(req *abstractRequest) (request, error) {
+		return commonJSON(new(userDeleteRequest), req)
+	}
+
 	authenticatedRequestMap["User.Lookup"] = func(req *abstractRequest) (request, error) {
 		return commonJSON(new(userLookupRequest), req)
 	}
@@ -123,6 +127,38 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			},
 		},
 	}, nil
+}
+
+// User.Delete
+type userDeleteRequest struct {
+	abstractRequest
+}
+
+func (f *userDeleteRequest) setAbstractRequest(req *abstractRequest) {
+	f.abstractRequest = *req
+}
+
+func (f userDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	deletedIDs, err := db.MySQLUserDelete(f.SenderID)
+
+	if err != nil {
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
+	}
+	closures := []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)}}
+
+	// TODO (shapiro): invalidate token
+	for _, projectID := range deletedIDs {
+		not := messages.Notification{
+			Resource:   "Project",
+			Method:     "Delete",
+			ResourceID: projectID,
+			Data:       struct{}{},
+		}.Wrap()
+
+		closures = append(closures, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(projectID)})
+	}
+
+	return closures, nil
 }
 
 // User.Lookup

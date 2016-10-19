@@ -113,13 +113,52 @@ func (dm *DatabaseMock) MySQLUserGetPass(username string) (string, error) {
 }
 
 // MySQLUserDelete is a mock of the real implementation
-func (dm *DatabaseMock) MySQLUserDelete(username string, pass string) error {
-	dm.FunctionCallCount++
+func (dm *DatabaseMock) MySQLUserDelete(username string) ([]int64, error) {
+	dm.FunctionCallCount += 2
+
+	var deletedIDs []int64
+	ownerPerm, err := config.PermissionByLabel("owner")
+	if err != nil {
+		return deletedIDs, err
+	}
+
+	for _, project := range dm.Projects[username] {
+		if project.PermissionLevel == ownerPerm.Level {
+			deletedIDs = append(deletedIDs, project.ProjectID)
+		}
+	}
+
 	if _, ok := dm.Users[username]; ok {
 		delete(dm.Users, username)
-		return nil
+	} else {
+		return []int64{}, ErrNoDbChange
 	}
-	return ErrNoDbChange
+
+	// go through everyone's projects and delete ones which were owned by `username`
+	// this is pretty gross... I can't wait for the refactor of this :/
+	for username, projects := range dm.Projects {
+		var indices []int
+		for i, project := range projects {
+			for _, deletedID := range deletedIDs {
+				if project.ProjectID == deletedID {
+					indices = append(indices, i)
+				}
+				break // continue to next i
+			}
+		}
+		// remove the found projects
+		initialLen := len(dm.Projects[username])
+		for offset, i := range indices {
+			projectsSlice := dm.Projects[username]
+			if i != initialLen-1 {
+				dm.Projects[username] = append(projectsSlice[0:i-offset], projectsSlice[i+1-offset:]...)
+			} else {
+				dm.Projects[username] = projectsSlice[0 : i-offset]
+			}
+		}
+	}
+
+	return deletedIDs, nil
 }
 
 // MySQLUserLookup is a mock of the real implementation
