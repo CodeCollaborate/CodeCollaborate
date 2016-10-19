@@ -46,7 +46,6 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 	db, err := sql.Open("mysql", connString)
 	if err == nil {
 		if err = db.Ping(); err != nil {
-			di.mysqldb = nil
 			err = ErrDbNotInitialized
 		} else {
 			di.mysqldb.db = db
@@ -58,6 +57,9 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		"Port":   di.mysqldb.config.Port,
 		"Schema": di.mysqldb.config.Schema,
 	})
+	if err != nil {
+		di.mysqldb = nil
+	}
 	return di.mysqldb, err
 }
 
