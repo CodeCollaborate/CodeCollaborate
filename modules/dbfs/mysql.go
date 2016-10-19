@@ -48,6 +48,7 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		for i := uint16(1); i < di.mysqldb.config.NumRetries; i++ {
 			if err = db.Ping(); err != nil {
 				err = ErrDbNotInitialized
+				time.Sleep(3 * time.Second)
 			} else {
 				di.mysqldb.db = db
 				err = nil
