@@ -45,11 +45,15 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		di.mysqldb.config.Timeout)
 	db, err := sql.Open("mysql", connString)
 	if err == nil {
-		if err = db.Ping(); err != nil {
-			di.mysqldb = nil
-			err = ErrDbNotInitialized
-		} else {
-			di.mysqldb.db = db
+		for i := uint16(0); i < di.mysqldb.config.NumRetries; i++ {
+			if err = db.Ping(); err != nil {
+				err = ErrDbNotInitialized
+				time.Sleep(3 * time.Second)
+			} else {
+				di.mysqldb.db = db
+				err = nil
+				break
+			}
 		}
 	}
 
@@ -58,6 +62,9 @@ func (di *DatabaseImpl) getMySQLConn() (*mysqlConn, error) {
 		"Port":   di.mysqldb.config.Port,
 		"Schema": di.mysqldb.config.Schema,
 	})
+	if err != nil {
+		di.mysqldb = nil
+	}
 	return di.mysqldb, err
 }
 

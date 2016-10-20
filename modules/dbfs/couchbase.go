@@ -77,7 +77,8 @@ func (di *DatabaseImpl) cbInsertNewFile(file cbFile) error {
 		return err
 	}
 
-	_, err = cb.bucket.Insert(strconv.FormatInt(file.FileID, 10), file, 0)
+	// TODO (shapiro): change me back to bucket.Insert(...)
+	_, err = cb.bucket.Upsert(strconv.FormatInt(file.FileID, 10), file, 0)
 	return err
 }
 
