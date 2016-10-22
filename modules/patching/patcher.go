@@ -16,18 +16,18 @@ func PatchText(text string, patches []*Patch) (string, error) {
 			if startIndex < diff.StartIndex {
 				buffer.WriteString(text[startIndex:diff.StartIndex])
 			}
-			if (diff.Insertion) {
+			if diff.Insertion {
 				// insert item
 				buffer.WriteString(diff.Changes)
 
 				// If the diff's startIndex is greater, move it up.
 				// Otherwise, a previous delete may have deleted over the start index.
-				if (startIndex < diff.StartIndex) {
+				if startIndex < diff.StartIndex {
 					startIndex = diff.StartIndex
 				}
 			} else {
 				// validate that we're deleting the right characters
-				if want, got := diff.Changes, text[diff.StartIndex: diff.StartIndex + diff.Length()]; want != got {
+				if want, got := diff.Changes, text[diff.StartIndex:diff.StartIndex+diff.Length()]; want != got {
 					return "", fmt.Errorf("PatchText: Deleted text %q does not match changes in diff: %q", got, want)
 				}
 

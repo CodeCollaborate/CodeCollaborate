@@ -2,10 +2,11 @@ package patching
 
 import (
 	"testing"
+
 	"github.com/kr/pretty"
 )
 
-func getPatchesOrDie(t *testing.T, patchStrs ...string) ([]*Patch) {
+func getPatchesOrDie(t *testing.T, patchStrs ...string) []*Patch {
 	patches := []*Patch{}
 
 	for _, str := range patchStrs {
@@ -26,90 +27,90 @@ func TestFilePatcher_ApplyPatch(t *testing.T) {
 		patches  []*Patch
 		text     string
 		expected string
-		error string
+		error    string
 	}{
 		{
-			desc: "Single Patch, Single insertion",
-			patches: getPatchesOrDie(t, "v0:\n2:+1:a"),
-			text: "test",
+			desc:     "Single Patch, Single insertion",
+			patches:  getPatchesOrDie(t, "v0:\n2:+1:a"),
+			text:     "test",
 			expected: "teast",
 		},
 		{
-			desc: "Single Patch, Single deletion",
-			patches: getPatchesOrDie(t, "v0:\n2:-1:s"),
-			text: "test",
+			desc:     "Single Patch, Single deletion",
+			patches:  getPatchesOrDie(t, "v0:\n2:-1:s"),
+			text:     "test",
 			expected: "tet",
 		},
 		{
-			desc: "Single Patch, Single deletion, Incorrect base text",
+			desc:    "Single Patch, Single deletion, Incorrect base text",
 			patches: getPatchesOrDie(t, "v0:\n2:-1:s"),
-			text: "aaaa",
-			error: "PatchText: Deleted text \"a\" does not match changes in diff: \"s\"",
+			text:    "aaaa",
+			error:   "PatchText: Deleted text \"a\" does not match changes in diff: \"s\"",
 		},
 		{
-			desc: "Single Patch, Double insertion",
-			patches: getPatchesOrDie(t, "v0:\n2:+1:m,\n3:+2:ab"),
-			text: "test",
+			desc:     "Single Patch, Double insertion",
+			patches:  getPatchesOrDie(t, "v0:\n2:+1:m,\n3:+2:ab"),
+			text:     "test",
 			expected: "temsabt",
 		},
 		{
-			desc: "Single Patch, Double deletion",
-			patches: getPatchesOrDie(t, "v0:\n0:-1:t,\n2:-2:st"),
-			text: "test",
+			desc:     "Single Patch, Double deletion",
+			patches:  getPatchesOrDie(t, "v0:\n0:-1:t,\n2:-2:st"),
+			text:     "test",
 			expected: "e",
 		},
 		{
-			desc: "Single Patch, Insert+Delete",
-			patches: getPatchesOrDie(t, "v0:\n1:+1:z,\n2:-2:st"),
-			text: "test",
+			desc:     "Single Patch, Insert+Delete",
+			patches:  getPatchesOrDie(t, "v0:\n1:+1:z,\n2:-2:st"),
+			text:     "test",
 			expected: "tze",
 		},
 		{
-			desc: "Single Patch, Delete+Insert",
-			patches: getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm"),
-			text: "test",
+			desc:     "Single Patch, Delete+Insert",
+			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm"),
+			text:     "test",
 			expected: "tlmt",
 		},
 		{
-			desc: "Double Patch, Single Insertions, 1 first",
-			patches: getPatchesOrDie(t, "v0:\n1:+1:a", "v1:\n1:+1:b"),
-			text: "test",
+			desc:     "Double Patch, Single Insertions, 1 first",
+			patches:  getPatchesOrDie(t, "v0:\n1:+1:a", "v1:\n1:+1:b"),
+			text:     "test",
 			expected: "tbaest",
 		},
 		{
-			desc: "Double Patch, Single Insertions, 2 first",
-			patches: getPatchesOrDie(t, "v0:\n1:+1:a", "v1:\n2:+1:b"),
-			text: "test",
+			desc:     "Double Patch, Single Insertions, 2 first",
+			patches:  getPatchesOrDie(t, "v0:\n1:+1:a", "v1:\n2:+1:b"),
+			text:     "test",
 			expected: "tabest",
 		},
 		{
-			desc: "Double Patch, Single Deletions, 1 first",
-			patches: getPatchesOrDie(t, "v0:\n1:-1:e", "v1:\n1:-1:s"),
-			text: "test",
+			desc:     "Double Patch, Single Deletions, 1 first",
+			patches:  getPatchesOrDie(t, "v0:\n1:-1:e", "v1:\n1:-1:s"),
+			text:     "test",
 			expected: "tt",
 		},
 		{
-			desc: "Double Patch, Insert-Deletes",
-			patches: getPatchesOrDie(t, "v0:\n1:+1:z,\n2:-2:st", "v1:\n0:+2:aa,\n2:-1:e"),
-			text: "test",
+			desc:     "Double Patch, Insert-Deletes",
+			patches:  getPatchesOrDie(t, "v0:\n1:+1:z,\n2:-2:st", "v1:\n0:+2:aa,\n2:-1:e"),
+			text:     "test",
 			expected: "aatz",
 		},
 		{
-			desc: "Double Patch, Delete-Inserts",
-			patches: getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm", "v1:\n0:-2:tl,\n3:+2:kk"),
-			text: "test",
+			desc:     "Double Patch, Delete-Inserts",
+			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm", "v1:\n0:-2:tl,\n3:+2:kk"),
+			text:     "test",
 			expected: "mkkt",
 		},
 		{
-			desc: "Double Patch, Insert-Delete, Delete-Insert",
-			patches: getPatchesOrDie(t, "v0:\n1:+1:z,\n2:-2:st", "v1:\n0:-2:tz,\n3:+2:ab"),
-			text: "test",
+			desc:     "Double Patch, Insert-Delete, Delete-Insert",
+			patches:  getPatchesOrDie(t, "v0:\n1:+1:z,\n2:-2:st", "v1:\n0:-2:tz,\n3:+2:ab"),
+			text:     "test",
 			expected: "eab",
 		},
 		{
-			desc: "Double Patch, Delete-Insert, Insert-Delete",
-			patches: getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm", "v1:\n0:-2:tl,\n3:+2:kk"),
-			text: "test",
+			desc:     "Double Patch, Delete-Insert, Insert-Delete",
+			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm", "v1:\n0:-2:tl,\n3:+2:kk"),
+			text:     "test",
 			expected: "mkkt",
 		},
 	}
