@@ -15,7 +15,6 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
 	"github.com/kr/pretty"
-	"fmt"
 )
 
 /**
@@ -126,7 +125,6 @@ func newAMQPMessageHandler(websocketID uint64, cfg *rabbitmq.AMQPPubSubCfg, wsCo
 		switch msg.ContentType {
 		case rabbitmq.ContentTypeMsg:
 			// If notification with self as origin, early-out; ignore our own notifications.
-			fmt.Printf("Headers: %v\n", msg.Headers)
 			if val, ok := msg.Headers["MessageType"]; ok && val == "Notification" {
 				if val, ok := msg.Headers["Origin"]; ok && val == rabbitmq.RabbitWebsocketQueueName(websocketID) {
 					utils.LogDebug("Ignoring notification from self", nil)
