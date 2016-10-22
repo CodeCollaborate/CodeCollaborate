@@ -15,6 +15,7 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
 	"github.com/kr/pretty"
+	"fmt"
 )
 
 /**
@@ -70,7 +71,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 
 	pubSubCfg := rabbitmq.NewAMQPPubSubCfg(cfg.ServerConfig.Name, pubCfg, subCfg)
 
-	subCfg.HandleMessageFunc = newAMQPMessageHandler(pubSubCfg, wsConn)
+	subCfg.HandleMessageFunc = newAMQPMessageHandler(wsID, pubSubCfg, wsConn)
 
 	go func() {
 		err := rabbitmq.RunPublisher(pubSubCfg)
@@ -120,10 +121,19 @@ loop:
 	close(pubCfg.Messages)
 }
 
-func newAMQPMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
+func newAMQPMessageHandler(websocketID uint64, cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
 	return func(msg rabbitmq.AMQPMessage) error {
 		switch msg.ContentType {
 		case rabbitmq.ContentTypeMsg:
+			// If notification with self as origin, early-out; ignore our own notifications.
+			fmt.Printf("Headers: %v\n", msg.Headers)
+			if val, ok := msg.Headers["MessageType"]; ok && val == "Notification" {
+				if val, ok := msg.Headers["Origin"]; ok && val == rabbitmq.RabbitWebsocketQueueName(websocketID) {
+					utils.LogDebug("Ignoring notification from self", nil)
+					return nil
+				}
+			}
+
 			utils.LogDebug("Sending Message", utils.LogFields{
 				"Message": string(msg.Message),
 			})
