@@ -3,9 +3,10 @@ package datahandling
 import (
 	"encoding/json"
 
+	"errors"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
-	"errors"
 	"github.com/CodeCollaborate/Server/utils"
 )
 

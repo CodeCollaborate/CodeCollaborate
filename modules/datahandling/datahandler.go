@@ -5,11 +5,12 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 
+	"sync"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
-	"sync"
 )
 
 var privKey *ecdsa.PrivateKey

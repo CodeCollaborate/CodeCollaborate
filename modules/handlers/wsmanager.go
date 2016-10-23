@@ -6,6 +6,8 @@ import (
 
 	"errors"
 
+	"sync"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -13,7 +15,6 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
 	"github.com/kr/pretty"
-	"sync"
 )
 
 /**
@@ -94,16 +95,17 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	// Waitgroup to make sure channel is closed at appropriate time.
 	dhCompleted := &sync.WaitGroup{}
 
+loop:
 	for {
 		select {
 		case <-pubSubCfg.Control.Exit:
-			break
+			break loop
 		default:
 			messageType, message, err := wsConn.ReadMessage()
 			if err != nil {
 				utils.LogError("Failed to read message, terminating connection", err, nil)
 				pubSubCfg.Control.Shutdown()
-				break
+				break loop
 			}
 			go dh.Handle(messageType, message, dhCompleted)
 		}
