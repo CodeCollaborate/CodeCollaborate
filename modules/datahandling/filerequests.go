@@ -1,6 +1,8 @@
 package datahandling
 
 import (
+	"time"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -18,6 +20,9 @@ type File struct {
 	RelativePath string
 	Version      int64
 }
+
+const retryTimeout = 500 * time.Millisecond
+const retryCount = 10
 
 // initProjectRequests populates the requestMap from requestmap.go with the appropriate constructors for the project methods
 func initFileRequests() {
@@ -315,6 +320,18 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	// TODO (normal/required): verify changes are valid changes
 	version, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
+	if err == dbfs.ErrDbLocked {
+		i := 1
+		for err == dbfs.ErrDbLocked && i < retryCount {
+			time.Sleep(retryTimeout)
+			version, err = db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
+			i++
+		}
+		if i >= 10 {
+			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, f.Tag)}}, err
+		}
+	}
+
 	if err != nil {
 		if err == dbfs.ErrVersionOutOfDate {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusVersionOutOfDate, f.Tag)}}, err
@@ -384,6 +401,18 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}
 
 	changes, err := db.CBGetFileChanges(f.FileID)
+	if err == dbfs.ErrDbLocked {
+		i := 1
+		for err == dbfs.ErrDbLocked && i < retryCount {
+			time.Sleep(retryTimeout)
+			changes, err = db.CBGetFileChanges(f.FileID)
+			i++
+		}
+		if i >= 10 {
+			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, f.Tag)}}, err
+		}
+	}
+
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}

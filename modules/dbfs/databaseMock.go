@@ -16,8 +16,10 @@ type DatabaseMock struct {
 	Projects map[string]([]ProjectMeta)
 	Files    map[int64]([]FileMeta)
 
-	FileVersion map[int64]int64
-	FileChanges map[int64][]string
+	FileVersion     map[int64]int64
+	FileChanges     map[int64][]string
+	FileReadLocked  map[int64]bool
+	FileWriteLocked map[int64]bool
 
 	ProjectIDCounter int64
 	FileIDCounter    int64
@@ -72,12 +74,19 @@ func (dm *DatabaseMock) CBGetFileVersion(fileID int64) (int64, error) {
 // CBGetFileChanges is a mock of the real implementation
 func (dm *DatabaseMock) CBGetFileChanges(fileID int64) ([]string, error) {
 	dm.FunctionCallCount++
+	if lock, ok := dm.FileReadLocked[fileID]; ok && lock {
+		return []string{}, ErrDbLocked
+	}
 	return dm.FileChanges[fileID], nil
 }
 
 // CBAppendFileChange is a mock of the real implementation
 func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
 	dm.FunctionCallCount++
+	if lock, ok := dm.FileWriteLocked[fileID]; ok && lock {
+		return -1, ErrDbLocked
+	}
+
 	if dm.FileVersion[fileID] > baseVersion {
 		return -1, ErrVersionOutOfDate
 	}
@@ -86,6 +95,37 @@ func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, chan
 		dm.FileChanges[fileID] = append(dm.FileChanges[fileID], change)
 	}
 	return dm.FileVersion[fileID], nil
+}
+
+// CBReadLockFile locks a file for scrunching
+func (dm *DatabaseMock) CBReadLockFile(fileID int64) error {
+	dm.FunctionCallCount++
+	dm.FileReadLocked[fileID] = true
+	return nil
+}
+
+// CBReadUnlockFile unlocks a file which was locked for scrunching
+func (dm *DatabaseMock) CBReadUnlockFile(fileID int64) error {
+	dm.FunctionCallCount++
+	dm.FileReadLocked[fileID] = false
+	return nil
+}
+
+// CBGetAndLockForScrunching gets all but the remainder entries for a file and locks the file object from reading
+func (dm *DatabaseMock) CBGetAndLockForScrunching(fileID int64, remainder int) ([]string, error) {
+	dm.FunctionCallCount++
+	err := dm.CBReadLockFile(fileID)
+	changes := dm.FileChanges[fileID]
+	return changes[0 : len(changes)-remainder], err
+}
+
+// CBDeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` pessimistic-ly
+func (dm *DatabaseMock) CBDeleteForScrunching(fileID int64, num int) error {
+	dm.FunctionCallCount++
+	dm.FileWriteLocked[fileID] = true
+	dm.FileChanges[fileID] = dm.FileChanges[fileID][num:]
+	dm.FileWriteLocked[fileID] = false
+	return nil
 }
 
 // mysql

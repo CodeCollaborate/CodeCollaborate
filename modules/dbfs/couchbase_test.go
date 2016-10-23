@@ -2,6 +2,8 @@ package dbfs
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
@@ -61,7 +63,7 @@ func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
 	// ensure it doesn't actually exist
 	di.CBDeleteFile(1)
 
-	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}}
+	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, Lock: false}
 	err := di.cbInsertNewFile(f)
 	if err != nil {
 		t.Fatal(err)
@@ -99,7 +101,7 @@ func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}}
+	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, Lock: false}
 	di.cbInsertNewFile(f)
 
 	err := di.CBDeleteFile(1)
@@ -170,37 +172,22 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	di.CBInsertNewFile(fileID, originalFileVersion, []string{"hey there", "sup"})
 
 	version, err := di.CBAppendFileChange(fileID, originalFileVersion, []string{"yooooo"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err, "unexpected error appending changes")
 
-	// new version
-	if version != originalFileVersion+1 {
-		t.Fatal("version did not update properly")
-	}
+	assert.Equal(t, originalFileVersion+1, version, "version did not update properly")
 
 	changes, err := di.CBGetFileChanges(fileID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err, "unexpected error getting changes")
 
-	if changes[0] != "hey there" {
-		t.Fatal(err)
-	}
-	if changes[1] != "sup" {
-		t.Fatal(err)
-	}
-	if changes[2] != "yooooo" {
-		t.Fatal(err)
-	}
-	if len(changes) != 3 {
-		t.Fatal("resultant changes are not correct")
-	}
+	assert.Len(t, changes, 3, "resultant changes not the correct length")
+
+	assert.Equal(t, "hey there", changes[0], "first change was not correct")
+	assert.Equal(t, "sup", changes[1], "second change was not correct")
+
+	assert.Equal(t, "yooooo", changes[2], "newly inserted change was not correct")
 
 	ver, err := di.CBGetFileVersion(fileID)
-	if ver != 3 {
-		t.Fatal("wrong file version")
-	}
+	assert.EqualValues(t, 3, ver, "wrong file version")
 
 	di.CBDeleteFile(fileID)
 }
