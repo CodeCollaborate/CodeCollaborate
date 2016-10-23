@@ -95,7 +95,7 @@ type AMQPPubCfg struct {
 func NewPubConfig(errHandler func(AMQPMessage), messageBuffer int) *AMQPPubCfg {
 	return &AMQPPubCfg{
 		PubErrHandler: errHandler,
-		Messages:      make(chan AMQPMessage, messageBuffer), // Buffer 16 messages to make sure a latency spike doesn't kill us.
+		Messages:      make(chan AMQPMessage, messageBuffer), // Buffer messages to make sure a latency spike doesn't kill us.
 	}
 }
 
