@@ -6,6 +6,8 @@ import (
 
 	"errors"
 
+	"sync"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -18,6 +20,8 @@ import (
 /**
  * WSManager handles all WebSocket upgrade requests.
  */
+
+const outboundMessageQueueBufferSize = 32
 
 // Counter for unique ID of WebSockets Connections. Unique to hostname.
 var atomicIDCounter uint64
@@ -56,7 +60,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	pubCfg := rabbitmq.NewPubConfig(func(msg rabbitmq.AMQPMessage) {
 		// TODO(wongb): Do we need to send errors back to the client on publishing fail? Can we just kill the socket?
 		msg.ErrHandler()
-	})
+	}, outboundMessageQueueBufferSize)
 
 	subCfg := &rabbitmq.AMQPSubCfg{
 		QueueID:     wsID,
@@ -90,15 +94,30 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		Db:          dbfs.Dbfs,
 	}
 
+	// Waitgroup to make sure channel is closed at appropriate time.
+	dhCompleted := &sync.WaitGroup{}
+
+loop:
 	for {
-		messageType, message, err := wsConn.ReadMessage()
-		if err != nil {
-			utils.LogError("Failed to read message, terminating connection", err, nil)
-			pubSubCfg.Control.Shutdown()
-			break
+		select {
+		case <-pubSubCfg.Control.Exit:
+			break loop
+		default:
+			messageType, message, err := wsConn.ReadMessage()
+			if err != nil {
+				utils.LogError("Failed to read message, terminating connection", err, nil)
+				pubSubCfg.Control.Shutdown()
+				break loop
+			}
+
+			dhCompleted.Add(1)
+			go dh.Handle(messageType, message, dhCompleted)
 		}
-		go dh.Handle(messageType, message)
 	}
+
+	// Wait for all datahandlers to complete before closing channel
+	dhCompleted.Wait()
+	close(pubCfg.Messages)
 }
 
 func newAMQPMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {

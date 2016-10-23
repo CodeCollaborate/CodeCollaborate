@@ -5,6 +5,8 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 
+	"sync"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -31,9 +33,12 @@ type DataHandler struct {
 	Db          dbfs.DBFS
 }
 
-// Handle takes the WebSocket Id, MessageType and message in byte-array form,
-// processing the data, and updating DB/FS/RabbitMQ as needed.
-func (dh DataHandler) Handle(messageType int, message []byte) error {
+// Handle takes the MessageType and message in byte-array form,
+// processing the data, and updating DBFS/RabbitMQ as needed.
+// the waitgroup allows the websocket manager to know when all requests have completed processing
+func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup) error {
+	defer wg.Done()
+
 	utils.LogDebug("Received Message", utils.LogFields{
 		"Message": string(message),
 	})

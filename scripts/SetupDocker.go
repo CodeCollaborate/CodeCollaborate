@@ -72,11 +72,11 @@ func main() {
 	time.Sleep(15 * time.Second)
 
 	fmt.Println("\nSetting up MySQL:")
-	f, err := os.Open("../config/defaults/mysqlSetup.sql")
+	f, err := os.Open("../config/defaults/mysql_setup.sql")
 	if err != nil {
-		f, err = os.Open("config/defaults/mysqlSetup.sql")
+		f, err = os.Open("config/defaults/mysql_setup.sql")
 		if err != nil {
-			log.Fatal("Exiting: Failed to open mysqlSetup.sql", err)
+			log.Fatal("Exiting: Failed to open mysql_setup.sql", err)
 		}
 	}
 	c := exec.Command("docker", "exec", "-i", imageName("MySQL"), "mysql", "--protocol=tcp", "-uroot", "-p"+*password)
@@ -85,11 +85,11 @@ func main() {
 	c.Stdin = f
 	c.Run()
 
-	f, err = os.Open("../config/defaults/mysqlSchemaSetup.sql")
+	f, err = os.Open("../config/defaults/mysql_schema_setup.sql")
 	if err != nil {
-		f, err = os.Open("config/defaults/mysqlSchemaSetup.sql")
+		f, err = os.Open("config/defaults/mysql_schema_setup.sql")
 		if err != nil {
-			log.Fatal("Exiting: Failed to open mysqlSchemaSetup.sql", err)
+			log.Fatal("Exiting: Failed to open mysql_schema_setup.sql", err)
 		}
 	}
 	c = exec.Command("docker", "exec", "-i", imageName("MySQL"), "mysql", "--protocol=tcp", "-uroot", "-p"+*password)
