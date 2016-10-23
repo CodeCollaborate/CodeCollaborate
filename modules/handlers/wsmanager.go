@@ -21,6 +21,8 @@ import (
  * WSManager handles all WebSocket upgrade requests.
  */
 
+const outboundMessageQueueBufferSize = 32
+
 // Counter for unique ID of WebSockets Connections. Unique to hostname.
 var atomicIDCounter uint64
 
@@ -58,7 +60,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	pubCfg := rabbitmq.NewPubConfig(func(msg rabbitmq.AMQPMessage) {
 		// TODO(wongb): Do we need to send errors back to the client on publishing fail? Can we just kill the socket?
 		msg.ErrHandler()
-	}, 32)
+	}, outboundMessageQueueBufferSize)
 
 	subCfg := &rabbitmq.AMQPSubCfg{
 		QueueID:     wsID,
