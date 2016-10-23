@@ -9,6 +9,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
+	"sync"
 )
 
 var privKey *ecdsa.PrivateKey
@@ -33,7 +34,9 @@ type DataHandler struct {
 
 // Handle takes the WebSocket Id, MessageType and message in byte-array form,
 // processing the data, and updating DB/FS/RabbitMQ as needed.
-func (dh DataHandler) Handle(messageType int, message []byte) error {
+func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup) error {
+	defer wg.Done()
+
 	utils.LogDebug("Received Message", utils.LogFields{
 		"Message": string(message),
 	})
