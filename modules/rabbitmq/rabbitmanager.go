@@ -274,7 +274,6 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 // to RabbitMQ.
 func RunPublisher(cfg *AMQPPubSubCfg) error {
 	defer func() {
-		close(cfg.PubCfg.Messages)
 		cfg.Control.Shutdown()
 	}()
 
