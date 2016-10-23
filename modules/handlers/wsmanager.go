@@ -97,7 +97,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	// Waitgroup to make sure channel is closed at appropriate time.
 	dhCompleted := &sync.WaitGroup{}
 
-loop:
+	loop:
 	for {
 		select {
 		case <-pubSubCfg.Control.Exit:
@@ -109,6 +109,8 @@ loop:
 				pubSubCfg.Control.Shutdown()
 				break loop
 			}
+
+			dhCompleted.Add(1)
 			go dh.Handle(messageType, message, dhCompleted)
 		}
 	}
