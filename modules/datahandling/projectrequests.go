@@ -292,10 +292,20 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 		},
 	}.Wrap()
 
+	unsubscribeCommand := rabbitCommandClosure{
+		Command: "Unsubscribe",
+		Tag:     -1,
+		Key:     rabbitmq.RabbitUserQueueName(p.RevokeUsername),
+		Data: rabbitmq.RabbitQueueData{
+			Key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
+		},
+	}
+
 	return []dhClosure{
 		toSenderClosure{msg: res},
 		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)},
-		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitUserQueueName(p.RevokeUsername)}}, nil
+		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitUserQueueName(p.RevokeUsername)},
+		unsubscribeCommand}, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {

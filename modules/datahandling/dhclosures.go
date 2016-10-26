@@ -85,6 +85,7 @@ func (cont toRabbitChannelClosure) call(dh DataHandler) error {
 type rabbitCommandClosure struct {
 	Command string
 	Tag     int64
+	Key     string
 	Data    interface{}
 }
 
@@ -95,11 +96,15 @@ func (cont rabbitCommandClosure) call(dh DataHandler) error {
 		return err
 	}
 
+	if cont.Key == "" {
+		cont.Key = rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID)
+	}
+
 	msg := rabbitmq.AMQPMessage{
 		Headers: map[string]interface{}{
 			"Origin": rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
 		},
-		RoutingKey:  rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
+		RoutingKey:  cont.Key,
 		ContentType: rabbitmq.ContentTypeCmd,
 		Persistent:  false,
 		Message:     msgJSON,
