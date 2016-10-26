@@ -253,11 +253,13 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 	}
 
 	// are we notifying the right people
-	if len(closures) != 2 ||
-		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
+	if len(closures) != 3 {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
+
+	assert.IsType(t, toSenderClosure{}, closures[0], "expected 1nd closure to be response to the sender")
+	assert.IsType(t, toRabbitChannelClosure{}, closures[1], "expected 2nd closure to be sent to project")
+	assert.IsType(t, toRabbitChannelClosure{}, closures[2], "expected last closure to be sent to revokee")
 
 	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
