@@ -63,7 +63,7 @@ func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
 	// ensure it doesn't actually exist
 	di.CBDeleteFile(1)
 
-	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, Lock: false}
+	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, UseTemp: false}
 	err := di.cbInsertNewFile(f)
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +101,7 @@ func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
-	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, Lock: false}
+	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, UseTemp: false}
 	di.cbInsertNewFile(f)
 
 	err := di.CBDeleteFile(1)

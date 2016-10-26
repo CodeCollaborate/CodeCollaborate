@@ -26,14 +26,8 @@ type DBFS interface {
 	// CBAppendFileChange mutates the file document with the new change and sets the new version number
 	CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error)
 
-	// CBReadLockFile locks a file for scrunching
-	CBReadLockFile(fileID int64) error
-
-	// CBReadUnlockFile unlocks a file which was locked for scrunching
-	CBReadUnlockFile(fileID int64) error
-
 	// CBGetForScrunching gets all but the remainder entries for a file and locks the file object from reading
-	CBGetAndLockForScrunching(fileID int64, remainder int) ([]string, error)
+	CBGetForScrunching(fileID int64, remainder int) ([]string, error)
 
 	// CBDeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` pessimistic-ly
 	CBDeleteForScrunching(fileID int64, num int) error

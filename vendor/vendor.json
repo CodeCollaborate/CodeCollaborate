@@ -3,77 +3,77 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "DE0OYxmDxfhl08gD7nVg4FzpxXg=",
+			"checksumSHA1": "+fR/AtnnQXyyT36gzQgkpNb1cA4=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
 			"revisionTime": "2016-08-29T20:23:21Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "KviOBYCzjM3lMUlhEDkFzvoccew=",
+			"checksumSHA1": "ehMj0TRo/mgd9fX18WcvYzybtJw=",
 			"path": "github.com/couchbase/gocb",
-			"revision": "c30d3a7562e0f93379ca5699fa3d24929ba75aad",
-			"revisionTime": "2016-07-27T23:51:05Z",
+			"revision": "e2b9757960b140f41890b1348122841ac6dcc5b4",
+			"revisionTime": "2016-10-23T03:27:53Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "VgdO95xKa54YWKwGrKWvVnDXVOc=",
+			"checksumSHA1": "Lf3uUXTkKK5DJ37BxQvxO1Fq+K8=",
 			"path": "github.com/davecgh/go-spew/spew",
 			"revision": "6d212800a42e8ab5c146b8ace3490ee17e5225f9",
 			"revisionTime": "2016-09-07T16:21:46Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "p0Z0V9yVoIyWYfcy1wTtCi/OdHo=",
+			"checksumSHA1": "oL8Ytkc0HkHrzY2vjA8bi3M2YcU=",
 			"path": "github.com/dgrijalva/jwt-go",
 			"revision": "24c63f56522a87ec5339cc3567883f1039378fdb",
 			"revisionTime": "2016-08-31T18:35:34Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "p0Z0V9yVoIyWYfcy1wTtCi/OdHo=",
+			"checksumSHA1": "oL8Ytkc0HkHrzY2vjA8bi3M2YcU=",
 			"path": "github.com/dgrijalva/jwt-go",
 			"revision": "24c63f56522a87ec5339cc3567883f1039378fdb",
 			"revisionTime": "2016-08-31T18:35:34Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "7VjWBbxIJUYXCoFzUp8p1E4jvUo=",
+			"checksumSHA1": "jEXpLrWXoQvH/zk1lW5Si0swr6Y=",
 			"path": "github.com/go-sql-driver/mysql",
 			"revision": "0b58b37b664c21f3010e836f1b931e1d0b0b0685",
 			"revisionTime": "2016-08-02T11:38:42Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "/bj7m8l+YyRjfq+oB5j1SWtOc4A=",
+			"checksumSHA1": "VKgJ7n+9zWTjTv696ilbvLOkDpA=",
 			"path": "github.com/gorilla/websocket",
 			"revision": "2d1e4548da234d9cb742cc3628556fef86aafbac",
 			"revisionTime": "2016-09-12T15:30:41Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "ZbvybRLthm+bve1duASQ5ghFl6Y=",
+			"checksumSHA1": "eOXF2PEvYLMeD8DSzLZJWbjYzco=",
 			"path": "github.com/kr/pretty",
 			"revision": "cfb55aafdaf3ec08f0db22699ab822c50091b1c4",
 			"revisionTime": "2016-08-23T17:07:15Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "XXTaAjLkKt+FINY1FTwS9G0Svrk=",
+			"checksumSHA1": "a0vHrIsco7eVjOvcYiV9VdQjLgw=",
 			"path": "github.com/kr/text",
 			"revision": "7cafcd837844e784b526369c9bce262804aebc60",
 			"revisionTime": "2016-05-04T02:26:26Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "W4HqEnnf+XFEfoL+mKz2ojvOOI0=",
+			"checksumSHA1": "Tz3FMUl0EQFg0qe0IhTlyvGybTE=",
 			"path": "github.com/streadway/amqp",
 			"revision": "2e25825abdbd7752ff08b270d313b93519a0a232",
 			"revisionTime": "2016-03-11T21:55:03Z",
 			"tree": true
 		},
 		{
-			"checksumSHA1": "g+RGhbXqsyBOtKpY08hPDQOeuqI=",
+			"checksumSHA1": "2ejItuuU32nvGsyKMvguQ2tUdMo=",
 			"path": "github.com/stretchr/testify",
 			"revision": "d77da356e56a7428ad25149ca77381849a6a5232",
 			"revisionTime": "2016-06-15T09:26:46Z",

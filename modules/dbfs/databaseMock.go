@@ -97,34 +97,20 @@ func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	return dm.FileVersion[fileID], nil
 }
 
-// CBReadLockFile locks a file for scrunching
-func (dm *DatabaseMock) CBReadLockFile(fileID int64) error {
+// CBGetForScrunching gets all but the remainder entries for a file and locks the file object from reading
+func (dm *DatabaseMock) CBGetForScrunching(fileID int64, remainder int) ([]string, error) {
 	dm.FunctionCallCount++
-	dm.FileReadLocked[fileID] = true
-	return nil
-}
-
-// CBReadUnlockFile unlocks a file which was locked for scrunching
-func (dm *DatabaseMock) CBReadUnlockFile(fileID int64) error {
-	dm.FunctionCallCount++
-	dm.FileReadLocked[fileID] = false
-	return nil
-}
-
-// CBGetAndLockForScrunching gets all but the remainder entries for a file and locks the file object from reading
-func (dm *DatabaseMock) CBGetAndLockForScrunching(fileID int64, remainder int) ([]string, error) {
-	dm.FunctionCallCount++
-	err := dm.CBReadLockFile(fileID)
 	changes := dm.FileChanges[fileID]
-	return changes[0 : len(changes)-remainder], err
+	return changes[0 : len(changes)-remainder], nil
 }
 
 // CBDeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` pessimistic-ly
 func (dm *DatabaseMock) CBDeleteForScrunching(fileID int64, num int) error {
 	dm.FunctionCallCount++
-	dm.FileWriteLocked[fileID] = true
+	// FIXME: reflect whatever we do in the impl
+	//dm.FileWriteLocked[fileID] = true
 	dm.FileChanges[fileID] = dm.FileChanges[fileID][num:]
-	dm.FileWriteLocked[fileID] = false
+	//dm.FileWriteLocked[fileID] = false
 	return nil
 }
 
