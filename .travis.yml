@@ -48,6 +48,10 @@ script:
 - GOOS=windows GOARCH=amd64 go build -o bin/server_windows_amd64.exe
 - GOOS=linux GOARCH=amd64 go build -o bin/server_linux_amd64
 
+# build with native architecture and run for 15 seconds
+- go build -o bin/native
+- ./bin/native& PID=$!; sleep 15; kill $PID
+
 deploy:
   on:
     tags: false

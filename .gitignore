@@ -44,3 +44,4 @@ data
 # misc
 *.swp
 /.vscode/
+/bin/

@@ -292,7 +292,20 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 		},
 	}.Wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)}}, nil
+	unsubscribeCommand := rabbitCommandClosure{
+		Command: "Unsubscribe",
+		Tag:     -1,
+		Key:     rabbitmq.RabbitUserQueueName(p.RevokeUsername),
+		Data: rabbitmq.RabbitQueueData{
+			Key: rabbitmq.RabbitProjectQueueName(p.ProjectID),
+		},
+	}
+
+	return []dhClosure{
+		toSenderClosure{msg: res},
+		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(p.ProjectID)},
+		toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitUserQueueName(p.RevokeUsername)},
+		unsubscribeCommand}, nil
 }
 
 func (p *projectRevokePermissionsRequest) setAbstractRequest(req *abstractRequest) {
@@ -352,7 +365,6 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			continue
 		}
 
-		// TODO: see note at modules/dbfs/mysql.go:307
 		name, permissions, err := db.MySQLProjectLookup(id, p.SenderID)
 		if err != nil {
 			errOut = err

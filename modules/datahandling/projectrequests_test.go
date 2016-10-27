@@ -253,24 +253,55 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 	}
 
 	// are we notifying the right people
-	if len(closures) != 2 ||
-		reflect.TypeOf(closures[0]).String() != "datahandling.toSenderClosure" ||
-		reflect.TypeOf(closures[1]).String() != "datahandling.toRabbitChannelClosure" {
+	if len(closures) != 4 {
 		t.Fatalf("did not properly process, recieved %d closure(s)", len(closures))
 	}
 
-	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
-	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
+	assert.IsType(t, toSenderClosure{}, closures[0], "expected 1nd closure to be response to the sender")
+	assert.IsType(t, toRabbitChannelClosure{}, closures[1], "expected 2nd closure to be sent to project")
+	assert.IsType(t, toRabbitChannelClosure{}, closures[2], "expected 3rd closure to be sent to revokee")
+	assert.IsType(t, rabbitCommandClosure{}, closures[3], "expected 4th closure to be rabbit command")
+
 	// did the server return success status
+	resp := closures[0].(toSenderClosure).msg.ServerMessage.(messages.Response)
 	if resp.Status != messages.StatusSuccess {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 
-	// is the data actually correct
+	// is the project notification actually correct
+	assert.Equal(t,
+		rabbitmq.RabbitProjectQueueName(projectID),
+		closures[1].(toRabbitChannelClosure).key,
+		"notification isn't being sent to project correctly")
+
+	not := closures[1].(toRabbitChannelClosure).msg.ServerMessage.(messages.Notification)
 	username := reflect.ValueOf(not.Data).FieldByName("RevokeUsername").Interface().(string)
 	if username != req.RevokeUsername {
 		t.Fatalf("Incorrect username was returned, expected %v, recieved %v", req.RevokeUsername, username)
 	}
+
+	// check user is being notified
+	assert.Equal(t,
+		rabbitmq.RabbitUserQueueName(req.RevokeUsername),
+		closures[2].(toRabbitChannelClosure).key,
+		"notification isn't being sent to user correctly")
+
+	// check user is being unsubscribed
+	assert.Equal(t,
+		"Unsubscribe",
+		closures[3].(rabbitCommandClosure).Command,
+		"user rabbit command is sending the wrong command")
+
+	assert.Equal(t,
+		rabbitmq.RabbitUserQueueName(req.RevokeUsername),
+		closures[3].(rabbitCommandClosure).Key,
+		"the unsubscribe command is being sent to the wrong channel")
+
+	unsubProjectID := reflect.ValueOf(closures[3].(rabbitCommandClosure).Data).FieldByName("Key").Interface().(string)
+	assert.EqualValues(t,
+		rabbitmq.RabbitProjectQueueName(projectID),
+		unsubProjectID,
+		"the user isn't being unsubscribed from the right project")
 
 	// did the user actually get removed
 	if len(db.Projects[req.RevokeUsername]) != 0 {
