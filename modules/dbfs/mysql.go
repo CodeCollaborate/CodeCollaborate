@@ -368,8 +368,6 @@ func (di *DatabaseImpl) MySQLProjectRename(projectID int64, newName string) erro
 
 // MySQLProjectLookup returns the project name and permissions for a project with ProjectID = 'projectID'
 //
-// TODO (non-immediate/required): decide on change to MySQLProjectLookup stored proc
-// aka: decide if looking them up 1 at a time is good or not
 // Looking them up 1 at a time may seem worse, however we're looking up rows based on their primary key
 // so we get the speed benefits of it having a unique index on it
 // Thoughts:
