@@ -234,9 +234,29 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Status: messages.StatusPartialfail,
 			Tag:    f.Tag,
 			Data: struct {
-				Projects []dbfs.ProjectMeta
+				Projects []projectLookupResult
 			}{
-				Projects: projects,
+				Projects: nil,
+			},
+		}.Wrap()
+		return []dhClosure{toSenderClosure{msg: res}}, err
+	}
+
+	var projectIDs [len(projects)]int64
+	for i, p := range projects {
+		projectIDs[i] = p.ProjectID
+	}
+
+	resultData, err := doLookup(f.Resource, f.Method, f.SenderID, projectIDs, db)
+
+	if err != nil {
+		res := messages.Response {
+			Status: messages.StatusPartialfail,
+			Tag:    f.Tag,
+			Data: struct {
+				Projects []projectLookupResult
+			}{
+				Projects: resultData,
 			},
 		}.Wrap()
 		return []dhClosure{toSenderClosure{msg: res}}, err
@@ -246,9 +266,9 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
-			Projects []dbfs.ProjectMeta
+			Projects []projectLookupResult
 		}{
-			Projects: projects,
+			Projects: resultData,
 		},
 	}.Wrap()
 
