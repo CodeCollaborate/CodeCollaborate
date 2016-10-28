@@ -348,7 +348,32 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			data := make([]interface{}, len(p.ProjectIDs))
 		but it seems like poor practice and makes the object oriented side of my brain cry
 	*/
-	resultData, errOut := doLookup(p.Resource, p.Method, p.SenderID, p.ProjectIDs, db)
+	resultData := make([]projectLookupResult, len(p.ProjectIDs))
+
+	var errOut error
+	i := 0
+	for _, id := range p.ProjectIDs {
+		hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, id, "read", db)
+		if err != nil || !hasPermission {
+			utils.LogError("API permission error", err, utils.LogFields{
+				"Resource":  p.Resource,
+				"Method":    p.Method,
+				"SenderID":  p.SenderID,
+				"ProjectID": id,
+			})
+			continue
+		}
+
+		lookupResult, err := projectLookup(p.SenderID, id, db)
+		if err != nil {
+			errOut = err
+		} else {
+			resultData[i] = lookupResult
+			i++
+		}
+	}
+	// shrink to cut off remainder left by errors
+	resultData = resultData[:i]
 
 	if errOut != nil {
 		if len(resultData) == 0 {
@@ -388,37 +413,21 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
 
-func doLookup(resource string, method string, senderID string, IDs []int64, db dbfs.DBFS) ([]projectLookupResult, error) {
-	resultData := make([]projectLookupResult, len(IDs))
+func projectLookup(senderID string, projectID int64, db dbfs.DBFS) (projectLookupResult, error) {
+	var resultData projectLookupResult
 
-	var errOut error
-	i := 0
-	for _, id := range IDs {
-		hasPermission, err := dbfs.PermissionAtLeast(senderID, id, "read", db)
-		if err != nil || !hasPermission {
-			utils.LogError("API permission error", err, utils.LogFields{
-				"Resource":  resource,
-				"Method":    method,
-				"SenderID":  senderID,
-				"ProjectID": id,
-			})
-			continue
-		}
+	name, permissions, err := db.MySQLProjectLookup(projectID, senderID)
 
-		name, permissions, err := db.MySQLProjectLookup(id, senderID)
-		if err != nil {
-			errOut = err
-		} else {
-			resultData[i] = projectLookupResult{
-				ProjectID:   id,
-				Name:        name,
-				Permissions: permissions}
-			i++
-		}
+	if err != nil {
+		return resultData, err
 	}
-	// shrink to cut off remainder left by errors
-	resultData = resultData[:i]
-	return resultData, errOut
+
+	resultData = projectLookupResult{
+		ProjectID:   projectID,
+		Name:        name,
+		Permissions: permissions}
+
+	return resultData, nil
 }
 
 func (p *projectLookupRequest) setAbstractRequest(req *abstractRequest) {

@@ -4,6 +4,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -242,15 +243,34 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: res}}, err
 	}
 
-	var projectIDs [len(projects)]int64
-	for i, p := range projects {
-		projectIDs[i] = p.ProjectID
-	}
+	resultData := make([]projectLookupResult, len(projects))
+	var errOut error
+	i := 0
+	for _, p := range projects {
+		hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, p.ProjectID, "read", db)
+		if err != nil || !hasPermission {
+			utils.LogError("API permission error", err, utils.LogFields{
+				"Resource":  f.Resource,
+				"Method":    f.Method,
+				"SenderID":  f.SenderID,
+				"ProjectID": p.ProjectID,
+			})
+			continue
+		}
 
-	resultData, err := doLookup(f.Resource, f.Method, f.SenderID, projectIDs, db)
+		lookupResult, err := projectLookup(f.SenderID, p.ProjectID, db)
+
+		if err != nil {
+			err = errOut
+		} else {
+			resultData[i] = lookupResult
+			i++
+		}
+	}
+	resultData = resultData[:i]
 
 	if err != nil {
-		res := messages.Response {
+		res := messages.Response{
 			Status: messages.StatusPartialfail,
 			Tag:    f.Tag,
 			Data: struct {

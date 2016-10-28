@@ -208,7 +208,7 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 1 {
+	if db.FunctionCallCount != 2 {
 		t.Fatalf("did not call correct number of db functions, called %d # of arguments", db.FunctionCallCount)
 	}
 
@@ -224,8 +224,8 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 	// is the data actually correct
-	projects := reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]dbfs.ProjectMeta)
-	if len(projects) != 1 && projects[0] != genesproject {
+	projects := reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]projectLookupResult)
+	if len(projects) != 1 && projects[0].ProjectID != genesproject.ProjectID {
 		t.Fatal("Incorrect user was returned")
 	}
 
@@ -250,8 +250,8 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 	// is the data actually correct
-	projects = reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]dbfs.ProjectMeta)
-	if len(projects) != 2 && projects[0] != genesproject && projects[1] != notgenesproject {
+	projects = reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]projectLookupResult)
+	if len(projects) != 2 && projects[0].ProjectID != genesproject.ProjectID && projects[1].ProjectID != notgenesproject.ProjectID {
 		t.Fatal("Incorrect user was returned")
 	}
 }
