@@ -246,21 +246,16 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	resultData := make([]projectLookupResult, len(projects))
 	var errOut error
 	i := 0
-	for _, p := range projects {
-		hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, p.ProjectID, "read", db)
-		if err != nil || !hasPermission {
-			utils.LogError("API permission error", err, utils.LogFields{
-				"Resource":  f.Resource,
-				"Method":    f.Method,
-				"SenderID":  f.SenderID,
-				"ProjectID": p.ProjectID,
-			})
-			continue
-		}
-
-		lookupResult, err := projectLookup(f.SenderID, p.ProjectID, db)
+	for _, project := range projects {
+		lookupResult, err := projectLookup(f.SenderID, project.ProjectID, db)
 
 		if err != nil {
+			utils.LogError("Project lookup error", err, utils.LogFields{
+					"Resource": f.Resource,
+					"Method": f.Method,
+					"SenderID": f.SenderID,
+					"ProjectID": project.ProjectID,
+			})
 			err = errOut
 		} else {
 			resultData[i] = lookupResult
@@ -269,7 +264,7 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}
 	resultData = resultData[:i]
 
-	if err != nil {
+	if errOut != nil {
 		res := messages.Response{
 			Status: messages.StatusPartialfail,
 			Tag:    f.Tag,

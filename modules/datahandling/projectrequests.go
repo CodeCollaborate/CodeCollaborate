@@ -353,6 +353,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	var errOut error
 	i := 0
 	for _, id := range p.ProjectIDs {
+		// it's better to do a cheap lookup and then an expensive one if required than an expensive one every time
 		hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, id, "read", db)
 		if err != nil || !hasPermission {
 			utils.LogError("API permission error", err, utils.LogFields{
@@ -425,7 +426,8 @@ func projectLookup(senderID string, projectID int64, db dbfs.DBFS) (projectLooku
 	resultData = projectLookupResult{
 		ProjectID:   projectID,
 		Name:        name,
-		Permissions: permissions}
+		Permissions: permissions,
+	}
 
 	return resultData, nil
 }

@@ -254,4 +254,8 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 	if len(projects) != 2 && projects[0].ProjectID != genesproject.ProjectID && projects[1].ProjectID != notgenesproject.ProjectID {
 		t.Fatal("Incorrect user was returned")
 	}
+	// check to see if permission map is correct
+	if projects[1].Permissions[gene.Username].PermissionLevel != 5 {
+		t.Fatal("Permission map was not returned correctly in lookup")
+	}
 }
