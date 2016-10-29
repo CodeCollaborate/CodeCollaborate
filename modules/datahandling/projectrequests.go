@@ -415,15 +415,14 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 }
 
 func projectLookup(senderID string, projectID int64, db dbfs.DBFS) (projectLookupResult, error) {
-	var resultData projectLookupResult
 
 	name, permissions, err := db.MySQLProjectLookup(projectID, senderID)
 
 	if err != nil {
-		return resultData, err
+		return projectLookupResult{}, err
 	}
 
-	resultData = projectLookupResult{
+	resultData := projectLookupResult{
 		ProjectID:   projectID,
 		Name:        name,
 		Permissions: permissions,

@@ -237,7 +237,7 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Data: struct {
 				Projects []projectLookupResult
 			}{
-				Projects: nil,
+				Projects: []projectLookupResult{},
 			},
 		}.Wrap()
 		return []dhClosure{toSenderClosure{msg: res}}, err
@@ -251,12 +251,12 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 		if err != nil {
 			utils.LogError("Project lookup error", err, utils.LogFields{
-					"Resource": f.Resource,
-					"Method": f.Method,
-					"SenderID": f.SenderID,
-					"ProjectID": project.ProjectID,
+				"Resource":  f.Resource,
+				"Method":    f.Method,
+				"SenderID":  f.SenderID,
+				"ProjectID": project.ProjectID,
 			})
-			err = errOut
+			errOut = err
 		} else {
 			resultData[i] = lookupResult
 			i++
