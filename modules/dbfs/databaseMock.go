@@ -2,7 +2,6 @@ package dbfs
 
 import (
 	"errors"
-	"path/filepath"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/config"
@@ -433,8 +432,7 @@ func (dm *DatabaseMock) MySQLFileGetInfo(fileID int64) (filey FileMeta, err erro
 func (dm *DatabaseMock) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
 	dm.FunctionCallCount++
 	dm.File = &raw
-	filepathy, err := calculateFilePath(relpath, filename, projectID)
-	return filepath.Join(filepathy, filename), err
+	return "./this_path_shouldnt_be_used_anywhere", nil
 }
 
 // FileDelete is a mock of the real implementation

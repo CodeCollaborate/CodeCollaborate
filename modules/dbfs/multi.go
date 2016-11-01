@@ -153,7 +153,7 @@ func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
 		changes = append(file.RemainingChanges, file.TempChanges...)
 		changes = append(changes, file.Changes...)
 
-		bytes, err := di.FileRead(meta.RelativePath, meta.Filename+".swp", meta.ProjectID)
+		bytes, err := di.swapRead(meta.RelativePath, meta.Filename, meta.ProjectID)
 		if err != nil {
 			return new([]byte), []string{}, err
 		}

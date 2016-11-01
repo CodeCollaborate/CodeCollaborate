@@ -18,7 +18,7 @@ var filePathSeparator = strconv.QuoteRune(os.PathSeparator)[1:2]
 // FileWrite writes the file with the given bytes to a calculated path, and
 // returns that path so it can be put in MySQL
 func (di *DatabaseImpl) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
-	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return "", err
 	}
@@ -38,7 +38,7 @@ func (di *DatabaseImpl) FileWrite(relpath string, filename string, projectID int
 // FileDelete deletes the file with the given metadata from the file system
 // Couple this with dbfs.MySQLFileDelete and dbfs.CBDeleteFile
 func (di *DatabaseImpl) FileDelete(relpath string, filename string, projectID int64) error {
-	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (di *DatabaseImpl) FileDelete(relpath string, filename string, projectID in
 
 // FileRead returns the project file from the calculated location on the disk
 func (di *DatabaseImpl) FileRead(relpath string, filename string, projectID int64) (*[]byte, error) {
-	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return new([]byte), err
 	}
@@ -59,11 +59,11 @@ func (di *DatabaseImpl) FileRead(relpath string, filename string, projectID int6
 
 // FileMove moves a file form the starting path to the end path
 func (di *DatabaseImpl) FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error {
-	startRelFilePath, err := calculateFilePath(startRelpath, startFilename, projectID)
+	startRelFilePath, err := di.calculateFilePath(startRelpath, startFilename, projectID)
 	if err != nil {
 		return err
 	}
-	endRelFilePath, err := calculateFilePath(endRelpath, endFilename, projectID)
+	endRelFilePath, err := di.calculateFilePath(endRelpath, endFilename, projectID)
 	if err != nil {
 		return err
 	}
@@ -81,12 +81,12 @@ func (di *DatabaseImpl) FileMove(startRelpath string, startFilename string, endR
 
 // returns the swap file path and any error
 func (di *DatabaseImpl) makeSwp(relpath string, filename string, projectID int64) ([]byte, error) {
-	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return []byte{}, err
 	}
 	fileLocation := filepath.Join(relFilePath, filename)
-	swapLoc := getSwpLocation(fileLocation)
+	swapLoc := di.getSwpLocation(fileLocation)
 
 	err = di.fileCopy(fileLocation, swapLoc)
 	if err != nil {
@@ -97,38 +97,50 @@ func (di *DatabaseImpl) makeSwp(relpath string, filename string, projectID int64
 	return fileBytes, err
 }
 
+// swapRead returns the swap file from the calculated location on the disk
+func (di *DatabaseImpl) swapRead(relpath string, filename string, projectID int64) (*[]byte, error) {
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
+	if err != nil {
+		return new([]byte), err
+	}
+	fileLocation := filepath.Join(relFilePath, filename)
+	swapLocation := di.getSwpLocation(fileLocation)
+	fileBytes, err := ioutil.ReadFile(swapLocation)
+	return &fileBytes, err
+}
+
 // FileWriteToSwap writes the swapfile for the file with the given info
 func (di *DatabaseImpl) FileWriteToSwap(relpath string, filename string, projectID int64, raw []byte) error {
-	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return err
 	}
 	fileLocation := filepath.Join(relFilePath, filename)
-	swapLoc := getSwpLocation(fileLocation)
+	swapLoc := di.getSwpLocation(fileLocation)
 
 	return ioutil.WriteFile(swapLoc, raw, 0744)
 }
 
 // returns any error
 func (di *DatabaseImpl) deleteSwp(relpath string, filename string, projectID int64) error {
-	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return err
 	}
 	fileLocation := filepath.Join(relFilePath, filename)
-	swapLoc := getSwpLocation(fileLocation)
+	swapLoc := di.getSwpLocation(fileLocation)
 
 	return os.Remove(swapLoc)
 }
 
 // swaps the swapfile to the location of the real file
 func (di *DatabaseImpl) swapSwp(relpath string, filename string, projectID int64) error {
-	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {
 		return err
 	}
 	fileLocation := filepath.Join(relFilePath, filename)
-	swapLoc := getSwpLocation(fileLocation)
+	swapLoc := di.getSwpLocation(fileLocation)
 
 	err = di.fileCopy(swapLoc, fileLocation)
 	return err
@@ -170,7 +182,7 @@ func (di *DatabaseImpl) fileCopy(src string, dst string) error {
 	return out.Sync()
 }
 
-func calculateFilePath(relpath string, filename string, projectID int64) (string, error) {
+func (di *DatabaseImpl) calculateFilePath(relpath string, filename string, projectID int64) (string, error) {
 	if strings.Contains(filename, filePathSeparator) {
 		return "", ErrMaliciousRequest
 	}
@@ -183,6 +195,6 @@ func calculateFilePath(relpath string, filename string, projectID int64) (string
 	return filepath.Join(projectFolderParentPath, strconv.FormatInt(projectID, 10), cleanPath), nil
 }
 
-func getSwpLocation(filepath string) string {
+func (di *DatabaseImpl) getSwpLocation(filepath string) string {
 	return filepath + ".swp"
 }
