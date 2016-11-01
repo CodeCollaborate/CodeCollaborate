@@ -112,6 +112,7 @@ func (di *DatabaseImpl) DeleteForScrunching(fileID int64, num int) error {
 		builder = builder.Upsert("tempchanges", []string{}, false)
 		builder = builder.Upsert("pullswp", false, false)
 		builder.Execute()
+		di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 		return err
 	}
 	err = di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)

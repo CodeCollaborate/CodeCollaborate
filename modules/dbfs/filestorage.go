@@ -131,10 +131,7 @@ func (di *DatabaseImpl) swapSwp(relpath string, filename string, projectID int64
 	swapLoc := getSwpLocation(fileLocation)
 
 	err = di.fileCopy(swapLoc, fileLocation)
-	if err != nil {
-		return err
-	}
-	return os.Remove(swapLoc)
+	return err
 }
 
 func (di *DatabaseImpl) fileCopy(src string, dst string) error {
