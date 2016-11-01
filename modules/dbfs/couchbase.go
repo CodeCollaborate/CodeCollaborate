@@ -14,11 +14,13 @@ type couchbaseConn struct {
 }
 
 type cbFile struct {
-	FileID      int64    `json:"-"`
-	Version     int64    `json:"version"`
-	Changes     []string `json:"changes"`
-	TempChanges []string `json:"tempchanges"`
-	UseTemp     bool     `json:"usetemp"`
+	FileID           int64    `json:"-"`
+	Version          int64    `json:"version"`
+	Changes          []string `json:"changes"`
+	TempChanges      []string `json:"tempchanges"`
+	RemainingChanges []string `json:"remaining_changes"`
+	UseTemp          bool     `json:"usetemp"`
+	PullSwp          bool     `json:"pullswp"`
 }
 
 func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
@@ -86,11 +88,13 @@ func (di *DatabaseImpl) cbInsertNewFile(file cbFile) error {
 // CBInsertNewFile inserts a new document with the given arguments
 func (di *DatabaseImpl) CBInsertNewFile(fileID int64, version int64, changes []string) error {
 	return di.cbInsertNewFile(cbFile{
-		FileID:      fileID,
-		Version:     version,
-		Changes:     changes,
-		UseTemp:     false,
-		TempChanges: []string{},
+		FileID:           fileID,
+		Version:          version,
+		Changes:          changes,
+		UseTemp:          false,
+		TempChanges:      []string{},
+		PullSwp:          false,
+		RemainingChanges: []string{},
 	})
 }
 
@@ -123,27 +127,6 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 	}
 
 	return version, err
-}
-
-// CBGetFileChanges returns the array of file changes for the given fileID
-func (di *DatabaseImpl) CBGetFileChanges(fileID int64) ([]string, error) {
-	cb, err := di.openCouchBase()
-	if err != nil {
-		return []string{}, err
-	}
-
-	file := cbFile{}
-	_, err = cb.bucket.Get(strconv.FormatInt(fileID, 10), &file)
-	if err != nil {
-		return []string{}, err
-	}
-
-	if file.UseTemp {
-		// FIXME: figure out how to pull if it's using the temp queue
-		return []string{}, ErrDbLocked
-	}
-
-	return file.Changes, err
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
@@ -196,99 +179,4 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 		return version, err
 	}
 	return version + 1, err
-}
-
-// CBGetForScrunching gets all but the remainder entries for a file and locks the file object from reading
-func (di *DatabaseImpl) CBGetForScrunching(fileID int64, remainder int) ([]string, error) {
-	cb, err := di.openCouchBase()
-	if err != nil {
-		return []string{}, err
-	}
-
-	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileID, 10)).Get("changes").Execute()
-	if err != nil {
-		return []string{}, ErrResourceNotFound
-	}
-
-	changes := []string{}
-	err = frag.Content("changes", &changes)
-	if err != nil {
-		return []string{}, ErrResourceNotFound
-	}
-
-	if len(changes)-remainder+1 > 0 {
-		return []string{}, ErrNoDbChange
-	}
-
-	return changes[0 : len(changes)-remainder], nil
-}
-
-// CBDeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` pessimistic-ly
-func (di *DatabaseImpl) CBDeleteForScrunching(fileID int64, num int) error {
-	cb, err := di.openCouchBase()
-	if err != nil {
-		return err
-	}
-
-	key := strconv.FormatInt(fileID, 10)
-
-	// turn on writing to TempChanges
-	builder := cb.bucket.MutateIn(key, 0, 0)
-	builder = builder.Upsert("tempchanges", []string{}, false)
-	builder = builder.Upsert("usetemp", true, false)
-	_, err = builder.Execute()
-	if err != nil {
-		return err
-	}
-
-	// get changes in normal changes
-	frag, err := cb.bucket.LookupIn(key).Get("changes").Execute()
-	if err != nil {
-		return err
-	}
-
-	changes := []string{}
-	err = frag.Content("changes", &changes)
-	if err != nil {
-		return ErrResourceNotFound
-	}
-
-	// turn off writing to TempChanges & reset normal changes
-	builder = cb.bucket.MutateIn(key, 0, 0)
-	builder = builder.Upsert("changes", []string{}, false)
-	builder = builder.Upsert("usetemp", false, false)
-	_, err = builder.Execute()
-	if err != nil {
-		return err
-	}
-
-	// get changes in TempChanges
-	frag, err = cb.bucket.LookupIn(key).Get("tempchanges").Execute()
-	if err != nil {
-		return err
-	}
-
-	tempChanges := []string{}
-	err = frag.Content("tempchanges", &tempChanges)
-	if err != nil {
-		return ErrResourceNotFound
-	}
-
-	// prepend temp changes
-	builder = cb.bucket.MutateIn(key, 0, 0)
-	builder.ArrayPrependMulti("changes", tempChanges, false)
-	_, err = builder.Execute()
-	if err != nil {
-		return err
-	}
-
-	// prepend normal changes (minus scrunched items)
-	builder = cb.bucket.MutateIn(key, 0, 0)
-	builder.ArrayPrependMulti("changes", changes[num:], false)
-	_, err = builder.Execute()
-	if err != nil {
-		return err
-	}
-
-	return err
 }

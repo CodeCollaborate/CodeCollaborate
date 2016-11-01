@@ -378,16 +378,7 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
-	rawFile, err := db.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
-	}
-
-	changes, err := db.CBGetFileChanges(f.FileID)
-	if err == dbfs.ErrDbLocked {
-		// FIXME: figure out this case inside db.CBGetFileChanges
-	}
-
+	rawFile, changes, err := db.PullFile(fileMeta)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/stretchr/testify/assert"
 )
 
 var geneMeta = dbfs.UserMeta{
@@ -41,9 +42,7 @@ func TestFileCreateRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 3 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -94,9 +93,7 @@ func TestFileRenameRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -153,9 +150,7 @@ func TestFileMoveRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -211,9 +206,7 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 4 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 5, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -269,9 +262,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -320,9 +311,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
@@ -345,8 +334,10 @@ func TestFilePullRequest_Process(t *testing.T) {
 
 	db := dbfs.NewDBMock()
 	db.MySQLUserRegister(geneMeta)
-	projectid, err := db.MySQLProjectCreate("loganga", "hi")
-	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
+	projectID, err := db.MySQLProjectCreate("loganga", "hi")
+	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectID)
+	db.FileWrite("./", "new file", projectID, []byte{})
+
 	changes := []string{"hi"}
 	db.CBAppendFileChange(fileid, 1, changes)
 

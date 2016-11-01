@@ -25,9 +25,6 @@ var ErrDbNotInitialized = errors.New("The database was not propperly initialized
 // ErrMaliciousRequest : The request attempted to directly tamper with our filesystem / database
 var ErrMaliciousRequest = errors.New("The request attempted to directly tamper with our filesystem / database")
 
-// ErrDbLocked : The requested database entry is temporarily locked for writing
-var ErrDbLocked = errors.New("The requested entry is temporarily locked")
-
 // ProjectPermission is the type which represents the permission relationship on projects
 type ProjectPermission struct {
 	Username        string

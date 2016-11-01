@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"errors"
+	"io"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 )
 
@@ -76,6 +79,100 @@ func (di *DatabaseImpl) FileMove(startRelpath string, startFilename string, endR
 	return err
 }
 
+// returns the swap file path and any error
+func (di *DatabaseImpl) makeSwp(relpath string, filename string, projectID int64) ([]byte, error) {
+	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	if err != nil {
+		return []byte{}, err
+	}
+	fileLocation := filepath.Join(relFilePath, filename)
+	swapLoc := getSwpLocation(fileLocation)
+
+	err = di.fileCopy(fileLocation, swapLoc)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	fileBytes, err := ioutil.ReadFile(swapLoc)
+	return fileBytes, err
+}
+
+// FileWriteToSwap writes the swapfile for the file with the given info
+func (di *DatabaseImpl) FileWriteToSwap(relpath string, filename string, projectID int64, raw []byte) error {
+	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	if err != nil {
+		return err
+	}
+	fileLocation := filepath.Join(relFilePath, filename)
+	swapLoc := getSwpLocation(fileLocation)
+
+	return ioutil.WriteFile(swapLoc, raw, 0744)
+}
+
+// returns any error
+func (di *DatabaseImpl) deleteSwp(relpath string, filename string, projectID int64) error {
+	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	if err != nil {
+		return err
+	}
+	fileLocation := filepath.Join(relFilePath, filename)
+	swapLoc := getSwpLocation(fileLocation)
+
+	return os.Remove(swapLoc)
+}
+
+// swaps the swapfile to the location of the real file
+func (di *DatabaseImpl) swapSwp(relpath string, filename string, projectID int64) error {
+	relFilePath, err := calculateFilePath(relpath, filename, projectID)
+	if err != nil {
+		return err
+	}
+	fileLocation := filepath.Join(relFilePath, filename)
+	swapLoc := getSwpLocation(fileLocation)
+
+	err = di.fileCopy(swapLoc, fileLocation)
+	if err != nil {
+		return err
+	}
+	return os.Remove(swapLoc)
+}
+
+func (di *DatabaseImpl) fileCopy(src string, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !srcInfo.Mode().IsRegular() {
+		return errors.New("non-regular source file cannot be copied")
+	}
+	_, err = os.Stat(dst)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			err = os.Remove(dst)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	if _, err = io.Copy(out, in); err != nil {
+		return err
+	}
+	return out.Sync()
+}
+
 func calculateFilePath(relpath string, filename string, projectID int64) (string, error) {
 	if strings.Contains(filename, filePathSeparator) {
 		return "", ErrMaliciousRequest
@@ -87,4 +184,8 @@ func calculateFilePath(relpath string, filename string, projectID int64) (string
 
 	projectFolderParentPath := config.GetConfig().ServerConfig.ProjectPath
 	return filepath.Join(projectFolderParentPath, strconv.FormatInt(projectID, 10), cleanPath), nil
+}
+
+func getSwpLocation(filepath string) string {
+	return filepath + ".swp"
 }

@@ -16,15 +16,14 @@ type DatabaseMock struct {
 	Projects map[string]([]ProjectMeta)
 	Files    map[int64]([]FileMeta)
 
-	FileVersion     map[int64]int64
-	FileChanges     map[int64][]string
-	FileReadLocked  map[int64]bool
-	FileWriteLocked map[int64]bool
+	FileVersion map[int64]int64
+	FileChanges map[int64][]string
 
 	ProjectIDCounter int64
 	FileIDCounter    int64
 
 	File *[]byte
+	Swp  *[]byte
 
 	// FunctionCallCount is the tracker of how many db functions are called
 	FunctionCallCount int
@@ -71,47 +70,47 @@ func (dm *DatabaseMock) CBGetFileVersion(fileID int64) (int64, error) {
 	return dm.FileVersion[fileID], nil
 }
 
-// CBGetFileChanges is a mock of the real implementation
-func (dm *DatabaseMock) CBGetFileChanges(fileID int64) ([]string, error) {
+// GetForScrunching gets all but the remainder entries for a file and creates a temp swp file.
+// Returns the changes for scrunching, location of the swap file, and any errors
+func (dm *DatabaseMock) GetForScrunching(fileID int64, remainder int) ([]string, []byte, error) {
 	dm.FunctionCallCount++
-	if lock, ok := dm.FileReadLocked[fileID]; ok && lock {
-		return []string{}, ErrDbLocked
+	changes := dm.FileChanges[fileID]
+	dm.Swp = new([]byte)
+	return changes[0 : len(changes)-remainder], *dm.Swp, nil
+}
+
+// DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
+// swp file
+func (dm *DatabaseMock) DeleteForScrunching(fileID int64, num int) error {
+	dm.FunctionCallCount++
+	dm.File = dm.Swp
+	dm.Swp = nil
+	dm.FileChanges[fileID] = dm.FileChanges[fileID][num:]
+	return nil
+}
+
+// PullFile pulls the changes and the file bytes from the databases
+func (dm *DatabaseMock) PullFile(meta FileMeta) (*[]byte, []string, error) {
+	dm.FunctionCallCount++
+	changes := dm.FileChanges[meta.FileID]
+	if dm.File == nil {
+		return new([]byte), []string{}, ErrNoData
 	}
-	return dm.FileChanges[fileID], nil
+	return dm.File, changes, nil
 }
 
 // CBAppendFileChange is a mock of the real implementation
 func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
 	dm.FunctionCallCount++
-	if lock, ok := dm.FileWriteLocked[fileID]; ok && lock {
-		return -1, ErrDbLocked
-	}
-
 	if dm.FileVersion[fileID] > baseVersion {
 		return -1, ErrVersionOutOfDate
 	}
 	dm.FileVersion[fileID]++
-	for _, change := range changes {
-		dm.FileChanges[fileID] = append(dm.FileChanges[fileID], change)
-	}
+
+	newChanges := append(dm.FileChanges[fileID], changes...)
+	dm.FileChanges[fileID] = newChanges
+
 	return dm.FileVersion[fileID], nil
-}
-
-// CBGetForScrunching gets all but the remainder entries for a file and locks the file object from reading
-func (dm *DatabaseMock) CBGetForScrunching(fileID int64, remainder int) ([]string, error) {
-	dm.FunctionCallCount++
-	changes := dm.FileChanges[fileID]
-	return changes[0 : len(changes)-remainder], nil
-}
-
-// CBDeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` pessimistic-ly
-func (dm *DatabaseMock) CBDeleteForScrunching(fileID int64, num int) error {
-	dm.FunctionCallCount++
-	// FIXME: reflect whatever we do in the impl
-	//dm.FileWriteLocked[fileID] = true
-	dm.FileChanges[fileID] = dm.FileChanges[fileID][num:]
-	//dm.FileWriteLocked[fileID] = false
-	return nil
 }
 
 // mysql
@@ -300,6 +299,7 @@ func (dm *DatabaseMock) MySQLProjectRevokePermission(projectID int64, revokeUser
 
 // MySQLUserProjectPermissionLookup returns the permission level of `username` on the project with the given projectID
 func (dm *DatabaseMock) MySQLUserProjectPermissionLookup(projectID int64, username string) (int8, error) {
+	dm.FunctionCallCount++
 	for _, proj := range dm.Projects[username] {
 		if proj.ProjectID == projectID {
 			return proj.PermissionLevel, nil
@@ -455,5 +455,14 @@ func (dm *DatabaseMock) FileRead(relpath string, filename string, projectID int6
 
 // FileMove moves a file form the starting path to the end path
 func (dm *DatabaseMock) FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error {
+	dm.FunctionCallCount++
+	// we only keep track of one file anyway
+	return nil
+}
+
+// FileWriteToSwap writes the swapfile for the file with the given info
+func (dm *DatabaseMock) FileWriteToSwap(relpath string, filename string, projectID int64, raw []byte) error {
+	dm.FunctionCallCount++
+	dm.Swp = &raw
 	return nil
 }

@@ -99,9 +99,7 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 1 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -184,9 +182,7 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 1 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 3 ||
@@ -248,9 +244,7 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 1 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 4 {
@@ -335,9 +329,7 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != len(req.ProjectIDs) {
-		t.Fatalf("did not call correct number of db functions, expected: %d, actual: %d", len(req.ProjectIDs), db.FunctionCallCount)
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
@@ -388,10 +380,7 @@ func TestProjectGetFilesRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	// NOTE: 4 comes from 1 db.MySQLProjectGetFiles + 3 db.CBGetFileVersion
-	if db.FunctionCallCount != 4 {
-		t.Fatalf("did not call correct number of db functions, expected: %d, actual: %d", 4, db.FunctionCallCount)
-	}
+	assert.Equal(t, 5, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
@@ -501,9 +490,7 @@ func TestProjectDeleteRequest_process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 1 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
