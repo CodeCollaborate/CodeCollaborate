@@ -365,14 +365,11 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			continue
 		}
 
-		name, permissions, err := db.MySQLProjectLookup(id, p.SenderID)
+		lookupResult, err := projectLookup(p.SenderID, id, db)
 		if err != nil {
 			errOut = err
 		} else {
-			resultData[i] = projectLookupResult{
-				ProjectID:   id,
-				Name:        name,
-				Permissions: permissions}
+			resultData[i] = lookupResult
 			i++
 		}
 	}
@@ -415,6 +412,24 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}.Wrap()
 
 	return []dhClosure{toSenderClosure{msg: res}}, nil
+}
+
+func projectLookup(senderID string, projectID int64, db dbfs.DBFS) (projectLookupResult, error) {
+	var result projectLookupResult
+
+	name, permissions, err := db.MySQLProjectLookup(projectID, senderID)
+
+	if err != nil {
+		return result, err
+	}
+
+	result = projectLookupResult{
+		ProjectID:   projectID,
+		Name:        name,
+		Permissions: permissions,
+	}
+
+	return result, nil
 }
 
 func (p *projectLookupRequest) setAbstractRequest(req *abstractRequest) {

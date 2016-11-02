@@ -4,6 +4,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -228,29 +229,52 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	projects, err := db.MySQLUserProjects(f.SenderID)
-	if err != nil {
+	var errOut error
+	projects, errOut := db.MySQLUserProjects(f.SenderID)
+
+	resultData := make([]projectLookupResult, len(projects))
+
+	i := 0
+	for _, project := range projects {
+		lookupResult, err := projectLookup(f.SenderID, project.ProjectID, db)
+
+		if err != nil {
+			utils.LogError("Project lookup error", err, utils.LogFields{
+				"Resource":  f.Resource,
+				"Method":    f.Method,
+				"SenderID":  f.SenderID,
+				"ProjectID": project.ProjectID,
+			})
+			errOut = err
+		} else {
+			resultData[i] = lookupResult
+			i++
+		}
+	}
+	resultData = resultData[:i]
+
+	if errOut != nil {
 		res := messages.Response{
 			Status: messages.StatusPartialfail,
 			Tag:    f.Tag,
 			Data: struct {
-				Projects []dbfs.ProjectMeta
+				Projects []projectLookupResult
 			}{
-				Projects: projects,
+				Projects: resultData,
 			},
 		}.Wrap()
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		return []dhClosure{toSenderClosure{msg: res}}, errOut
 	}
 
 	res := messages.Response{
 		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
-			Projects []dbfs.ProjectMeta
+			Projects []projectLookupResult
 		}{
-			Projects: projects,
+			Projects: resultData,
 		},
 	}.Wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}}, err
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }
