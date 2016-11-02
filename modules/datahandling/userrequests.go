@@ -229,22 +229,11 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
-	projects, err := db.MySQLUserProjects(f.SenderID)
-	if err != nil {
-		res := messages.Response{
-			Status: messages.StatusPartialfail,
-			Tag:    f.Tag,
-			Data: struct {
-				Projects []projectLookupResult
-			}{
-				Projects: []projectLookupResult{},
-			},
-		}.Wrap()
-		return []dhClosure{toSenderClosure{msg: res}}, err
-	}
+	var errOut error
+	projects, errOut := db.MySQLUserProjects(f.SenderID)
 
 	resultData := make([]projectLookupResult, len(projects))
-	var errOut error
+
 	i := 0
 	for _, project := range projects {
 		lookupResult, err := projectLookup(f.SenderID, project.ProjectID, db)
@@ -274,7 +263,7 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				Projects: resultData,
 			},
 		}.Wrap()
-		return []dhClosure{toSenderClosure{msg: res}}, err
+		return []dhClosure{toSenderClosure{msg: res}}, errOut
 	}
 
 	res := messages.Response{
@@ -287,5 +276,5 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.Wrap()
 
-	return []dhClosure{toSenderClosure{msg: res}}, err
+	return []dhClosure{toSenderClosure{msg: res}}, nil
 }

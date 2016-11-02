@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/stretchr/testify/assert"
@@ -229,8 +230,13 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 		t.Fatal("Incorrect user was returned")
 	}
 
+	writePerm, err := config.PermissionByLabel("write")
+	assert.Nil(t, err, "did not get permission")
+
 	// add gene to a new project and see if the process function updates as expected
-	db.MySQLProjectGrantPermission(notgenesproject.ProjectID, "loganga", 5, "notloganga")
+	err = db.MySQLProjectGrantPermission(notgenesproject.ProjectID, "loganga", writePerm.Level, "notloganga")
+	assert.Nil(t, err, "couldn't grant project permission")
+
 	db.FunctionCallCount = 0
 
 	closures, err = req.process(db)
@@ -254,8 +260,15 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 	if len(projects) != 2 && projects[0].ProjectID != genesproject.ProjectID && projects[1].ProjectID != notgenesproject.ProjectID {
 		t.Fatal("Incorrect user was returned")
 	}
+
+	assert.Len(t, projects[1].Permissions, 2, "incorrect number of permissions returned")
+
 	// check to see if permission map is correct
-	if projects[1].Permissions[gene.Username].PermissionLevel != 5 {
+	if projects[1].Permissions[gene.Username].PermissionLevel != writePerm.Level {
 		t.Fatal("Permission map was not returned correctly in lookup")
 	}
+
+	ownerPerm, err := config.PermissionByLabel("owner")
+	assert.Nil(t, err, "did not get permission")
+	assert.Equal(t, ownerPerm.Level, projects[1].Permissions[notgene.Username].PermissionLevel, "not all permissions returned for project")
 }
