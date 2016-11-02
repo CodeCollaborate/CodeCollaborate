@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/stretchr/testify/assert"
@@ -208,7 +209,7 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 1 {
+	if db.FunctionCallCount != 2 {
 		t.Fatalf("did not call correct number of db functions, called %d # of arguments", db.FunctionCallCount)
 	}
 
@@ -224,13 +225,18 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 	// is the data actually correct
-	projects := reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]dbfs.ProjectMeta)
-	if len(projects) != 1 && projects[0] != genesproject {
+	projects := reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]projectLookupResult)
+	if len(projects) != 1 && projects[0].ProjectID != genesproject.ProjectID {
 		t.Fatal("Incorrect user was returned")
 	}
 
+	writePerm, err := config.PermissionByLabel("write")
+	assert.Nil(t, err, "did not get permission")
+
 	// add gene to a new project and see if the process function updates as expected
-	db.MySQLProjectGrantPermission(notgenesproject.ProjectID, "loganga", 5, "notloganga")
+	err = db.MySQLProjectGrantPermission(notgenesproject.ProjectID, "loganga", writePerm.Level, "notloganga")
+	assert.Nil(t, err, "couldn't grant project permission")
+
 	db.FunctionCallCount = 0
 
 	closures, err = req.process(db)
@@ -250,8 +256,19 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", resp.Status)
 	}
 	// is the data actually correct
-	projects = reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]dbfs.ProjectMeta)
-	if len(projects) != 2 && projects[0] != genesproject && projects[1] != notgenesproject {
+	projects = reflect.ValueOf(resp.Data).FieldByName("Projects").Interface().([]projectLookupResult)
+	if len(projects) != 2 && projects[0].ProjectID != genesproject.ProjectID && projects[1].ProjectID != notgenesproject.ProjectID {
 		t.Fatal("Incorrect user was returned")
 	}
+
+	assert.Len(t, projects[1].Permissions, 2, "incorrect number of permissions returned")
+
+	// check to see if permission map is correct
+	if projects[1].Permissions[gene.Username].PermissionLevel != writePerm.Level {
+		t.Fatal("Permission map was not returned correctly in lookup")
+	}
+
+	ownerPerm, err := config.PermissionByLabel("owner")
+	assert.Nil(t, err, "did not get permission")
+	assert.Equal(t, ownerPerm.Level, projects[1].Permissions[notgene.Username].PermissionLevel, "not all permissions returned for project")
 }
