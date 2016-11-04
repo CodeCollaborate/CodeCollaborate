@@ -24,7 +24,7 @@ func initUserRequests() {
 		return commonJSON(new(userLoginRequest), req)
 	}
 
-	unauthenticatedRequestMap["User.Delete"] = func(req *abstractRequest) (request, error) {
+	authenticatedRequestMap["User.Delete"] = func(req *abstractRequest) (request, error) {
 		return commonJSON(new(userDeleteRequest), req)
 	}
 
