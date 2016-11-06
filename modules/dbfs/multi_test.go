@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"bytes"
+	"fmt"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/stretchr/testify/assert"
-	"fmt"
-	"bytes"
 )
 
 var defaultBaseFile = "this is a very important file"
@@ -59,15 +60,15 @@ func TestDatabaseImpl_ScrunchFile(t *testing.T) {
 
 	for i := 0; i < 50; i++ {
 		if i < 10 {
-			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d", i + 1, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d", i+1, i)
 		} else {
-			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d", i + 1, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d", i+1, i)
 		}
 	}
 
 	expectedOutput.WriteString("te")
 	for i := len(patches) - minBufferLength - 1; i >= 0; i-- {
-		if i < len(patches) - minBufferLength {
+		if i < len(patches)-minBufferLength {
 			expectedOutput.WriteString(fmt.Sprintf("%d", i))
 		}
 	}

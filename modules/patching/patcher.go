@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-// PatchText applies the provided patches onto the given text. The patches are applied strictly in the order given.
+// PatchTextFromString applies the provided patches onto the given text. The patches are applied strictly in the order given.
 // This method completes in O(n*m) time, where n is the base text length, and m is the number of patches.
-func BuildAndPatchText(text string, patchesStr []string) (string, error) {
+func PatchTextFromString(text string, patchesStr []string) (string, error) {
 	patches := make([]*Patch, len(patchesStr))
 	for i, patch := range patchesStr {
 		patch, err := NewPatchFromString(patch)

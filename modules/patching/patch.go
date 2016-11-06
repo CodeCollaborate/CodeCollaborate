@@ -31,7 +31,7 @@ func NewPatchFromString(str string) (*Patch, error) {
 	patch := Patch{}
 
 	parts := strings.Split(str, ":\n")
-	if len(parts) < 2{
+	if len(parts) < 2 {
 		return nil, errors.New("Invalid patch format")
 	}
 

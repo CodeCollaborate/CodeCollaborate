@@ -4,8 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/CodeCollaborate/Server/modules/config"
 	"fmt"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
 )
 
@@ -85,7 +86,7 @@ func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
 			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
 		}
 
-		result, err := patching.BuildAndPatchText(string(baseFile), changes)
+		result, err := patching.PatchTextFromString(string(baseFile), changes)
 		if err != nil {
 			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
 		}

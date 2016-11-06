@@ -3,14 +3,17 @@ package dbfs
 import (
 	"strconv"
 
-	"github.com/CodeCollaborate/Server/utils"
-	"github.com/CodeCollaborate/Server/modules/patching"
 	"fmt"
+
+	"github.com/CodeCollaborate/Server/modules/patching"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var minBufferLength = 50
 var maxBufferLength = minBufferLength * 10
 
+// ScrunchFile scrunches all but the last minBufferLength items into the file on disk
+// It then removes the changes from Couchbase
 func (di *DatabaseImpl) ScrunchFile(meta FileMeta) error {
 	_, changes, err := di.PullFile(meta)
 	if err != nil {
@@ -22,7 +25,7 @@ func (di *DatabaseImpl) ScrunchFile(meta FileMeta) error {
 			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
 		}
 
-		result, err := patching.BuildAndPatchText(string(baseFile), changes)
+		result, err := patching.PatchTextFromString(string(baseFile), changes)
 		if err != nil {
 			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
 		}
@@ -55,13 +58,13 @@ func (di *DatabaseImpl) getForScrunching(fileMeta FileMeta, remainder int) ([]st
 		return []string{}, []byte{}, ErrResourceNotFound
 	}
 
-	if len(changes) - (remainder + 1) < 0 {
+	if len(changes)-(remainder+1) < 0 {
 		return []string{}, []byte{}, ErrNoDbChange
 	}
 
 	swp, err := di.makeSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 
-	return changes[0 : len(changes) - remainder], swp, err
+	return changes[0 : len(changes)-remainder], swp, err
 }
 
 // DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
