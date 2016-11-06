@@ -110,12 +110,12 @@ func (di *DatabaseImpl) swapRead(relpath string, filename string, projectID int6
 }
 
 // FileWriteToSwap writes the swapfile for the file with the given info
-func (di *DatabaseImpl) FileWriteToSwap(relpath string, filename string, projectID int64, raw []byte) error {
-	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
+func (di *DatabaseImpl) FileWriteToSwap(meta FileMeta, raw []byte) error {
+	relFilePath, err := di.calculateFilePath(meta.RelativePath, meta.Filename, meta.ProjectID)
 	if err != nil {
 		return err
 	}
-	fileLocation := filepath.Join(relFilePath, filename)
+	fileLocation := filepath.Join(relFilePath, meta.Filename)
 	swapLoc := di.getSwpLocation(fileLocation)
 
 	return ioutil.WriteFile(swapLoc, raw, 0744)

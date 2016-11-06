@@ -348,6 +348,11 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		},
 	}.Wrap()
 
+	// Trigger scrunching if longer than maxBufferLength
+	go func() {
+		db.ScrunchFile(fileMeta)
+	}()
+
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
 

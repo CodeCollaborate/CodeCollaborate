@@ -7,6 +7,21 @@ import (
 
 // PatchText applies the provided patches onto the given text. The patches are applied strictly in the order given.
 // This method completes in O(n*m) time, where n is the base text length, and m is the number of patches.
+func BuildAndPatchText(text string, patchesStr []string) (string, error) {
+	patches := make([]*Patch, len(patchesStr))
+	for i, patch := range patchesStr {
+		patch, err := NewPatchFromString(patch)
+		if err != nil {
+			return "", err
+		}
+		patches[i] = patch
+	}
+
+	return PatchText(text, patches)
+}
+
+// PatchText applies the provided patches onto the given text. The patches are applied strictly in the order given.
+// This method completes in O(n*m) time, where n is the base text length, and m is the number of patches.
 func PatchText(text string, patches []*Patch) (string, error) {
 	for _, patch := range patches {
 		var buffer bytes.Buffer

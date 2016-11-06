@@ -4,11 +4,41 @@ import (
 	"strconv"
 
 	"github.com/CodeCollaborate/Server/utils"
+	"github.com/CodeCollaborate/Server/modules/patching"
+	"fmt"
 )
+
+var minBufferLength = 50
+var maxBufferLength = minBufferLength * 10
+
+func (di *DatabaseImpl) ScrunchFile(meta FileMeta) error {
+	_, changes, err := di.PullFile(meta)
+	if err != nil {
+		return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
+	}
+	if len(changes) > maxBufferLength {
+		changes, baseFile, err := di.getForScrunching(meta, minBufferLength)
+		if err != nil {
+			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
+		}
+
+		result, err := patching.BuildAndPatchText(string(baseFile), changes)
+		if err != nil {
+			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
+		}
+		if err := di.FileWriteToSwap(meta, []byte(result)); err != nil {
+			return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
+		}
+		if err := di.deleteForScrunching(meta, len(changes)); err != nil {
+			return fmt.Errorf("Scrunching - Failed to removed scrunched changes: %v", err)
+		}
+	}
+	return nil
+}
 
 // GetForScrunching gets all but the remainder entries for a file and creates a temp swp file
 // returns the changes for scrunching, the swap file contents, and any errors
-func (di *DatabaseImpl) GetForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
+func (di *DatabaseImpl) getForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return []string{}, []byte{}, err
@@ -25,18 +55,18 @@ func (di *DatabaseImpl) GetForScrunching(fileMeta FileMeta, remainder int) ([]st
 		return []string{}, []byte{}, ErrResourceNotFound
 	}
 
-	if len(changes)-(remainder+1) < 0 {
+	if len(changes) - (remainder + 1) < 0 {
 		return []string{}, []byte{}, ErrNoDbChange
 	}
 
 	swp, err := di.makeSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 
-	return changes[0 : len(changes)-remainder], swp, err
+	return changes[0 : len(changes) - remainder], swp, err
 }
 
 // DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
 // swp file
-func (di *DatabaseImpl) DeleteForScrunching(fileMeta FileMeta, num int) error {
+func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return err

@@ -221,7 +221,7 @@ func TestDatabaseImpl_FileWriteToSwap(t *testing.T) {
 	// test swap write
 	newRawFile := []byte(string(fileText) + "it's a pretty cool file, not going to lie\n")
 
-	err = di.FileWriteToSwap(file.RelativePath, file.Filename, file.ProjectID, newRawFile)
+	err = di.FileWriteToSwap(file, newRawFile)
 	assert.NoError(t, err, "error writing to swap")
 
 	swp, err = di.swapRead(file.RelativePath, file.Filename, file.ProjectID)
@@ -246,7 +246,7 @@ func TestDatabaseImpl_FileSwapSwap(t *testing.T) {
 
 	// test swap write
 	newRawFile := []byte(string(fileText) + "it's a pretty cool file, not going to lie\n")
-	err = di.FileWriteToSwap(file.RelativePath, file.Filename, file.ProjectID, newRawFile)
+	err = di.FileWriteToSwap(file, newRawFile)
 	assert.NoError(t, err, "error writing to swap")
 
 	err = di.swapSwp(file.RelativePath, file.Filename, file.ProjectID)

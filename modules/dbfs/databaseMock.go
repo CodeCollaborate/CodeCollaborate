@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/config"
+	"fmt"
+	"github.com/CodeCollaborate/Server/modules/patching"
 )
 
 // DatabaseMock is a mock used for testing.
@@ -69,9 +71,37 @@ func (dm *DatabaseMock) CBGetFileVersion(fileID int64) (int64, error) {
 	return dm.FileVersion[fileID], nil
 }
 
+// ScrunchFile moves a file form the starting path to the end path
+func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
+	dm.FunctionCallCount++
+
+	_, changes, err := dm.PullFile(meta)
+	if err != nil {
+		return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
+	}
+	if len(changes) > maxBufferLength {
+		changes, baseFile, err := dm.getForScrunching(meta, minBufferLength)
+		if err != nil {
+			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
+		}
+
+		result, err := patching.BuildAndPatchText(string(baseFile), changes)
+		if err != nil {
+			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
+		}
+		if err := dm.FileWriteToSwap(meta, []byte(result)); err != nil {
+			return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
+		}
+		if err := dm.deleteForScrunching(meta, len(changes)); err != nil {
+			return fmt.Errorf("Scrunching - Failed to removed scrunched changes: %v", err)
+		}
+	}
+	return nil
+}
+
 // GetForScrunching gets all but the remainder entries for a file and creates a temp swp file.
 // Returns the changes for scrunching, location of the swap file, and any errors
-func (dm *DatabaseMock) GetForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
+func (dm *DatabaseMock) getForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
 	dm.FunctionCallCount++
 	changes := dm.FileChanges[fileMeta.FileID]
 	dm.Swp = new([]byte)
@@ -80,7 +110,7 @@ func (dm *DatabaseMock) GetForScrunching(fileMeta FileMeta, remainder int) ([]st
 
 // DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
 // swp file
-func (dm *DatabaseMock) DeleteForScrunching(fileMeta FileMeta, num int) error {
+func (dm *DatabaseMock) deleteForScrunching(fileMeta FileMeta, num int) error {
 	dm.FunctionCallCount++
 	dm.File = dm.Swp
 	dm.Swp = nil
@@ -459,7 +489,7 @@ func (dm *DatabaseMock) FileMove(startRelpath string, startFilename string, endR
 }
 
 // FileWriteToSwap writes the swapfile for the file with the given info
-func (dm *DatabaseMock) FileWriteToSwap(relpath string, filename string, projectID int64, raw []byte) error {
+func (dm *DatabaseMock) FileWriteToSwap(meta FileMeta, raw []byte) error {
 	dm.FunctionCallCount++
 	dm.Swp = &raw
 	return nil

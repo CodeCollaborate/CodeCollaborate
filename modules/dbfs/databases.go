@@ -7,18 +7,22 @@ var Dbfs DBFS
 type DBFS interface {
 	// multi
 
-	// GetForScrunching gets all but the remainder entries for a file and creates a temp swp file.
-	// Returns the changes for scrunching, the swap file contents, and any errors
-	GetForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error)
+	// ScrunchFile scrunches the file for the given metadata. All new changes called while scrunching is
+	// in progress are redirected, and merged back when done.
+	ScrunchFile(meta FileMeta) error
 
-	// DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
+	// getForScrunching gets all but the remainder entries for a file and creates a temp swp file.
+	// Returns the changes for scrunching, the swap file contents, and any errors
+	getForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error)
+
+	// deleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
 	// swp file
-	DeleteForScrunching(fileMeta FileMeta, num int) error
+	deleteForScrunching(fileMeta FileMeta, num int) error
 
 	// PullFile pulls the changes and the file bytes from the databases
 	PullFile(meta FileMeta) (*[]byte, []string, error)
 
-	// couchbase
+	// Couchbase
 
 	// CloseCouchbase closes the CouchBase db connection
 	// YOU PROBABLY DON'T NEED TO RUN THIS EVER
@@ -113,5 +117,5 @@ type DBFS interface {
 	FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error
 
 	// FileWriteToSwap writes the swapfile for the file with the given info
-	FileWriteToSwap(relpath string, filename string, projectID int64, raw []byte) error
+	FileWriteToSwap(meta FileMeta, raw []byte) error
 }
