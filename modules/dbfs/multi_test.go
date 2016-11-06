@@ -17,7 +17,7 @@ var defaultBaseFile = "this is a very important file"
 var defaultChanges = []string{"I swear", "I'm not lying"}
 
 func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseImpl, FileMeta) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	file := FileMeta{

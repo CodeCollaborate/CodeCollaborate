@@ -23,7 +23,7 @@ var userTwo = UserMeta{
 	LastName:  "Fahsl"}
 
 func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	my, err := di.getMySQLConn()
@@ -42,7 +42,7 @@ func TestDatabaseImpl_OpenMySQLConn(t *testing.T) {
 }
 
 func TestDatabaseImpl_CloseMySQL(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	_, err := di.getMySQLConn()
@@ -60,7 +60,7 @@ func TestDatabaseImpl_CloseMySQL(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.MySQLUserDelete(userOne.Username)
@@ -76,7 +76,7 @@ func TestDatabaseImpl_MySQLUserRegister(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete(userOne.Username)
 
@@ -97,7 +97,7 @@ func TestDatabaseImpl_MySQLUserGetPass(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserDelete(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete(userOne.Username)
 	di.MySQLUserDelete(userTwo.Username)
@@ -156,7 +156,7 @@ func TestDatabaseImpl_MySQLUserDelete(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete(userOne.Username)
 
@@ -185,7 +185,7 @@ func TestDatabaseImpl_MySQLUserLookup(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 	di.MySQLUserDelete(userOne.Username)
 
@@ -212,7 +212,7 @@ func TestDatabaseImpl_MySQLUserProjects(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -244,7 +244,7 @@ func TestDatabaseImpl_MySQLProjectCreate(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -279,7 +279,7 @@ func TestDatabaseImpl_MySQLProjectDelete(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -313,7 +313,7 @@ func TestDatabaseImpl_MySQLProjectGetFiles(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	err := di.MySQLUserRegister(userOne)
@@ -360,7 +360,7 @@ func TestDatabaseImpl_MySQLProjectGrantPermission(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -415,7 +415,7 @@ func TestDatabaseImpl_MySQLProjectLookup(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -449,7 +449,7 @@ func TestDatabaseImpl_MySQLProjectRevokePermission(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.MySQLUserDelete(userOne.Username)
@@ -488,7 +488,7 @@ func TestDatabaseImpl_MySqlUserProjectPermissionLookup(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.MySQLUserDelete(userOne.Username)
@@ -515,7 +515,7 @@ func TestDatabaseImpl_MySQLProjectRename(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -544,7 +544,7 @@ func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -569,7 +569,7 @@ func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -598,7 +598,7 @@ func TestDatabaseImpl_MySQLFileMove(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)
@@ -627,7 +627,7 @@ func TestDatabaseImpl_MySQLRenameFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_MySQLFileGetInfo(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	erro := di.MySQLUserRegister(userOne)

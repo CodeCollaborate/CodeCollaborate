@@ -8,7 +8,7 @@ import (
 )
 
 func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	cb, err := di.openCouchBase()
@@ -40,7 +40,7 @@ func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
 }
 
 func TestDatabaseImpl_CloseCouchbase(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	db, err := di.openCouchBase()
@@ -58,7 +58,7 @@ func TestDatabaseImpl_CloseCouchbase(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	// ensure it doesn't actually exist
@@ -80,7 +80,7 @@ func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBInsertNewFileByDetails(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(1)
@@ -99,7 +99,7 @@ func TestDatabaseImpl_CBInsertNewFileByDetails(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, UseTemp: false}
@@ -117,7 +117,7 @@ func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBGetFileVersion(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(1)
@@ -137,7 +137,7 @@ func TestDatabaseImpl_CBGetFileVersion(t *testing.T) {
 
 func TestDatabaseImpl_CBGetFileChanges(t *testing.T) {
 	// setup
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	file := FileMeta{
@@ -179,7 +179,7 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 		Filename:     "_test_file_123",
 	}
 
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(file.FileID)

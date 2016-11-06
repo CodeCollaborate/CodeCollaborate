@@ -12,7 +12,7 @@ import (
 )
 
 func TestDatabaseImpl_FileWrite(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
@@ -77,7 +77,7 @@ func TestDatabaseImpl_FileWrite(t *testing.T) {
 }
 
 func TestDatabaseImpl_FileRead(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
@@ -105,7 +105,7 @@ func TestDatabaseImpl_FileRead(t *testing.T) {
 }
 
 func TestDatabaseImpl_FileDelete(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
@@ -135,7 +135,7 @@ func TestDatabaseImpl_FileDelete(t *testing.T) {
 }
 
 func TestDatabaseImpl_FileMove(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
@@ -199,7 +199,7 @@ func setupFileWithSwap(t *testing.T, di *DatabaseImpl) (string, []byte) {
 }
 
 func TestDatabaseImpl_FileWriteToSwap(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
@@ -230,7 +230,7 @@ func TestDatabaseImpl_FileWriteToSwap(t *testing.T) {
 }
 
 func TestDatabaseImpl_FileSwapSwap(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 
