@@ -79,7 +79,7 @@ func (di *DatabaseImpl) FileMove(startRelpath string, startFilename string, endR
 	return err
 }
 
-// returns the swap file path and any error
+// returns the swap file contents and any error
 func (di *DatabaseImpl) makeSwp(relpath string, filename string, projectID int64) ([]byte, error) {
 	relFilePath, err := di.calculateFilePath(relpath, filename, projectID)
 	if err != nil {

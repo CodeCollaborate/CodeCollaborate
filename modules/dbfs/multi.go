@@ -30,7 +30,7 @@ func (di *DatabaseImpl) GetForScrunching(fileID int64, remainder int) ([]string,
 		return []string{}, []byte{}, ErrResourceNotFound
 	}
 
-	if len(changes)-remainder+1 > 0 {
+	if len(changes)-(remainder+1) < 0 {
 		return []string{}, []byte{}, ErrNoDbChange
 	}
 

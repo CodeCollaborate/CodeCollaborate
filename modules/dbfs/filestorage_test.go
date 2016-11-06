@@ -8,11 +8,14 @@ import (
 	"testing"
 
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDatabaseImpl_FileWrite(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
+
+	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
@@ -77,6 +80,8 @@ func TestDatabaseImpl_FileRead(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
 
+	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
+
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
 
@@ -102,6 +107,8 @@ func TestDatabaseImpl_FileRead(t *testing.T) {
 func TestDatabaseImpl_FileDelete(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
+
+	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
@@ -130,6 +137,8 @@ func TestDatabaseImpl_FileDelete(t *testing.T) {
 func TestDatabaseImpl_FileMove(t *testing.T) {
 	configSetup(t)
 	di := new(DatabaseImpl)
+
+	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 
 	projectParentPath := filepath.Clean(config.GetConfig().ServerConfig.ProjectPath)
 	filepath1 := filepath.Join(projectParentPath, "10", "myFile1.txt")
@@ -164,4 +173,55 @@ func TestDatabaseImpl_FileMove(t *testing.T) {
 		t.Fatal("file was not moved")
 	}
 
+}
+
+func TestDatabaseImpl_FileWriteToSwap(t *testing.T) {
+	configSetup(t)
+	di := new(DatabaseImpl)
+
+	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
+
+	file := FileMeta{
+		FileID:       0,
+		RelativePath: "./",
+		Filename:     "_test_name",
+		ProjectID:    0,
+	}
+
+	fileText := []byte("Hello World!\nWelcome to my file\n")
+
+	filePath, err := di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, fileText)
+	assert.NoError(t, err, "error initially writing file")
+
+	_, err = os.Stat(filePath)
+	assert.False(t, os.IsNotExist(err), "original file does not exist")
+
+	defer os.Remove(filePath)
+
+	// make swap file
+	raw, err := di.makeSwp(file.RelativePath, file.Filename, file.ProjectID)
+	assert.NoError(t, err, "error creating swap file")
+	assert.EqualValues(t, fileText, raw, "swap file and file are not equal")
+
+	// test getSwpLocation (and allow defer-ed deletion)
+	swpLoc := di.getSwpLocation(filePath)
+	_, err = os.Stat(swpLoc)
+	assert.False(t, os.IsNotExist(err), "swap file does not exist")
+
+	defer os.Remove(swpLoc)
+
+	// test swap read
+	swp, err := di.swapRead(file.RelativePath, file.Filename, file.ProjectID)
+	assert.NoError(t, err, "error reading swp file")
+	assert.Equal(t, raw, *swp, "swap incorrectly changed")
+
+	// test swap write
+	newRawFile := []byte(string(fileText) + "it's a pretty cool file, not going to lie\n")
+
+	err = di.FileWriteToSwap(file.RelativePath, file.Filename, file.ProjectID, newRawFile)
+	assert.NoError(t, err, "error writing to swap")
+
+	swp, err = di.swapRead(file.RelativePath, file.Filename, file.ProjectID)
+	assert.NoError(t, err, "error reading swp file")
+	assert.Equal(t, newRawFile, *swp, "swap incorrectly changed")
 }
