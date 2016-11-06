@@ -84,3 +84,7 @@ func TestDatabaseImpl_GetForScrunching(t *testing.T) {
 	err = di.deleteSwp(file.RelativePath, file.Filename, file.ProjectID)
 	assert.NoError(t, err, "error deletig swp file")
 }
+
+// TODO: check delete
+
+// TODO: check mid-delete pulling
