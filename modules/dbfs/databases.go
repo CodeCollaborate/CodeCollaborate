@@ -9,11 +9,11 @@ type DBFS interface {
 
 	// GetForScrunching gets all but the remainder entries for a file and creates a temp swp file.
 	// Returns the changes for scrunching, the swap file contents, and any errors
-	GetForScrunching(fileID int64, remainder int) ([]string, []byte, error)
+	GetForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error)
 
 	// DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
 	// swp file
-	DeleteForScrunching(fileID int64, num int) error
+	DeleteForScrunching(fileMeta FileMeta, num int) error
 
 	// PullFile pulls the changes and the file bytes from the databases
 	PullFile(meta FileMeta) (*[]byte, []string, error)

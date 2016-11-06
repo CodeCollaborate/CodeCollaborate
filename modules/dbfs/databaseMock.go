@@ -71,20 +71,20 @@ func (dm *DatabaseMock) CBGetFileVersion(fileID int64) (int64, error) {
 
 // GetForScrunching gets all but the remainder entries for a file and creates a temp swp file.
 // Returns the changes for scrunching, location of the swap file, and any errors
-func (dm *DatabaseMock) GetForScrunching(fileID int64, remainder int) ([]string, []byte, error) {
+func (dm *DatabaseMock) GetForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
 	dm.FunctionCallCount++
-	changes := dm.FileChanges[fileID]
+	changes := dm.FileChanges[fileMeta.FileID]
 	dm.Swp = new([]byte)
 	return changes[0 : len(changes)-remainder], *dm.Swp, nil
 }
 
 // DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
 // swp file
-func (dm *DatabaseMock) DeleteForScrunching(fileID int64, num int) error {
+func (dm *DatabaseMock) DeleteForScrunching(fileMeta FileMeta, num int) error {
 	dm.FunctionCallCount++
 	dm.File = dm.Swp
 	dm.Swp = nil
-	dm.FileChanges[fileID] = dm.FileChanges[fileID][num:]
+	dm.FileChanges[fileMeta.FileID] = dm.FileChanges[fileMeta.FileID][num:]
 	return nil
 }
 

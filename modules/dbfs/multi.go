@@ -8,18 +8,13 @@ import (
 
 // GetForScrunching gets all but the remainder entries for a file and creates a temp swp file
 // returns the changes for scrunching, the swap file contents, and any errors
-func (di *DatabaseImpl) GetForScrunching(fileID int64, remainder int) ([]string, []byte, error) {
+func (di *DatabaseImpl) GetForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return []string{}, []byte{}, err
 	}
 
-	fileMeta, err := di.MySQLFileGetInfo(fileID)
-	if err != nil {
-		return []string{}, []byte{}, err
-	}
-
-	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileID, 10)).Get("changes").Execute()
+	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileMeta.FileID, 10)).Get("changes").Execute()
 	if err != nil {
 		return []string{}, []byte{}, ErrResourceNotFound
 	}
@@ -41,18 +36,15 @@ func (di *DatabaseImpl) GetForScrunching(fileID int64, remainder int) ([]string,
 
 // DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
 // swp file
-func (di *DatabaseImpl) DeleteForScrunching(fileID int64, num int) error {
+func (di *DatabaseImpl) DeleteForScrunching(fileMeta FileMeta, num int) error {
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return err
 	}
+	// NOTE: the test for this in multi_test.go walks through this logic, ensuring pull works throughout
+	//		 therefore, any changes made here need to be reflected there as well
 
-	fileMeta, err := di.MySQLFileGetInfo(fileID)
-	if err != nil {
-		return err
-	}
-
-	key := strconv.FormatInt(fileID, 10)
+	key := strconv.FormatInt(fileMeta.FileID, 10)
 
 	// turn on writing to TempChanges
 	builder := cb.bucket.MutateIn(key, 0, 0)
@@ -115,14 +107,6 @@ func (di *DatabaseImpl) DeleteForScrunching(fileID int64, num int) error {
 		di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 		return err
 	}
-	err = di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
-	if err != nil {
-		utils.LogError("error deleting swap file", err, utils.LogFields{
-			"Filename":    fileMeta.Filename,
-			"ProjectID":   fileMeta.ProjectID,
-			"File relath": fileMeta.RelativePath,
-		})
-	}
 
 	// prepend changes and reset temporarily stored changes
 	builder = cb.bucket.MutateIn(key, 0, 0)
@@ -131,6 +115,15 @@ func (di *DatabaseImpl) DeleteForScrunching(fileID int64, num int) error {
 	builder = builder.Upsert("tempchanges", []string{}, false)
 	builder = builder.Upsert("pullswp", false, false)
 	_, err = builder.Execute()
+
+	err = di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	if err != nil {
+		utils.LogError("error deleting swap file", err, utils.LogFields{
+			"Filename":    fileMeta.Filename,
+			"ProjectID":   fileMeta.ProjectID,
+			"File relath": fileMeta.RelativePath,
+		})
+	}
 
 	return err
 }
