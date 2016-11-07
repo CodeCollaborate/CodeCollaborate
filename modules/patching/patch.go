@@ -3,6 +3,7 @@ package patching
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -10,7 +11,7 @@ import (
 // Patch represents a set of changes to a versioned document
 type Patch struct {
 	// BaseVersion is the version that this patch was created on.
-	BaseVersion int
+	BaseVersion int64
 
 	// Changes is the list of changes that were applied to the document.
 	// When patching, changes MUST be applied in order.
@@ -18,7 +19,7 @@ type Patch struct {
 }
 
 // NewPatch creates a new patch with the given parameters
-func NewPatch(baseVersion int, changes []*Diff) *Patch {
+func NewPatch(baseVersion int64, changes []*Diff) *Patch {
 	return &Patch{
 		BaseVersion: baseVersion,
 		Changes:     changes,
@@ -38,7 +39,7 @@ func NewPatchFromString(str string) (*Patch, error) {
 	if len(parts[0]) <= 1 {
 		return nil, errors.New("Invalid base version")
 	}
-	patch.BaseVersion, err = strconv.Atoi(string(parts[0][1]))
+	patch.BaseVersion, err = strconv.ParseInt(string(parts[0][1]), 10, 64)
 
 	if err != nil {
 		return nil, err
@@ -96,6 +97,22 @@ func (patch *Patch) Undo() *Patch {
 	return NewPatch(patch.BaseVersion, newChanges)
 }
 
+// TransformFromString does an Operational Transform against the other patches, creating a set
+// of changes relative to previously applied changes.
+func (patch *Patch) TransformFromString(others []string) (*Patch, error) {
+	patches := make([]*Patch, len(others))
+
+	for i, v := range others {
+		patch, err := NewPatchFromString(v)
+		if err != nil {
+			return nil, err
+		}
+		patches[i] = patch
+	}
+
+	return patch.Transform(patches), nil
+}
+
 // Transform does an Operational Transform against the other patches, creating a set
 // of changes relative to previously applied changes.
 func (patch *Patch) Transform(others []*Patch) *Patch {
@@ -122,7 +139,7 @@ func (patch *Patch) String() string {
 	var buffer bytes.Buffer
 
 	buffer.WriteString("v")
-	buffer.WriteString(strconv.Itoa(patch.BaseVersion))
+	buffer.WriteString(fmt.Sprintf("%d", patch.BaseVersion))
 	buffer.WriteString(":\n")
 	buffer.WriteString(patch.Changes[0].String())
 	for _, diff := range patch.Changes[1:] {

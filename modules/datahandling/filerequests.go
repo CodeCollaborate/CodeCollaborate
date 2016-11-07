@@ -313,8 +313,10 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
+	prevChanges, err := db.PullChanges(fileMeta)
+
 	// TODO (normal/required): verify changes are valid changes
-	version, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
+	version, missing, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes, prevChanges)
 	if err != nil {
 		if err == dbfs.ErrVersionOutOfDate {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusVersionOutOfDate, f.Tag)}}, err
@@ -328,9 +330,11 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
-			FileVersion int64
+			FileVersion    int64
+			MissingPatches []string
 		}{
-			FileVersion: version,
+			FileVersion:    version,
+			MissingPatches: missing,
 		},
 	}.Wrap()
 	not := messages.Notification{
@@ -349,9 +353,11 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}.Wrap()
 
 	// Trigger scrunching if longer than maxBufferLength
-	go func() {
-		db.ScrunchFile(fileMeta)
-	}()
+	if len(prevChanges) > dbfs.MaxBufferLength {
+		go func() {
+			db.ScrunchFile(fileMeta)
+		}()
+	}
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }

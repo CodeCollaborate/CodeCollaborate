@@ -9,33 +9,33 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 )
 
-var minBufferLength = 50
-var maxBufferLength = minBufferLength * 10
+// TODO (wongb): Move this to config
+
+// MinBufferLength specifies the minimum number of patches left in the database after scrunching
+var MinBufferLength = 50
+
+// MaxBufferLength specifies the maximum number of patches left in the database before scrunching
+var MaxBufferLength = MinBufferLength * 10
 
 // ScrunchFile scrunches all but the last minBufferLength items into the file on disk
 // It then removes the changes from Couchbase
 func (di *DatabaseImpl) ScrunchFile(meta FileMeta) error {
-	_, changes, err := di.PullFile(meta)
+	changes, baseFile, err := di.getForScrunching(meta, MinBufferLength)
+
 	if err != nil {
 		return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
 	}
-	if len(changes) > maxBufferLength {
-		changes, baseFile, err := di.getForScrunching(meta, minBufferLength)
-		if err != nil {
-			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
-		}
-
-		result, err := patching.PatchTextFromString(string(baseFile), changes)
-		if err != nil {
-			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
-		}
-		if err := di.FileWriteToSwap(meta, []byte(result)); err != nil {
-			return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
-		}
-		if err := di.deleteForScrunching(meta, len(changes)); err != nil {
-			return fmt.Errorf("Scrunching - Failed to removed scrunched changes: %v", err)
-		}
+	result, err := patching.PatchTextFromString(string(baseFile), changes)
+	if err != nil {
+		return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
 	}
+	if err := di.FileWriteToSwap(meta, []byte(result)); err != nil {
+		return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
+	}
+	if err := di.deleteForScrunching(meta, len(changes)); err != nil {
+		return fmt.Errorf("Scrunching - Failed to removed scrunched changes: %v", err)
+	}
+
 	return nil
 }
 
@@ -195,4 +195,32 @@ func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
 		return new([]byte), []string{}, err
 	}
 	return bytes, changes, err
+}
+
+// PullChanges pulls the changes from the databases
+func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, error) {
+	cb, err := di.openCouchBase()
+	if err != nil {
+		return []string{}, err
+	}
+
+	file := cbFile{}
+	_, err = cb.bucket.Get(strconv.FormatInt(meta.FileID, 10), &file)
+	if err != nil {
+		return []string{}, err
+	}
+	var changes []string
+
+	if file.PullSwp {
+		changes = append(file.RemainingChanges, file.TempChanges...)
+		changes = append(changes, file.Changes...)
+
+		return changes, nil
+	} else if file.UseTemp {
+		changes = append(file.Changes, file.TempChanges...)
+	} else {
+		changes = file.Changes
+	}
+
+	return changes, err
 }

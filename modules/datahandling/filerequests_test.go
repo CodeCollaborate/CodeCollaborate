@@ -262,7 +262,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -311,7 +311,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
@@ -339,7 +339,7 @@ func TestFilePullRequest_Process(t *testing.T) {
 	db.FileWrite("./", "new file", projectID, []byte{})
 
 	changes := []string{"hi"}
-	db.CBAppendFileChange(fileid, 1, changes)
+	db.CBAppendFileChange(fileid, 1, changes, []string{})
 
 	req.Resource = "File"
 	req.Method = "Pull"

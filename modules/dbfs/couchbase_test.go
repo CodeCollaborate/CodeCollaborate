@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -184,14 +186,19 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 
 	di.CBDeleteFile(file.FileID)
 
+	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1", originalFileVersion)
+	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2", originalFileVersion)
+	patch3 := fmt.Sprintf("v%d:\n3:+6:patch3", originalFileVersion)
+
 	// although these are not valid patches, this is purely a test of the logic, not of the patching
 	// because of that this might fail in the future
-	di.CBInsertNewFile(file.FileID, originalFileVersion, []string{"hey there", "sup"})
+	di.CBInsertNewFile(file.FileID, originalFileVersion, []string{patch1, patch2})
 	// NOTE: this was added as a need by us changing to dbfs.PullFile
 	di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte{})
 
-	version, err := di.CBAppendFileChange(file.FileID, originalFileVersion, []string{"yooooo"})
+	version, missing, err := di.CBAppendFileChange(file.FileID, originalFileVersion, []string{patch3}, []string{})
 	assert.NoError(t, err, "unexpected error appending changes")
+	assert.Empty(t, missing, "Unexpected missing patches")
 
 	assert.Equal(t, originalFileVersion+1, version, "version did not update properly")
 
@@ -201,10 +208,10 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	assert.Empty(t, *raw, "we shouldn't have scrunched")
 	assert.Len(t, changes, 3, "resultant changes not the correct length")
 
-	assert.Equal(t, "hey there", changes[0], "first change was not correct")
-	assert.Equal(t, "sup", changes[1], "second change was not correct")
+	assert.Equal(t, patch1, changes[0], "first change was not correct")
+	assert.Equal(t, patch2, changes[1], "second change was not correct")
 
-	assert.Equal(t, "yooooo", changes[2], "newly inserted change was not correct")
+	assert.Equal(t, patch3, changes[2], "newly inserted change was not correct")
 
 	ver, err := di.CBGetFileVersion(file.FileID)
 	assert.EqualValues(t, 3, ver, "wrong file version")

@@ -4,7 +4,11 @@ import (
 	"strconv"
 	"strings"
 
+	"errors"
+	"fmt"
+
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/couchbase/gocb"
 )
 
@@ -130,11 +134,12 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
+// Returns the new version number, the missing patches, and an error, if any.
+func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes, prevChanges []string) (int64, []string, error) {
 	// TODO (non-immediate/required): verify changes are valid changes
 	cb, err := di.openCouchBase()
 	if err != nil {
-		return -1, err
+		return -1, nil, err
 	}
 	key := strconv.FormatInt(fileID, 10)
 
@@ -143,7 +148,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	// then use it in the MutateIn call to verify the document hasn't updated underneath us
 	frag, err := cb.bucket.LookupIn(key).Get("version").Get("usetemp").Execute()
 	if err != nil {
-		return -1, ErrResourceNotFound
+		return -1, nil, ErrResourceNotFound
 	}
 
 	cas := frag.Cas()
@@ -151,32 +156,59 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	var useTemp bool
 	err = frag.Content("version", &version)
 	if err != nil {
-		return -1, ErrNoData
+		return -1, nil, ErrNoData
 	}
 	err = frag.Content("usetemp", &useTemp)
 	if err != nil {
-		return -1, ErrNoData
+		return -1, nil, ErrNoData
 	}
 
 	// check to make sure the patch is being applied to the most recent revision
-	if baseVersion != version {
-		return -1, ErrVersionOutOfDate
+	if baseVersion > version {
+		return -1, nil, ErrVersionOutOfDate
+	}
+
+	versionDiff := version - baseVersion
+	// Apply patches from the change's baseVersion onwards
+	toApply := prevChanges[len(prevChanges)-int(versionDiff):]
+
+	transformedChanges := make([]string, len(changes))
+
+	// Build patch, transform changes against newer changes.
+	for i, changeStr := range changes {
+		change, err := patching.NewPatchFromString(changeStr)
+		if err != nil {
+			return -1, nil, errors.New("Failed to parse patch")
+		}
+
+		if change.BaseVersion != baseVersion {
+			return -1, nil, fmt.Errorf("Patch base version (%d) did not match request base version (%d)", change.BaseVersion, baseVersion)
+		}
+
+		transformedChange, err := change.TransformFromString(toApply) // rewrite change with transformed patch
+		if err != nil {
+			return -1, nil, ErrInternalServerError // Could not parse one of the old patches - should never happen.
+		}
+
+		// Update the BaseVersion to be be the previous change
+		transformedChange.BaseVersion += int64(i)
+		transformedChanges[i] = transformedChange.String()
 	}
 
 	// use the cas to make sure the document hasn't changed
 	builder := cb.bucket.MutateIn(key, cas, 0)
 
 	if !useTemp {
-		builder.ArrayAppendMulti("changes", changes, false)
+		builder.ArrayAppendMulti("changes", transformedChanges, false)
 	} else {
-		builder.ArrayAppendMulti("tempchanges", changes, false)
+		builder.ArrayAppendMulti("tempchanges", transformedChanges, false)
 	}
 
-	builder = builder.Counter("version", 1, false)
+	builder = builder.Counter("version", int64(len(transformedChanges)), false)
 
 	_, err = builder.Execute()
 	if err != nil {
-		return version, err
+		return -1, nil, err
 	}
-	return version + 1, err
+	return version + 1, toApply, err
 }

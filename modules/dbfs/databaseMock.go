@@ -80,8 +80,8 @@ func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
 	if err != nil {
 		return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
 	}
-	if len(changes) > maxBufferLength {
-		changes, baseFile, err := dm.getForScrunching(meta, minBufferLength)
+	if len(changes) > MaxBufferLength {
+		changes, baseFile, err := dm.getForScrunching(meta, MinBufferLength)
 		if err != nil {
 			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
 		}
@@ -129,18 +129,25 @@ func (dm *DatabaseMock) PullFile(meta FileMeta) (*[]byte, []string, error) {
 	return dm.File, changes, nil
 }
 
+// PullChanges pulls the changes from the databases
+func (dm *DatabaseMock) PullChanges(meta FileMeta) ([]string, error) {
+	dm.FunctionCallCount++
+	changes := dm.FileChanges[meta.FileID]
+	return changes, nil
+}
+
 // CBAppendFileChange is a mock of the real implementation
-func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
+func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, changes, prevChanges []string) (int64, []string, error) {
 	dm.FunctionCallCount++
 	if dm.FileVersion[fileID] > baseVersion {
-		return -1, ErrVersionOutOfDate
+		return -1, nil, ErrVersionOutOfDate
 	}
 	dm.FileVersion[fileID]++
 
 	newChanges := append(dm.FileChanges[fileID], changes...)
 	dm.FileChanges[fileID] = newChanges
 
-	return dm.FileVersion[fileID], nil
+	return dm.FileVersion[fileID], nil, nil
 }
 
 // mysql
