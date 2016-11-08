@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"errors"
-	"fmt"
-
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/couchbase/gocb"
@@ -168,10 +166,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 		return -1, nil, ErrVersionOutOfDate
 	}
 
-	versionDiff := version - baseVersion
-	// Apply patches from the change's baseVersion onwards
-	toApply := prevChanges[len(prevChanges)-int(versionDiff):]
-
+	minVersion := baseVersion
 	transformedChanges := make([]string, len(changes))
 
 	// Build patch, transform changes against newer changes.
@@ -181,9 +176,22 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 			return -1, nil, errors.New("Failed to parse patch")
 		}
 
-		if change.BaseVersion != baseVersion {
-			return -1, nil, fmt.Errorf("Patch base version (%d) did not match request base version (%d)", change.BaseVersion, baseVersion)
+		//if change.BaseVersion != baseVersion {
+		//	return -1, nil, fmt.Errorf("Patch base version (%d) did not match request base version (%d)", change.BaseVersion, baseVersion)
+		//}
+
+		if minVersion > change.BaseVersion {
+			minVersion = change.BaseVersion
 		}
+		// For every patch, calculate the patches that it does not have.
+		startIndex := len(prevChanges) - int(version - change.BaseVersion)
+
+		if startIndex < 0{
+			return -1, nil, ErrVersionOutOfDate
+		}
+
+		// Apply patches from the change's baseVersion onwards
+		toApply := prevChanges[startIndex:]
 
 		transformedChange, err := change.TransformFromString(toApply) // rewrite change with transformed patch
 		if err != nil {
@@ -210,5 +218,5 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	if err != nil {
 		return -1, nil, err
 	}
-	return version + 1, toApply, err
+	return version + 1, prevChanges[len(prevChanges) - int(version - minVersion):], err
 }
