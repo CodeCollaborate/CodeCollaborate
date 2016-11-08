@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	password = flag.String("password", "password", "Prefix for all Docker images and volumes")
+	password = flag.String("password", "password", "the unhashed password you want the hash of")
 )
 
 func main() {
