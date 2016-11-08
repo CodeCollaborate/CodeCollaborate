@@ -286,7 +286,6 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 type fileChangeRequest struct {
 	FileID          int64
 	Changes         []string
-	BaseFileVersion int64
 	abstractRequest
 }
 
@@ -316,7 +315,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	prevChanges, err := db.PullChanges(fileMeta)
 
 	// TODO (normal/required): verify changes are valid changes
-	version, missing, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes, prevChanges)
+	version, missing, err := db.CBAppendFileChange(f.FileID, f.Changes, prevChanges)
 	if err != nil {
 		if err == dbfs.ErrVersionOutOfDate {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusVersionOutOfDate, f.Tag)}}, err
@@ -342,11 +341,9 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data: struct {
-			BaseFileVersion int64 // TODO(wongb): check if BaseFileVersion is needed on notifications
 			FileVersion     int64
 			Changes         []string
 		}{
-			BaseFileVersion: f.BaseFileVersion,
 			FileVersion:     version,
 			Changes:         f.Changes,
 		},

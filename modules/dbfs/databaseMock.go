@@ -14,18 +14,18 @@ import (
 //
 // fields are exported in case you're a masochist and wan't to initialize this by hand
 type DatabaseMock struct {
-	Users    map[string](UserMeta)
-	Projects map[string]([]ProjectMeta)
-	Files    map[int64]([]FileMeta)
+	Users             map[string](UserMeta)
+	Projects          map[string]([]ProjectMeta)
+	Files             map[int64]([]FileMeta)
 
-	FileVersion map[int64]int64
-	FileChanges map[int64][]string
+	FileVersion       map[int64]int64
+	FileChanges       map[int64][]string
 
-	ProjectIDCounter int64
-	FileIDCounter    int64
+	ProjectIDCounter  int64
+	FileIDCounter     int64
 
-	File *[]byte
-	Swp  *[]byte
+	File              *[]byte
+	Swp               *[]byte
 
 	// FunctionCallCount is the tracker of how many db functions are called
 	FunctionCallCount int
@@ -106,7 +106,7 @@ func (dm *DatabaseMock) getForScrunching(fileMeta FileMeta, remainder int) ([]st
 	dm.FunctionCallCount++
 	changes := dm.FileChanges[fileMeta.FileID]
 	dm.Swp = new([]byte)
-	return changes[0 : len(changes)-remainder], *dm.Swp, nil
+	return changes[0 : len(changes) - remainder], *dm.Swp, nil
 }
 
 // DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
@@ -137,11 +137,21 @@ func (dm *DatabaseMock) PullChanges(meta FileMeta) ([]string, error) {
 }
 
 // CBAppendFileChange is a mock of the real implementation
-func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, changes, prevChanges []string) (int64, []string, error) {
+func (dm *DatabaseMock) CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error) {
 	dm.FunctionCallCount++
-	if dm.FileVersion[fileID] > baseVersion {
-		return -1, nil, ErrVersionOutOfDate
+
+	for _, changeStr := range changes {
+		change, err := patching.NewPatchFromString(changeStr)
+		if err != nil {
+			return -1, nil, errors.New("Failed to parse patch")
+		}
+
+		// check to make sure the patch is being applied to the most recent revision
+		if change.BaseVersion > dm.FileVersion[fileID] {
+			return -1, nil, ErrVersionOutOfDate
+		}
 	}
+
 	dm.FileVersion[fileID]++
 
 	newChanges := append(dm.FileChanges[fileID], changes...)
@@ -212,10 +222,10 @@ func (dm *DatabaseMock) MySQLUserDelete(username string) ([]int64, error) {
 		initialLen := len(dm.Projects[username])
 		for offset, i := range indices {
 			projectsSlice := dm.Projects[username]
-			if i != initialLen-1 {
-				dm.Projects[username] = append(projectsSlice[0:i-offset], projectsSlice[i+1-offset:]...)
+			if i != initialLen - 1 {
+				dm.Projects[username] = append(projectsSlice[0:i - offset], projectsSlice[i + 1 - offset:]...)
 			} else {
-				dm.Projects[username] = projectsSlice[0 : i-offset]
+				dm.Projects[username] = projectsSlice[0 : i - offset]
 			}
 		}
 	}
@@ -264,8 +274,8 @@ func (dm *DatabaseMock) MySQLProjectDelete(projectID int64, senderID string) err
 				index = int64(i)
 			}
 		}
-		if int64(len(dm.Projects[username])) > index+1 {
-			dm.Projects[username] = append(dm.Projects[username][:index], dm.Projects[username][(index+1):]...)
+		if int64(len(dm.Projects[username])) > index + 1 {
+			dm.Projects[username] = append(dm.Projects[username][:index], dm.Projects[username][(index + 1):]...)
 		} else {
 			dm.Projects[username] = dm.Projects[username][:index]
 		}
@@ -324,10 +334,10 @@ func (dm *DatabaseMock) MySQLProjectRevokePermission(projectID int64, revokeUser
 	if index < 0 {
 		return errors.New("project not found")
 	}
-	if len(dm.Projects[revokeUsername]) > index+1 {
+	if len(dm.Projects[revokeUsername]) > index + 1 {
 		dm.Projects[revokeUsername] = append(
 			dm.Projects[revokeUsername][:index],
-			dm.Projects[revokeUsername][index+1:]...)
+			dm.Projects[revokeUsername][index + 1:]...)
 	} else {
 		dm.Projects[revokeUsername] = dm.Projects[revokeUsername][:index]
 	}
@@ -406,10 +416,10 @@ func (dm *DatabaseMock) MySQLFileDelete(fileID int64) error {
 	for projectID, files := range dm.Files {
 		for i, file := range files {
 			if file.FileID == fileID {
-				if len(dm.Files[projectID]) > i+1 {
+				if len(dm.Files[projectID]) > i + 1 {
 					dm.Files[projectID] = append(
 						dm.Files[projectID][:i],
-						dm.Files[projectID][i+1:]...)
+						dm.Files[projectID][i + 1:]...)
 				} else {
 					dm.Files[projectID] = dm.Files[projectID][:i]
 				}

@@ -196,7 +196,7 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	// NOTE: this was added as a need by us changing to dbfs.PullFile
 	di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte{})
 
-	version, missing, err := di.CBAppendFileChange(file.FileID, originalFileVersion, []string{patch3}, []string{})
+	version, missing, err := di.CBAppendFileChange(file.FileID, []string{patch3}, []string{})
 	assert.NoError(t, err, "unexpected error appending changes")
 	assert.Empty(t, missing, "Unexpected missing patches")
 

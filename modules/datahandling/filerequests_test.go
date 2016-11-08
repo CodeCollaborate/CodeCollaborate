@@ -251,8 +251,9 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	req.Resource = "File"
 	req.Method = "Change"
 	req.FileID = fileid
-	req.Changes = []string{"change 1"}
-	req.BaseFileVersion = newFileVersion
+	req.Changes = []string{"v0:\n0:+1:a"}
+
+	baseFileVersion := int64(1);
 
 	db.FunctionCallCount = 0
 
@@ -297,12 +298,13 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	newVersion := reflect.ValueOf(closure.msg.ServerMessage.(messages.Notification).Data).FieldByName("FileVersion").Interface().(int64)
-	if newVersion != req.BaseFileVersion+1 {
-		t.Fatalf("wrong file version, expected: %d, got: %d", req.BaseFileVersion+1, newVersion)
+	if newVersion != baseFileVersion+1 {
+		t.Fatalf("wrong file version, expected: %d, got: %d", baseFileVersion+1, newVersion)
 	}
 
-	// try the request again to prove that it rejects lower file versions
+	// try the request again to prove that it rejects higher file versions
 
+	req.Changes = []string{"v9999:\n0:+1:a"}
 	db.FunctionCallCount = 0
 
 	closures, err = req.process(db)
@@ -338,8 +340,8 @@ func TestFilePullRequest_Process(t *testing.T) {
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectID)
 	db.FileWrite("./", "new file", projectID, []byte{})
 
-	changes := []string{"hi"}
-	db.CBAppendFileChange(fileid, 1, changes, []string{})
+	changes := []string{"v0:\n0:+1:a"}
+	db.CBAppendFileChange(fileid, changes, []string{})
 
 	req.Resource = "File"
 	req.Method = "Pull"

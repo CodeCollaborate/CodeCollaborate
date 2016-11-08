@@ -41,7 +41,7 @@ type DBFS interface {
 	CBGetFileVersion(fileID int64) (int64, error)
 
 	// CBAppendFileChange mutates the file document with the new change and sets the new version number
-	CBAppendFileChange(fileID int64, baseVersion int64, changes, prevChanges []string) (int64, []string, error)
+	CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error)
 
 	// MySQL
 

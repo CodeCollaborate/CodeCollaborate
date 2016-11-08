@@ -9,6 +9,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/couchbase/gocb"
+	"math"
 )
 
 type couchbaseConn struct {
@@ -134,7 +135,7 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
 // Returns the new version number, the missing patches, and an error, if any.
-func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes, prevChanges []string) (int64, []string, error) {
+func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error) {
 	// TODO (non-immediate/required): verify changes are valid changes
 	cb, err := di.openCouchBase()
 	if err != nil {
@@ -162,12 +163,8 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 		return -1, nil, ErrNoData
 	}
 
-	// check to make sure the patch is being applied to the most recent revision
-	if baseVersion > version {
-		return -1, nil, ErrVersionOutOfDate
-	}
 
-	minVersion := baseVersion
+	var minVersion int64 = math.MaxInt64
 	transformedChanges := make([]string, len(changes))
 
 	// Build patch, transform changes against newer changes.
@@ -175,6 +172,11 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 		change, err := patching.NewPatchFromString(changeStr)
 		if err != nil {
 			return -1, nil, errors.New("Failed to parse patch")
+		}
+
+		// check to make sure the patch is being applied to the most recent revision
+		if change.BaseVersion > version {
+			return -1, nil, ErrVersionOutOfDate
 		}
 
 		if minVersion > change.BaseVersion {
@@ -215,5 +217,8 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	if err != nil {
 		return -1, nil, err
 	}
+
+
+
 	return version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
 }
