@@ -176,10 +176,6 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 			return -1, nil, errors.New("Failed to parse patch")
 		}
 
-		//if change.BaseVersion != baseVersion {
-		//	return -1, nil, fmt.Errorf("Patch base version (%d) did not match request base version (%d)", change.BaseVersion, baseVersion)
-		//}
-
 		if minVersion > change.BaseVersion {
 			minVersion = change.BaseVersion
 		}
