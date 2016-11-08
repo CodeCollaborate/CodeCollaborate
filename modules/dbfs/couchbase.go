@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"errors"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/couchbase/gocb"
@@ -180,9 +181,9 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 			minVersion = change.BaseVersion
 		}
 		// For every patch, calculate the patches that it does not have.
-		startIndex := len(prevChanges) - int(version - change.BaseVersion)
+		startIndex := len(prevChanges) - int(version-change.BaseVersion)
 
-		if startIndex < 0{
+		if startIndex < 0 {
 			return -1, nil, ErrVersionOutOfDate
 		}
 
@@ -214,5 +215,5 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, chan
 	if err != nil {
 		return -1, nil, err
 	}
-	return version + 1, prevChanges[len(prevChanges) - int(version - minVersion):], err
+	return version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
 }
