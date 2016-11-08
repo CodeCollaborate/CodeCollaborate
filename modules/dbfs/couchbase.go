@@ -6,10 +6,11 @@ import (
 
 	"errors"
 
+	"math"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/couchbase/gocb"
-	"math"
 )
 
 type couchbaseConn struct {
@@ -163,8 +164,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []
 		return -1, nil, ErrNoData
 	}
 
-
-	var minVersion int64 = math.MaxInt64
+	minVersion := int64(math.MaxInt64)
 	transformedChanges := make([]string, len(changes))
 
 	// Build patch, transform changes against newer changes.
@@ -217,8 +217,6 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []
 	if err != nil {
 		return -1, nil, err
 	}
-
-
 
 	return version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
 }

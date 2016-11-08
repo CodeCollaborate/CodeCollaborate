@@ -253,7 +253,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	req.FileID = fileid
 	req.Changes = []string{"v0:\n0:+1:a"}
 
-	baseFileVersion := int64(1);
+	baseFileVersion := int64(1)
 
 	db.FunctionCallCount = 0
 
