@@ -87,6 +87,8 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		}
 	}()
 
+	pubSubCfg.Control.Ready.Wait()
+
 	// we don't actually need more than 1 datahandler per websocket
 	dh := datahandling.DataHandler{
 		MessageChan: pubCfg.Messages,
