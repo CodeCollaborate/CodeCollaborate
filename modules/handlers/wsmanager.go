@@ -121,13 +121,14 @@ loop:
 }
 
 func newAMQPMessageHandler(websocketID uint64, cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
+	queueName := rabbitmq.RabbitWebsocketQueueName(websocketID)
+
 	return func(msg rabbitmq.AMQPMessage) error {
 		switch msg.ContentType {
 		case rabbitmq.ContentTypeMsg:
 			// If notification with self as origin, early-out; ignore our own notifications.
 			if val, ok := msg.Headers["MessageType"]; ok && val == "Notification" {
-				if val, ok := msg.Headers["Origin"]; ok && val == rabbitmq.RabbitWebsocketQueueName(websocketID) {
-					utils.LogDebug("Ignoring notification from self", nil)
+				if val, ok := msg.Headers["Origin"]; ok && val == queueName {
 					return nil
 				}
 			}
