@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"net/http"
-	"sync/atomic"
-
 	"errors"
-
+	"net/http"
 	"sync"
+	"sync/atomic"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"

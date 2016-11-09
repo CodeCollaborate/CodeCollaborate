@@ -1,15 +1,13 @@
 package rabbitmq
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"sync"
 	"testing"
-
 	"time"
-
-	"encoding/json"
-	"errors"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"

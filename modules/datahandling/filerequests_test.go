@@ -1,10 +1,9 @@
 package datahandling
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
-
-	"fmt"
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
