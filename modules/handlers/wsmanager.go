@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"net/http"
-	"sync/atomic"
-
 	"errors"
-
+	"net/http"
 	"sync"
+	"sync/atomic"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
@@ -70,7 +68,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 
 	pubSubCfg := rabbitmq.NewAMQPPubSubCfg(cfg.ServerConfig.Name, pubCfg, subCfg)
 
-	subCfg.HandleMessageFunc = newAMQPMessageHandler(pubSubCfg, wsConn)
+	subCfg.HandleMessageFunc = newAMQPMessageHandler(wsID, pubSubCfg, wsConn)
 
 	go func() {
 		err := rabbitmq.RunPublisher(pubSubCfg)
@@ -86,6 +84,8 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 			pubSubCfg.Control.Shutdown()
 		}
 	}()
+
+	pubSubCfg.Control.Ready.Wait()
 
 	// we don't actually need more than 1 datahandler per websocket
 	dh := datahandling.DataHandler{
@@ -120,10 +120,19 @@ loop:
 	close(pubCfg.Messages)
 }
 
-func newAMQPMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
+func newAMQPMessageHandler(websocketID uint64, cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
+	queueName := rabbitmq.RabbitWebsocketQueueName(websocketID)
+
 	return func(msg rabbitmq.AMQPMessage) error {
 		switch msg.ContentType {
 		case rabbitmq.ContentTypeMsg:
+			// If notification with self as origin, early-out; ignore our own notifications.
+			if val, ok := msg.Headers["MessageType"]; ok && val == "Notification" {
+				if val, ok := msg.Headers["Origin"]; ok && val == queueName {
+					return nil
+				}
+			}
+
 			utils.LogDebug("Sending Message", utils.LogFields{
 				"Message": string(msg.Message),
 			})

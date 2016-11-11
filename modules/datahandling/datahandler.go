@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-
 	"sync"
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"

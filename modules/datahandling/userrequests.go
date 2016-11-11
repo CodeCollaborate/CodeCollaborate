@@ -98,6 +98,10 @@ func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
+	if hashed == "" {
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, err
+	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(f.Password)); err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, err
 	}
