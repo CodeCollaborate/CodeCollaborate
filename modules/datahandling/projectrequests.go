@@ -362,6 +362,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				"SenderID":  p.SenderID,
 				"ProjectID": id,
 			})
+			errOut = ErrAuthenticationFailed
 			continue
 		}
 
