@@ -84,7 +84,6 @@ func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
 		if err != nil {
 			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
 		}
-
 		result, err := patching.PatchTextFromString(string(baseFile), changes)
 		if err != nil {
 			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
