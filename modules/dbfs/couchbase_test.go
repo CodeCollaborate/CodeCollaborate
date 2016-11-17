@@ -1,10 +1,9 @@
 package dbfs
 
 import (
+	"fmt"
 	"testing"
 	"time"
-
-	"fmt"
 
 	"github.com/stretchr/testify/assert"
 )

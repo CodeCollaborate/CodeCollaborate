@@ -1,12 +1,10 @@
 package dbfs
 
 import (
+	"errors"
+	"math"
 	"strconv"
 	"strings"
-
-	"errors"
-
-	"math"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"

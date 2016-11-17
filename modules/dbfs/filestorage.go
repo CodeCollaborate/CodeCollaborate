@@ -1,14 +1,13 @@
 package dbfs
 
 import (
+	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"errors"
-	"io"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 )

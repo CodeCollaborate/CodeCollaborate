@@ -17,12 +17,16 @@ type Config struct {
 
 // ServerCfg contains various config items that pertain to the server
 type ServerCfg struct {
-	Name                  string
-	Port                  uint16
-	ProjectPath           string
-	DisableAuth           bool
-	LogLevel              string
-	TokenValidity         string
+	Name            string
+	Port            uint16
+	ProjectPath     string
+	DisableAuth     bool
+	LogLevel        string
+	TokenValidity   string
+	MinBufferLength int
+	MaxBufferLength int
+
+	// Parsed validity
 	tokenValidityDuration time.Duration
 }
 
