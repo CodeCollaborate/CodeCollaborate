@@ -71,7 +71,7 @@ func (dm *DatabaseMock) CBGetFileVersion(fileID int64) (int64, error) {
 	return dm.FileVersion[fileID], nil
 }
 
-// ScrunchFile moves a file form the starting path to the end path
+// ScrunchFile moves a file from the starting path to the end path
 func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
 	dm.FunctionCallCount++
 

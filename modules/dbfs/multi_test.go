@@ -35,7 +35,6 @@ func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseIm
 	_, err = di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte(baseFile))
 	assert.NoError(t, err, "error writing file to disk")
 
-	// TODO: make these actual patches
 	_, _, err = di.CBAppendFileChange(file.FileID, baseChanges, []string{})
 	assert.NoError(t, err, "error appending change to file")
 
