@@ -2,11 +2,11 @@
 USE `testing`;
 
 
--- MySQL dump 10.13  Distrib 5.7.15, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.16, for Linux (x86_64)
 --
 -- Host: localhost    Database: testing
 -- ------------------------------------------------------
--- Server version	5.7.15
+-- Server version	5.7.16
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -30,11 +30,12 @@ CREATE TABLE `File` (
   `FileID` bigint(20) NOT NULL AUTO_INCREMENT,
   `Creator` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
   `CreationDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `RelativePath` varchar(2083) COLLATE utf8_unicode_ci NOT NULL,
+  `RelativePath` varchar(970) COLLATE utf8_unicode_ci NOT NULL,
   `ProjectID` bigint(20) NOT NULL,
   `Filename` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`FileID`),
   UNIQUE KEY `FileID_UNIQUE` (`FileID`),
+  UNIQUE KEY `unique_location` (`ProjectID`,`RelativePath`,`Filename`),
   KEY `fk_File_Username_idx` (`Creator`),
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
