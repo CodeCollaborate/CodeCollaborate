@@ -1,10 +1,13 @@
 package dbfs
 
 import (
+	"errors"
+	"math"
 	"strconv"
 	"strings"
 
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/couchbase/gocb"
 )
 
@@ -14,9 +17,13 @@ type couchbaseConn struct {
 }
 
 type cbFile struct {
-	FileID  int64    `json:"-"`
-	Version int64    `json:"version"`
-	Changes []string `json:"changes"`
+	FileID           int64    `json:"-"`
+	Version          int64    `json:"version"`
+	Changes          []string `json:"changes"`
+	TempChanges      []string `json:"tempchanges"`
+	RemainingChanges []string `json:"remaining_changes"`
+	UseTemp          bool     `json:"usetemp"`
+	PullSwp          bool     `json:"pullswp"`
 }
 
 func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
@@ -84,9 +91,13 @@ func (di *DatabaseImpl) cbInsertNewFile(file cbFile) error {
 // CBInsertNewFile inserts a new document with the given arguments
 func (di *DatabaseImpl) CBInsertNewFile(fileID int64, version int64, changes []string) error {
 	return di.cbInsertNewFile(cbFile{
-		FileID:  fileID,
-		Version: version,
-		Changes: changes,
+		FileID:           fileID,
+		Version:          version,
+		Changes:          changes,
+		UseTemp:          false,
+		TempChanges:      []string{},
+		PullSwp:          false,
+		RemainingChanges: []string{},
 	})
 }
 
@@ -113,63 +124,97 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 	}
 
 	var version int64
-	frag.Content("version", &version)
-	return version, err
-}
-
-// CBGetFileChanges returns the array of file changes for the given fileID
-func (di *DatabaseImpl) CBGetFileChanges(fileID int64) ([]string, error) {
-	cb, err := di.openCouchBase()
-	if err != nil {
-		return []string{}, err
-	}
-
-	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileID, 10)).Get("changes").Execute()
-	if err != nil {
-		return []string{}, err
-	}
-
-	var changes []string
-	frag.Content("changes", &changes)
-
-	return changes, err
-}
-
-// CBAppendFileChange mutates the file document with the new change and sets the new version number
-func (di *DatabaseImpl) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
-	// TODO (non-immediate/required): verify changes are valid changes
-	cb, err := di.openCouchBase()
-	if err != nil {
-		return -1, err
-	}
-
-	// optimistic locking operation
-	// check the version is accurate and get the object's cas,
-	// then use it in the MutateIn call to verify the document hasn't updated underneath us
-	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileID, 10)).Get("version").Execute()
+	err = frag.Content("version", &version)
 	if err != nil {
 		return -1, ErrResourceNotFound
 	}
 
+	return version, err
+}
+
+// CBAppendFileChange mutates the file document with the new change and sets the new version number
+// Returns the new version number, the missing patches, and an error, if any.
+func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error) {
+	// TODO (non-immediate/required): verify changes are valid changes
+	cb, err := di.openCouchBase()
+	if err != nil {
+		return -1, nil, err
+	}
+	key := strconv.FormatInt(fileID, 10)
+
+	// optimistic locking operation
+	// check the version is accurate and get the object's cas,
+	// then use it in the MutateIn call to verify the document hasn't updated underneath us
+	frag, err := cb.bucket.LookupIn(key).Get("version").Get("usetemp").Execute()
+	if err != nil {
+		return -1, nil, ErrResourceNotFound
+	}
+
 	cas := frag.Cas()
 	var version int64
-	frag.Content("version", &version)
+	var useTemp bool
+	err = frag.Content("version", &version)
+	if err != nil {
+		return -1, nil, ErrNoData
+	}
+	err = frag.Content("usetemp", &useTemp)
+	if err != nil {
+		return -1, nil, ErrNoData
+	}
 
-	// check to make sure the patch is being applied to the most recent revision
-	if baseVersion != version {
-		return -1, ErrVersionOutOfDate
+	minVersion := int64(math.MaxInt64)
+	transformedChanges := make([]string, len(changes))
+
+	// Build patch, transform changes against newer changes.
+	for i, changeStr := range changes {
+		change, err := patching.NewPatchFromString(changeStr)
+		if err != nil {
+			return -1, nil, errors.New("Failed to parse patch")
+		}
+
+		// check to make sure the patch is being applied to the most recent revision
+		if change.BaseVersion > version {
+			return -1, nil, ErrVersionOutOfDate
+		}
+
+		if minVersion > change.BaseVersion {
+			minVersion = change.BaseVersion
+		}
+		// For every patch, calculate the patches that it does not have.
+		startIndex := len(prevChanges) - int(version-change.BaseVersion)
+
+		if startIndex < 0 {
+			return -1, nil, ErrVersionOutOfDate
+		}
+
+		// Apply patches from the change's baseVersion onwards
+		toApply := prevChanges[startIndex:]
+
+		transformedChange, err := change.TransformFromString(toApply) // rewrite change with transformed patch
+		if err != nil {
+			return -1, nil, ErrInternalServerError // Could not parse one of the old patches - should never happen.
+		}
+
+		// Update the BaseVersion to be be the previous change
+		transformedChange.BaseVersion += int64(i)
+		transformedChanges[i] = transformedChange.String()
 	}
 
 	// use the cas to make sure the document hasn't changed
-	builder := cb.bucket.MutateIn(strconv.FormatInt(fileID, 10), cas, 0)
-	for _, change := range changes {
-		builder = builder.ArrayAppend("changes", change, false)
+	builder := cb.bucket.MutateIn(key, cas, 0)
+
+	if !useTemp {
+		builder.ArrayAppendMulti("changes", transformedChanges, false)
+	} else {
+		builder.ArrayAppendMulti("tempchanges", transformedChanges, false)
 	}
 
-	builder = builder.Counter("version", 1, false)
+	builder = builder.Counter("version", int64(len(transformedChanges)), false)
+
 	_, err = builder.Execute()
 	if err != nil {
-		return version, err
+		return -1, nil, err
 	}
-	return version + 1, err
+
+	return version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
 }

@@ -104,7 +104,7 @@ func main() {
 	c.Stderr = os.Stdout
 	c.Stdin = os.Stdin
 	c.Run()
-	c = exec.Command("docker", "exec", imageName("Couchbase"), "couchbase-cli", "bucket-create", "-c", "localhost:8091", "-u", *username, "-p", *password, "--bucket="+*schemaName, "--bucket-type=couchbase", "--bucket-password="+*password, "--bucket-ramsize=512", "--wait")
+	c = exec.Command("docker", "exec", imageName("Couchbase"), "couchbase-cli", "bucket-create", "-c", "localhost:8091", "-u", *username, "-p", *password, "--bucket="+*schemaName, "--bucket-type=couchbase", "--bucket-password="+*password, "--bucket-ramsize=200", "--enable-index-replica=0", "--bucket-replica=0", "--enable-flush=1", "--wait")
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stdout
 	c.Stdin = os.Stdin

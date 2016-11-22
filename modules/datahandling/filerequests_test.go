@@ -7,6 +7,7 @@ import (
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
+	"github.com/stretchr/testify/assert"
 )
 
 var geneMeta = dbfs.UserMeta{
@@ -41,9 +42,7 @@ func TestFileCreateRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 3 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -94,9 +93,7 @@ func TestFileRenameRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -153,9 +150,7 @@ func TestFileMoveRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -211,9 +206,7 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 4 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 5, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -258,8 +251,9 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	req.Resource = "File"
 	req.Method = "Change"
 	req.FileID = fileid
-	req.Changes = []string{"change 1"}
-	req.BaseFileVersion = newFileVersion
+	req.Changes = []string{"v0:\n0:+1:a"}
+
+	baseFileVersion := int64(1)
 
 	db.FunctionCallCount = 0
 
@@ -269,9 +263,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -306,12 +298,13 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	newVersion := reflect.ValueOf(closure.msg.ServerMessage.(messages.Notification).Data).FieldByName("FileVersion").Interface().(int64)
-	if newVersion != req.BaseFileVersion+1 {
-		t.Fatalf("wrong file version, expected: %d, got: %d", req.BaseFileVersion+1, newVersion)
+	if newVersion != baseFileVersion+1 {
+		t.Fatalf("wrong file version, expected: %d, got: %d", baseFileVersion+1, newVersion)
 	}
 
-	// try the request again to prove that it rejects lower file versions
+	// try the request again to prove that it rejects higher file versions
 
+	req.Changes = []string{"v9999:\n0:+1:a"}
 	db.FunctionCallCount = 0
 
 	closures, err = req.process(db)
@@ -320,9 +313,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	if db.FunctionCallCount != 2 {
-		t.Fatal("did not call correct number of db functions")
-	}
+	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
@@ -345,10 +336,12 @@ func TestFilePullRequest_Process(t *testing.T) {
 
 	db := dbfs.NewDBMock()
 	db.MySQLUserRegister(geneMeta)
-	projectid, err := db.MySQLProjectCreate("loganga", "hi")
-	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectid)
-	changes := []string{"hi"}
-	db.CBAppendFileChange(fileid, 1, changes)
+	projectID, err := db.MySQLProjectCreate("loganga", "hi")
+	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectID)
+	db.FileWrite("./", "new file", projectID, []byte{})
+
+	changes := []string{"v0:\n0:+1:a"}
+	db.CBAppendFileChange(fileid, changes, []string{})
 
 	req.Resource = "File"
 	req.Method = "Pull"

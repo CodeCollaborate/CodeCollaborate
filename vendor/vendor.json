@@ -10,10 +10,10 @@
 			"tree": true
 		},
 		{
-			"checksumSHA1": "KviOBYCzjM3lMUlhEDkFzvoccew=",
+			"checksumSHA1": "TR2i6yKtd/VvjWVC+w1d/SFkauM=",
 			"path": "github.com/couchbase/gocb",
-			"revision": "c30d3a7562e0f93379ca5699fa3d24929ba75aad",
-			"revisionTime": "2016-07-27T23:51:05Z",
+			"revision": "e2b9757960b140f41890b1348122841ac6dcc5b4",
+			"revisionTime": "2016-10-23T03:27:53Z",
 			"tree": true
 		},
 		{

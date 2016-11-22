@@ -284,9 +284,8 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 // File.Change
 type fileChangeRequest struct {
-	FileID          int64
-	Changes         []string
-	BaseFileVersion int64
+	FileID  int64
+	Changes []string
 	abstractRequest
 }
 
@@ -313,8 +312,10 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
+	prevChanges, err := db.PullChanges(fileMeta)
+
 	// TODO (normal/required): verify changes are valid changes
-	version, err := db.CBAppendFileChange(f.FileID, f.BaseFileVersion, f.Changes)
+	version, missing, err := db.CBAppendFileChange(f.FileID, f.Changes, prevChanges)
 	if err != nil {
 		if err == dbfs.ErrVersionOutOfDate {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusVersionOutOfDate, f.Tag)}}, err
@@ -328,9 +329,11 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Status: messages.StatusSuccess,
 		Tag:    f.Tag,
 		Data: struct {
-			FileVersion int64
+			FileVersion    int64
+			MissingPatches []string
 		}{
-			FileVersion: version,
+			FileVersion:    version,
+			MissingPatches: missing,
 		},
 	}.Wrap()
 	not := messages.Notification{
@@ -338,15 +341,20 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Method:     f.Method,
 		ResourceID: f.FileID,
 		Data: struct {
-			BaseFileVersion int64 // TODO(wongb): check if BaseFileVersion is needed on notifications
-			FileVersion     int64
-			Changes         []string
+			FileVersion int64
+			Changes     []string
 		}{
-			BaseFileVersion: f.BaseFileVersion,
-			FileVersion:     version,
-			Changes:         f.Changes,
+			FileVersion: version,
+			Changes:     f.Changes,
 		},
 	}.Wrap()
+
+	// Trigger scrunching if longer than maxBufferLength
+	if len(prevChanges) > dbfs.MaxBufferLength {
+		go func() {
+			db.ScrunchFile(fileMeta)
+		}()
+	}
 
 	return []dhClosure{toSenderClosure{msg: res}, toRabbitChannelClosure{msg: not, key: rabbitmq.RabbitProjectQueueName(fileMeta.ProjectID)}}, nil
 }
@@ -378,12 +386,7 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
-	rawFile, err := db.FileRead(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
-	}
-
-	changes, err := db.CBGetFileChanges(f.FileID)
+	rawFile, changes, err := db.PullFile(fileMeta)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
