@@ -5,26 +5,43 @@ var Dbfs DBFS
 
 // DBFS is the interface which maps all of the necessary database and file system functions
 type DBFS interface {
-	// couchbase
+	// multi
+
+	// ScrunchFile scrunches the file for the given metadata. All new changes called while scrunching is
+	// in progress are redirected, and merged back when done.
+	ScrunchFile(meta FileMeta) error
+
+	// getForScrunching gets all but the remainder entries for a file and creates a temp swp file.
+	// Returns the changes for scrunching, the swap file contents, and any errors
+	getForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error)
+
+	// deleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
+	// swp file
+	deleteForScrunching(fileMeta FileMeta, num int) error
+
+	// PullFile pulls the changes and the file bytes from the databases
+	PullFile(meta FileMeta) (*[]byte, []string, error)
+
+	// PullChanges pulls the changes and file version from the databases
+	PullChanges(meta FileMeta) ([]string, error)
+
+	// Couchbase
 
 	// CloseCouchbase closes the CouchBase db connection
 	// YOU PROBABLY DON'T NEED TO RUN THIS EVER
 	CloseCouchbase() error
 
-	// CBInsertNewFile inserts a new document into couchbase with CBFile.FileID == fileID
+	// CBInsertNewFile inserts a new document with the given arguments
 	CBInsertNewFile(fileID int64, version int64, changes []string) error
 
-	// CBInsertNewFile inserts a new document with the given arguments
+	// CBDeleteFile deletes the document with FileID == fileID from couchbase
 	CBDeleteFile(fileID int64) error
 
-	// CBDeleteFile deletes the document with FileID == fileID from couchbase
+	// CBGetFileVersion returns the current version of the file for the given FileID
 	CBGetFileVersion(fileID int64) (int64, error)
 
-	// CBGetFileVersion returns the current version of the file for the given FileID
-	CBGetFileChanges(fileID int64) ([]string, error)
-
 	// CBAppendFileChange mutates the file document with the new change and sets the new version number
-	CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error)
+	CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error)
 
 	// MySQL
 
@@ -99,9 +116,9 @@ type DBFS interface {
 	// Couple this with dbfs.MySQLFileDelete and dbfs.CBDeleteFile
 	FileDelete(relpath string, filename string, projectID int64) error
 
-	// FileRead returns the project file from the calculated location on the disk
-	FileRead(relpath string, filename string, projectID int64) (*[]byte, error)
-
 	// FileMove moves a file form the starting path to the end path
 	FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error
+
+	// FileWriteToSwap writes the swapfile for the file with the given info
+	FileWriteToSwap(meta FileMeta, raw []byte) error
 }

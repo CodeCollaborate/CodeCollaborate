@@ -1,11 +1,15 @@
 package dbfs
 
 import (
+	"fmt"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	cb, err := di.openCouchBase()
@@ -37,7 +41,7 @@ func TestDatabaseImpl_OpenCouchBase(t *testing.T) {
 }
 
 func TestDatabaseImpl_CloseCouchbase(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	db, err := di.openCouchBase()
@@ -55,13 +59,13 @@ func TestDatabaseImpl_CloseCouchbase(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	// ensure it doesn't actually exist
 	di.CBDeleteFile(1)
 
-	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}}
+	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, UseTemp: false}
 	err := di.cbInsertNewFile(f)
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +81,7 @@ func TestDatabaseImpl_CBInsertNewFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBInsertNewFileByDetails(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(1)
@@ -96,10 +100,10 @@ func TestDatabaseImpl_CBInsertNewFileByDetails(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
-	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}}
+	f := cbFile{FileID: 1, Version: 2, Changes: []string{"hey there", "sup"}, UseTemp: false}
 	di.cbInsertNewFile(f)
 
 	err := di.CBDeleteFile(1)
@@ -114,7 +118,7 @@ func TestDatabaseImpl_CBDeleteFile(t *testing.T) {
 }
 
 func TestDatabaseImpl_CBGetFileVersion(t *testing.T) {
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
 	di.CBDeleteFile(1)
@@ -134,73 +138,83 @@ func TestDatabaseImpl_CBGetFileVersion(t *testing.T) {
 
 func TestDatabaseImpl_CBGetFileChanges(t *testing.T) {
 	// setup
-	configSetup(t)
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
+	file := FileMeta{
+		FileID:       1,
+		Creator:      "_testuser1",
+		CreationDate: time.Now(),
+		RelativePath: "/.",
+		ProjectID:    0,
+		Filename:     "_test_file_123",
+	}
+
+	di.CBDeleteFile(file.FileID)
+	di.CBInsertNewFile(file.FileID, 2, []string{"hey there", "sup"})
+
+	// NOTE: this was added as a need by us changing to dbfs.PullFile
+	di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte{})
+
+	raw, changes, err := di.PullFile(file)
+	assert.NoError(t, err, "unexpected error getting changes")
+
+	assert.Empty(t, *raw, "we shouldn't have scrunched")
+
+	assert.Len(t, changes, 2, "resultant changes not the correct length")
+	assert.Equal(t, "hey there", changes[0], "first change was not correct")
+	assert.Equal(t, "sup", changes[1], "second change was not correct")
+
 	di.CBDeleteFile(1)
-	di.CBInsertNewFile(1, 2, []string{"hey there", "sup"})
-
-	changes, err := di.CBGetFileChanges(1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if changes[0] != "hey there" {
-		t.Fatal(err)
-	}
-	if changes[1] != "sup" {
-		t.Fatal(err)
-	}
-	if len(changes) != 2 {
-		t.Fatal("resultant changes are not correct")
-	}
-
-	di.CBDeleteFile(1)
+	di.FileDelete(file.RelativePath, file.Filename, file.ProjectID)
 }
 
 func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	var originalFileVersion int64 = 2
-	var fileID int64 = 1
-	configSetup(t)
+	file := FileMeta{
+		FileID:       1,
+		Creator:      "_testuser1",
+		CreationDate: time.Now(),
+		RelativePath: "/.",
+		ProjectID:    0,
+		Filename:     "_test_file_123",
+	}
+
+	testConfigSetup(t)
 	di := new(DatabaseImpl)
 
-	di.CBDeleteFile(fileID)
+	di.CBDeleteFile(file.FileID)
+
+	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1", originalFileVersion)
+	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2", originalFileVersion)
+	patch3 := fmt.Sprintf("v%d:\n3:+6:patch3", originalFileVersion)
 
 	// although these are not valid patches, this is purely a test of the logic, not of the patching
-	di.CBInsertNewFile(fileID, originalFileVersion, []string{"hey there", "sup"})
+	// because of that this might fail in the future
+	di.CBInsertNewFile(file.FileID, originalFileVersion, []string{patch1, patch2})
+	// NOTE: this was added as a need by us changing to dbfs.PullFile
+	di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte{})
 
-	version, err := di.CBAppendFileChange(fileID, originalFileVersion, []string{"yooooo"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	version, missing, err := di.CBAppendFileChange(file.FileID, []string{patch3}, []string{})
+	assert.NoError(t, err, "unexpected error appending changes")
+	assert.Empty(t, missing, "Unexpected missing patches")
 
-	// new version
-	if version != originalFileVersion+1 {
-		t.Fatal("version did not update properly")
-	}
+	assert.Equal(t, originalFileVersion+1, version, "version did not update properly")
 
-	changes, err := di.CBGetFileChanges(fileID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	raw, changes, err := di.PullFile(file)
+	assert.NoError(t, err, "unexpected error getting changes")
 
-	if changes[0] != "hey there" {
-		t.Fatal(err)
-	}
-	if changes[1] != "sup" {
-		t.Fatal(err)
-	}
-	if changes[2] != "yooooo" {
-		t.Fatal(err)
-	}
-	if len(changes) != 3 {
-		t.Fatal("resultant changes are not correct")
-	}
+	assert.Empty(t, *raw, "we shouldn't have scrunched")
+	assert.Len(t, changes, 3, "resultant changes not the correct length")
 
-	ver, err := di.CBGetFileVersion(fileID)
-	if ver != 3 {
-		t.Fatal("wrong file version")
-	}
+	assert.Equal(t, patch1, changes[0], "first change was not correct")
+	assert.Equal(t, patch2, changes[1], "second change was not correct")
 
-	di.CBDeleteFile(fileID)
+	assert.Equal(t, patch3, changes[2], "newly inserted change was not correct")
+
+	ver, err := di.CBGetFileVersion(file.FileID)
+	assert.EqualValues(t, 3, ver, "wrong file version")
+
+	di.CBDeleteFile(file.FileID)
+	di.FileDelete(file.RelativePath, file.Filename, file.ProjectID)
 }

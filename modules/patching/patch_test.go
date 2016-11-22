@@ -18,7 +18,7 @@ func TestPatch_NewPatch(t *testing.T) {
 func TestPatch_NewPatchFromString(t *testing.T) {
 	patch, err := NewPatchFromString("v6:\n3:-8:deletion,\n2:+6:insert")
 	require.Nil(t, err)
-	require.Equal(t, 6, patch.BaseVersion)
+	require.Equal(t, int64(6), patch.BaseVersion)
 	require.Equal(t, 2, len(patch.Changes))
 	require.Equal(t, "3:-8:deletion", patch.Changes[0].String())
 	require.Equal(t, "2:+6:insert", patch.Changes[1].String())
@@ -26,14 +26,14 @@ func TestPatch_NewPatchFromString(t *testing.T) {
 	// Test insertion from string
 	patch, err = NewPatchFromString("v4:\n2:+1:a")
 	require.Nil(t, err)
-	require.Equal(t, 4, patch.BaseVersion)
+	require.Equal(t, int64(4), patch.BaseVersion)
 	require.Equal(t, 1, len(patch.Changes))
 	require.Equal(t, "2:+1:a", patch.Changes[0].String())
 
 	// Test insertion from string
 	patch, err = NewPatchFromString("v3:\n26:+2:ab,\n81:-3:cde")
 	require.Nil(t, err)
-	require.Equal(t, 3, patch.BaseVersion)
+	require.Equal(t, int64(3), patch.BaseVersion)
 	require.Equal(t, 2, len(patch.Changes))
 	require.Equal(t, "26:+2:ab", patch.Changes[0].String())
 	require.Equal(t, "81:-3:cde", patch.Changes[1].String())

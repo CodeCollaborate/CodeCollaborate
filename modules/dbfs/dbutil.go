@@ -16,14 +16,20 @@ var ErrNoData = errors.New("No entries were found")
 // ErrVersionOutOfDate : The request attempted to mutate an out of date resource
 var ErrVersionOutOfDate = errors.New("The request attempted to modify an out of date resource")
 
+// ErrInvalidData : The request contained invalid data
+var ErrInvalidData = errors.New("The request contained invalid data")
+
+// ErrInternalServerError : The request failed on an invalid server state
+var ErrInternalServerError = errors.New("The request failed on an invalid server state")
+
 // ErrResourceNotFound : The request attempted to mutate an out of date resource
 var ErrResourceNotFound = errors.New("No such resource was found")
 
 // ErrDbNotInitialized : Active db connection does not exist
 var ErrDbNotInitialized = errors.New("The database was not propperly initialized before execution")
 
-// ErrMaliciousRequest : The request attempted to directly tamper with our filesystemp / database
-var ErrMaliciousRequest = errors.New("The request attempted to directly tamper with our filesystemp / database")
+// ErrMaliciousRequest : The request attempted to directly tamper with our filesystem / database
+var ErrMaliciousRequest = errors.New("The request attempted to directly tamper with our filesystem / database")
 
 // ProjectPermission is the type which represents the permission relationship on projects
 type ProjectPermission struct {

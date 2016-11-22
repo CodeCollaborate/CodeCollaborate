@@ -143,7 +143,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 	}
 
 	if !success {
-		return errors.New("Failed to connect - timed out.")
+		return errors.New("Failed to connect - timed out")
 	}
 
 	return nil

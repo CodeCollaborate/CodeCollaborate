@@ -2,10 +2,11 @@ package dbfs
 
 import (
 	"errors"
-	"path/filepath"
+	"fmt"
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/patching"
 )
 
 // DatabaseMock is a mock used for testing.
@@ -23,6 +24,7 @@ type DatabaseMock struct {
 	FileIDCounter    int64
 
 	File *[]byte
+	Swp  *[]byte
 
 	// FunctionCallCount is the tracker of how many db functions are called
 	FunctionCallCount int
@@ -69,23 +71,91 @@ func (dm *DatabaseMock) CBGetFileVersion(fileID int64) (int64, error) {
 	return dm.FileVersion[fileID], nil
 }
 
-// CBGetFileChanges is a mock of the real implementation
-func (dm *DatabaseMock) CBGetFileChanges(fileID int64) ([]string, error) {
+// ScrunchFile moves a file from the starting path to the end path
+func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
 	dm.FunctionCallCount++
-	return dm.FileChanges[fileID], nil
+
+	_, changes, err := dm.PullFile(meta)
+	if err != nil {
+		return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
+	}
+	if len(changes) > MaxBufferLength {
+		changes, baseFile, err := dm.getForScrunching(meta, MinBufferLength)
+		if err != nil {
+			return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
+		}
+		result, err := patching.PatchTextFromString(string(baseFile), changes)
+		if err != nil {
+			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
+		}
+		if err := dm.FileWriteToSwap(meta, []byte(result)); err != nil {
+			return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
+		}
+		if err := dm.deleteForScrunching(meta, len(changes)); err != nil {
+			return fmt.Errorf("Scrunching - Failed to removed scrunched changes: %v", err)
+		}
+	}
+	return nil
+}
+
+// GetForScrunching gets all but the remainder entries for a file and creates a temp swp file.
+// Returns the changes for scrunching, location of the swap file, and any errors
+func (dm *DatabaseMock) getForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
+	dm.FunctionCallCount++
+	changes := dm.FileChanges[fileMeta.FileID]
+	dm.Swp = new([]byte)
+	return changes[0 : len(changes)-remainder], *dm.Swp, nil
+}
+
+// DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
+// swp file
+func (dm *DatabaseMock) deleteForScrunching(fileMeta FileMeta, num int) error {
+	dm.FunctionCallCount++
+	dm.File = dm.Swp
+	dm.Swp = nil
+	dm.FileChanges[fileMeta.FileID] = dm.FileChanges[fileMeta.FileID][num:]
+	return nil
+}
+
+// PullFile pulls the changes and the file bytes from the databases
+func (dm *DatabaseMock) PullFile(meta FileMeta) (*[]byte, []string, error) {
+	dm.FunctionCallCount++
+	changes := dm.FileChanges[meta.FileID]
+	if dm.File == nil {
+		return new([]byte), []string{}, ErrNoData
+	}
+	return dm.File, changes, nil
+}
+
+// PullChanges pulls the changes from the databases
+func (dm *DatabaseMock) PullChanges(meta FileMeta) ([]string, error) {
+	dm.FunctionCallCount++
+	changes := dm.FileChanges[meta.FileID]
+	return changes, nil
 }
 
 // CBAppendFileChange is a mock of the real implementation
-func (dm *DatabaseMock) CBAppendFileChange(fileID int64, baseVersion int64, changes []string) (int64, error) {
+func (dm *DatabaseMock) CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error) {
 	dm.FunctionCallCount++
-	if dm.FileVersion[fileID] > baseVersion {
-		return -1, ErrVersionOutOfDate
+
+	for _, changeStr := range changes {
+		change, err := patching.NewPatchFromString(changeStr)
+		if err != nil {
+			return -1, nil, errors.New("Failed to parse patch")
+		}
+
+		// check to make sure the patch is being applied to the most recent revision
+		if change.BaseVersion > dm.FileVersion[fileID] {
+			return -1, nil, ErrVersionOutOfDate
+		}
 	}
+
 	dm.FileVersion[fileID]++
-	for _, change := range changes {
-		dm.FileChanges[fileID] = append(dm.FileChanges[fileID], change)
-	}
-	return dm.FileVersion[fileID], nil
+
+	newChanges := append(dm.FileChanges[fileID], changes...)
+	dm.FileChanges[fileID] = newChanges
+
+	return dm.FileVersion[fileID], nil, nil
 }
 
 // mysql
@@ -274,6 +344,7 @@ func (dm *DatabaseMock) MySQLProjectRevokePermission(projectID int64, revokeUser
 
 // MySQLUserProjectPermissionLookup returns the permission level of `username` on the project with the given projectID
 func (dm *DatabaseMock) MySQLUserProjectPermissionLookup(projectID int64, username string) (int8, error) {
+	dm.FunctionCallCount++
 	for _, proj := range dm.Projects[username] {
 		if proj.ProjectID == projectID {
 			return proj.PermissionLevel, nil
@@ -407,8 +478,7 @@ func (dm *DatabaseMock) MySQLFileGetInfo(fileID int64) (filey FileMeta, err erro
 func (dm *DatabaseMock) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
 	dm.FunctionCallCount++
 	dm.File = &raw
-	filepathy, err := calculateFilePath(relpath, filename, projectID)
-	return filepath.Join(filepathy, filename), err
+	return "./this_path_shouldnt_be_used_anywhere", nil
 }
 
 // FileDelete is a mock of the real implementation
@@ -429,5 +499,14 @@ func (dm *DatabaseMock) FileRead(relpath string, filename string, projectID int6
 
 // FileMove moves a file form the starting path to the end path
 func (dm *DatabaseMock) FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error {
+	dm.FunctionCallCount++
+	// we only keep track of one file anyway
+	return nil
+}
+
+// FileWriteToSwap writes the swapfile for the file with the given info
+func (dm *DatabaseMock) FileWriteToSwap(meta FileMeta, raw []byte) error {
+	dm.FunctionCallCount++
+	dm.Swp = &raw
 	return nil
 }

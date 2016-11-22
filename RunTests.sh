@@ -29,6 +29,6 @@ done <<< "$(go test -v $(go list ./... | grep -v /vendor/))"
 
 printf -- "--------------------------------------------------------------------------------\n"
 
-[ "$FAILED" == 0 ] && printf -- "Tests Passed\n" || printf -- "Tests Failed\n"
+[ "$FAILED" == 0 ] && printf -- "\e[1;32mTests Passed\e[0m\n" || printf -- "\e[1;31mTests Failed\e[0m\n"
 printf -- "\n"
 exit "$FAILED"
