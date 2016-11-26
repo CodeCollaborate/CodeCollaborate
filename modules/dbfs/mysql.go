@@ -85,12 +85,12 @@ STORED PROCEDURES
 
 // MySQLUserRegister registers a new user in MySQL
 func (di *DatabaseImpl) MySQLUserRegister(user UserMeta) error {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL user_register(?,?,?,?,?)", user.Username, user.Password, user.Email, user.FirstName, user.LastName)
+	result, err := mysqlConn.db.Exec("CALL user_register(?,?,?,?,?)", user.Username, user.Password, user.Email, user.FirstName, user.LastName)
 	if err != nil {
 		return err
 	}
@@ -105,12 +105,12 @@ func (di *DatabaseImpl) MySQLUserRegister(user UserMeta) error {
 
 // MySQLUserGetPass is used to get the key and hash of a stored password to verify that a value is correct
 func (di *DatabaseImpl) MySQLUserGetPass(username string) (password string, err error) {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return "", err
 	}
 
-	rows, err := mysql.db.Query("CALL user_get_password(?)", username)
+	rows, err := mysqlConn.db.Query("CALL user_get_password(?)", username)
 	if err != nil {
 		return "", err
 	}
@@ -129,12 +129,12 @@ func (di *DatabaseImpl) MySQLUserGetPass(username string) (password string, err 
 
 // MySQLUserDelete deletes a user from MySQL
 func (di *DatabaseImpl) MySQLUserDelete(username string) ([]int64, error) {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return []int64{}, err
 	}
 
-	rows, err := mysql.db.Query("Call user_get_projectids(?)", username)
+	rows, err := mysqlConn.db.Query("Call user_get_projectids(?)", username)
 
 	var projectIDs []int64
 	for rows.Next() {
@@ -149,7 +149,7 @@ func (di *DatabaseImpl) MySQLUserDelete(username string) ([]int64, error) {
 		projectIDs = append(projectIDs, projectID)
 	}
 
-	result, err := mysql.db.Exec("CALL user_delete(?)", username)
+	result, err := mysqlConn.db.Exec("CALL user_delete(?)", username)
 	if err != nil {
 		return []int64{}, err
 	}
@@ -164,12 +164,12 @@ func (di *DatabaseImpl) MySQLUserDelete(username string) ([]int64, error) {
 
 // MySQLUserLookup returns user information about a user with the username 'username'
 func (di *DatabaseImpl) MySQLUserLookup(username string) (user UserMeta, err error) {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return user, err
 	}
 
-	rows, err := mysql.db.Query("CALL user_lookup(?)", username)
+	rows, err := mysqlConn.db.Query("CALL user_lookup(?)", username)
 	if err != nil {
 		return user, err
 	}
@@ -190,12 +190,12 @@ func (di *DatabaseImpl) MySQLUserLookup(username string) (user UserMeta, err err
 
 // MySQLUserProjects returns the projectID, the project name, and the permission level the user `username` has on that project
 func (di *DatabaseImpl) MySQLUserProjects(username string) ([]ProjectMeta, error) {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := mysql.db.Query("CALL user_projects(?)", username)
+	rows, err := mysqlConn.db.Query("CALL user_projects(?)", username)
 	if err != nil {
 		return nil, err
 	}
@@ -216,12 +216,12 @@ func (di *DatabaseImpl) MySQLUserProjects(username string) ([]ProjectMeta, error
 
 // MySQLProjectCreate create a new project in MySQL
 func (di *DatabaseImpl) MySQLProjectCreate(username string, projectName string) (projectID int64, err error) {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return -1, err
 	}
 
-	rows, err := mysql.db.Query("CALL project_create(?,?)", projectName, username)
+	rows, err := mysqlConn.db.Query("CALL project_create(?,?)", projectName, username)
 	if err != nil {
 		return -1, err
 	}
@@ -237,12 +237,12 @@ func (di *DatabaseImpl) MySQLProjectCreate(username string, projectName string) 
 
 // MySQLProjectDelete deletes a project from MySQL
 func (di *DatabaseImpl) MySQLProjectDelete(projectID int64, senderID string) error {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL project_delete(?,?)", projectID, senderID)
+	result, err := mysqlConn.db.Exec("CALL project_delete(?,?)", projectID, senderID)
 	if err != nil {
 		return err
 	}
@@ -256,12 +256,12 @@ func (di *DatabaseImpl) MySQLProjectDelete(projectID int64, senderID string) err
 
 // MySQLProjectGetFiles returns the Files from the project with projectID = projectID
 func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error) {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := mysql.db.Query("CALL project_get_files(?)", projectID)
+	rows, err := mysqlConn.db.Query("CALL project_get_files(?)", projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -282,12 +282,12 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 
 // MySQLProjectGrantPermission gives the user `grantUsername` the permission `permissionLevel` on project `projectID`
 func (di *DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int8, grantedByUsername string) error {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL project_grant_permissions(?, ?, ?, ?)", projectID, grantUsername, permissionLevel, grantedByUsername)
+	result, err := mysqlConn.db.Exec("CALL project_grant_permissions(?, ?, ?, ?)", projectID, grantUsername, permissionLevel, grantedByUsername)
 	if err != nil {
 		return err
 	}
@@ -302,12 +302,12 @@ func (di *DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUserna
 // MySQLProjectRevokePermission removes revokeUsername's permissions from the project
 // DOES NOT WORK FOR OWNER (which is kinda a good thing)
 func (di *DatabaseImpl) MySQLProjectRevokePermission(projectID int64, revokeUsername string, revokedByUsername string) error {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL project_revoke_permissions(?, ?)", projectID, revokeUsername)
+	result, err := mysqlConn.db.Exec("CALL project_revoke_permissions(?, ?)", projectID, revokeUsername)
 	if err != nil {
 		return err
 	}
@@ -321,12 +321,12 @@ func (di *DatabaseImpl) MySQLProjectRevokePermission(projectID int64, revokeUser
 
 // MySQLUserProjectPermissionLookup returns the permission level of `username` on the project with the given projectID
 func (di *DatabaseImpl) MySQLUserProjectPermissionLookup(projectID int64, username string) (int8, error) {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return 0, err
 	}
 
-	rows, err := mysql.db.Query("CALL user_project_permission(?, ?)", username, projectID)
+	rows, err := mysqlConn.db.Query("CALL user_project_permission(?, ?)", username, projectID)
 	if err != nil {
 		return 0, err
 	}
@@ -349,12 +349,12 @@ func (di *DatabaseImpl) MySQLUserProjectPermissionLookup(projectID int64, userna
 
 // MySQLProjectRename allows for you to rename projects
 func (di *DatabaseImpl) MySQLProjectRename(projectID int64, newName string) error {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL project_rename(?, ?)", projectID, newName)
+	result, err := mysqlConn.db.Exec("CALL project_rename(?, ?)", projectID, newName)
 	if err != nil {
 		return err
 	}
@@ -378,14 +378,14 @@ func (di *DatabaseImpl) MySQLProjectRename(projectID int64, newName string) erro
 // http://stackoverflow.com/a/8150183 <- preferred if we switch b/c FIND_IN_SET doesn't use indexes
 func (di *DatabaseImpl) MySQLProjectLookup(projectID int64, username string) (name string, permissions map[string]ProjectPermission, err error) {
 	permissions = make(map[string](ProjectPermission))
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return "", permissions, err
 	}
 
 	// TODO (optional): un-hardcode '10' as the owner constant in the MySQL ProjectLookup stored proc
 
-	rows, err := mysql.db.Query("CALL project_lookup(?)", projectID)
+	rows, err := mysqlConn.db.Query("CALL project_lookup(?)", projectID)
 	if err != nil {
 		return "", permissions, err
 	}
@@ -415,25 +415,28 @@ func (di *DatabaseImpl) MySQLProjectLookup(projectID int64, username string) (na
 }
 
 // MySQLFileCreate create a new file in MySQL
-func (di *DatabaseImpl) MySQLFileCreate(username string, filename string, relativePath string, projectID int64) (fileID int64, err error) {
-	if strings.Contains(filename, filePathSeparator) {
+func (di *DatabaseImpl) MySQLFileCreate(username string, filename string, relativePath string, projectID int64) (int64, error) {
+	filename = filepath.Clean(filename)
+	if strings.Contains(filename, filePathSeparator) || strings.Contains(filename, "..") {
 		return -1, ErrMaliciousRequest
 	}
 
-	filepathClean := filepath.Clean(relativePath)
-	if strings.HasPrefix(filepathClean, "..") {
+	relativePath = filepath.Clean(relativePath)
+	if strings.HasPrefix(relativePath, "..") {
 		return -1, ErrMaliciousRequest
 	}
 
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return -1, err
 	}
 
-	rows, err := mysql.db.Query("CALL file_create(?,?,?,?)", username, filename, filepathClean, projectID)
+	rows, err := mysqlConn.db.Query("CALL file_create(?,?,?,?)", username, filename, relativePath, projectID)
 	if err != nil {
 		return -1, err
 	}
+
+	var fileID int64
 	for rows.Next() {
 		err = rows.Scan(&fileID)
 		if err != nil {
@@ -447,12 +450,12 @@ func (di *DatabaseImpl) MySQLFileCreate(username string, filename string, relati
 // MySQLFileDelete deletes a file from the MySQL database
 // this does not delete the actual file
 func (di *DatabaseImpl) MySQLFileDelete(fileID int64) error {
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL file_delete(?)", fileID)
+	result, err := mysqlConn.db.Exec("CALL file_delete(?)", fileID)
 	if err != nil {
 		return err
 	}
@@ -471,12 +474,12 @@ func (di *DatabaseImpl) MySQLFileMove(fileID int64, newPath string) error {
 		return ErrMaliciousRequest
 	}
 
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL file_move(?, ?)", fileID, newPathClean)
+	result, err := mysqlConn.db.Exec("CALL file_move(?, ?)", fileID, newPathClean)
 	if err != nil {
 		return err
 	}
@@ -494,12 +497,12 @@ func (di *DatabaseImpl) MySQLFileRename(fileID int64, newName string) error {
 		return ErrMaliciousRequest
 	}
 
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
 	}
 
-	result, err := mysql.db.Exec("CALL file_rename(?, ?)", fileID, newName)
+	result, err := mysqlConn.db.Exec("CALL file_rename(?, ?)", fileID, newName)
 	if err != nil {
 		return err
 	}
@@ -514,12 +517,12 @@ func (di *DatabaseImpl) MySQLFileRename(fileID int64, newName string) error {
 // MySQLFileGetInfo returns the meta data about the given file
 func (di *DatabaseImpl) MySQLFileGetInfo(fileID int64) (FileMeta, error) {
 	file := FileMeta{}
-	mysql, err := di.getMySQLConn()
+	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return file, err
 	}
 
-	rows, err := mysql.db.Query("CALL file_get_info(?)", fileID)
+	rows, err := mysqlConn.db.Query("CALL file_get_info(?)", fileID)
 	if err != nil {
 		return file, err
 	}

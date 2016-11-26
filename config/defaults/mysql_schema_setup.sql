@@ -6,7 +6,7 @@ USE `cc`;
 --
 -- Host: localhost    Database: cc
 -- ------------------------------------------------------
--- Server version	5.7.16
+-- Server version	5.7.15
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -30,12 +30,11 @@ CREATE TABLE `File` (
   `FileID` bigint(20) NOT NULL AUTO_INCREMENT,
   `Creator` varchar(25) COLLATE utf8_unicode_ci NOT NULL,
   `CreationDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `RelativePath` varchar(970) COLLATE utf8_unicode_ci NOT NULL,
+  `RelativePath` varchar(2083) COLLATE utf8_unicode_ci NOT NULL,
   `ProjectID` bigint(20) NOT NULL,
   `Filename` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`FileID`),
   UNIQUE KEY `FileID_UNIQUE` (`FileID`),
-  UNIQUE KEY `unique_location` (`ProjectID`,`RelativePath`,`Filename`),
   KEY `fk_File_Username_idx` (`Creator`),
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
@@ -141,12 +140,22 @@ CREATE TABLE `User` (
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `file_create`(IN username varchar(25), IN filename varchar(50), IN relativePath varchar(2083), IN projectID bigint(20))
-  BEGIN
-    INSERT INTO `File`
-    (Creator, RelativePath, ProjectID, Filename)
-    VALUES (username, relativePath, projectID, filename);
-    SELECT LAST_INSERT_ID();
-  END ;;
+BEGIN
+  IF ( NOT EXISTS ( SELECT `File`.`FileID`
+          FROM `File`
+          WHERE `File`.`ProjectID` =  projectID AND `File`.`RelativePath` = relativePath AND `File`.`Filename` = filename ) ) THEN
+      BEGIN
+        INSERT INTO `File`
+        (Creator, RelativePath, ProjectID, Filename)
+        VALUES (username, relativePath, projectID, filename);
+        SELECT LAST_INSERT_ID();
+      END;
+    ELSE
+      BEGIN
+        SELECT null;
+      END;
+    END IF;
+END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -511,7 +520,7 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `user_project_permission`(username varchar(25), projectID bigint(20))
 BEGIN
-	SELECT Permissions.PermissionLevel
+  SELECT Permissions.PermissionLevel
     FROM Permissions
     WHERE Permissions.Username = username and Permissions.ProjectID = projectID
     UNION

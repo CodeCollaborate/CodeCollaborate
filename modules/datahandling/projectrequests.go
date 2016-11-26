@@ -83,7 +83,7 @@ func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		//if err == project already exists {
 		// TODO(shapiro): implement a specific error for this on the mysql.go side
 		//}
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServFail, p.Tag)}}, nil
 	}
 
 	res := messages.Response{
@@ -124,7 +124,7 @@ func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	err = db.MySQLProjectRename(p.ProjectID, p.NewName)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServFail, p.Tag)}}, err
 	}
 
 	res := messages.NewEmptyResponse(messages.StatusSuccess, p.Tag)
@@ -192,7 +192,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 
 	ownerPerm, err := config.PermissionByLabel("owner")
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServFail, p.Tag)}}, nil
 	}
 
 	if requestPerm.Level == ownerPerm.Level {
@@ -202,7 +202,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 
 	err = db.MySQLProjectGrantPermission(p.ProjectID, p.GrantUsername, p.PermissionLevel, p.SenderID)
 	if err != nil {
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServFail, p.Tag)}}, err
 	}
 
 	res := messages.NewEmptyResponse(messages.StatusSuccess, p.Tag)
@@ -258,7 +258,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 		if err == dbfs.ErrNoDbChange {
 			ownerPerm, err := config.PermissionByLabel("owner")
 			if err != nil {
-				return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, nil
+				return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServFail, p.Tag)}}, nil
 			}
 
 			_, permissions, err := db.MySQLProjectLookup(p.ProjectID, p.SenderID)
@@ -277,7 +277,7 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 				}
 			}
 		}
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServFail, p.Tag)}}, err
 	}
 
 	res := messages.NewEmptyResponse(messages.StatusSuccess, p.Tag)
@@ -391,7 +391,7 @@ func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
 		res := messages.Response{
-			Status: messages.StatusPartialfail,
+			Status: messages.StatusPartialFail,
 			Tag:    p.Tag,
 			Data: struct {
 				Projects []projectLookupResult
@@ -515,7 +515,7 @@ func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			return []dhClosure{toSenderClosure{msg: res}}, nil
 		}
 		res := messages.Response{
-			Status: messages.StatusPartialfail,
+			Status: messages.StatusPartialFail,
 			Tag:    p.Tag,
 			Data: struct {
 				Files []fileLookupResult
@@ -618,7 +618,7 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		if err == dbfs.ErrNoDbChange {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, err
 		}
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServfail, p.Tag)}}, err
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusServFail, p.Tag)}}, err
 
 	}
 
