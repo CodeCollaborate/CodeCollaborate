@@ -77,12 +77,12 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
-	_, err = db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
+	fileID, err := db.MySQLFileCreate(f.SenderID, f.Name, f.RelativePath, f.ProjectID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	fileID, err := db.MySQLFileCreate(f.SenderID, f.Name, f.RelativePath, f.ProjectID)
+	_, err = db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}

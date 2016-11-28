@@ -522,25 +522,28 @@ func TestDatabaseImpl_MySQLFileCreate(t *testing.T) {
 	if erro != nil {
 		t.Fatal(erro)
 	}
+	filename := "file-y"
 
 	projectID, _ := di.MySQLProjectCreate(userOne.Username, "codecollabcore")
-	fileID, err := di.MySQLFileCreate(userOne.Username, "file-y", ".", projectID)
+	fileID, err := di.MySQLFileCreate(userOne.Username, filename, ".", projectID)
 
 	files, _ := di.MySQLProjectGetFiles(projectID)
 
-	_ = di.MySQLProjectDelete(projectID, userOne.Username)
-	di.MySQLUserDelete(userOne.Username)
+	defer di.MySQLUserDelete(userOne.Username)
+	defer di.MySQLProjectDelete(projectID, userOne.Username)
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err, "mysql error")
+	assert.Equal(t, 1, len(files), "Project incorrect file count")
+	assert.Equal(t, fileID, files[0].FileID, "incorrect fileID")
+	assert.Equal(t, userOne.Username, files[0].Creator, "incorrect creator")
+	assert.Equal(t, ".", files[0].RelativePath, "incorrect relative path")
+	assert.Equal(t, filename, files[0].Filename, "incorrect filename")
+	assert.Equal(t, projectID, files[0].ProjectID, "incorrect projectID")
 
-	if len(files) != 1 {
-		t.Fatalf("Project %v returned not the correct length, expected: 1, actual: %v", projectID, len(files))
-	}
-	if files[0].FileID != fileID || files[0].Creator != userOne.Username || files[0].RelativePath != "." || files[0].Filename != "file-y" || files[0].ProjectID != projectID {
-		t.Fatalf("Wrong return, got project: %v", files[0])
-	}
+	// should fail b/c location is already in use
+	fileIDNew, err := di.MySQLFileCreate(userOne.Username, filename, ".", projectID)
+	assert.EqualValues(t, -1, fileIDNew, "Expected invalid FileID to be returned")
+	assert.Error(t, err, "expected duplicate insertion to fail")
 }
 
 func TestDatabaseImpl_MySQLFileDelete(t *testing.T) {

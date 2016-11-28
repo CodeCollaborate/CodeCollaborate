@@ -199,7 +199,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		// return what we can but
 		// tell the client whatever they don't get back failed
 		res := messages.Response{
-			Status: messages.StatusPartialfail,
+			Status: messages.StatusPartialFail,
 			Tag:    f.Tag,
 			Data: struct {
 				Users []dbfs.UserMeta
@@ -259,7 +259,7 @@ func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 
 	if errOut != nil {
 		res := messages.Response{
-			Status: messages.StatusPartialfail,
+			Status: messages.StatusPartialFail,
 			Tag:    f.Tag,
 			Data: struct {
 				Projects []projectLookupResult

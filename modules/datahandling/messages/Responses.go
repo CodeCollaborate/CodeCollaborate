@@ -62,14 +62,14 @@ const StatusNotFound int = 404
 // StatusVersionOutOfDate represents a state in which the client has an outdated version of the resource
 const StatusVersionOutOfDate int = 409 // (409 = conflict)
 
-// StatusPartialfail represents a partial failure in processing the request
-const StatusPartialfail int = 499
+// StatusPartialFail represents a partial failure in processing the request
+const StatusPartialFail int = 499
 
-// StatusServfail represents an internal failure in processing.
-const StatusServfail int = 500
+// StatusServFail represents an internal failure in processing.
+const StatusServFail int = 500
 
 // StatusUnimplemented represents a called method that has not yet been implemented
 const StatusUnimplemented = 501
 
-// StatusServpartialfail represents an internal failure in processing part of the request.
-const StatusServpartialfail int = 599
+// StatusServPartialFail represents an internal failure in processing part of the request.
+const StatusServPartialFail int = 599
