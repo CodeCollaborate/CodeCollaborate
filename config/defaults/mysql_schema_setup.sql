@@ -2,7 +2,7 @@ USE `cc`;
 # USE `testing`;
 
 
--- MySQL dump 10.13  Distrib 5.7.15, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.16, for Linux (x86_64)
 --
 -- Host: localhost    Database: cc
 -- ------------------------------------------------------
@@ -140,12 +140,22 @@ CREATE TABLE `User` (
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `file_create`(IN username varchar(25), IN filename varchar(50), IN relativePath varchar(2083), IN projectID bigint(20))
-  BEGIN
-    INSERT INTO `File`
-    (Creator, RelativePath, ProjectID, Filename)
-    VALUES (username, relativePath, projectID, filename);
-    SELECT LAST_INSERT_ID();
-  END ;;
+BEGIN
+  IF ( NOT EXISTS ( SELECT `File`.`FileID`
+          FROM `File`
+          WHERE `File`.`ProjectID` =  projectID AND `File`.`RelativePath` = relativePath AND `File`.`Filename` = filename ) ) THEN
+      BEGIN
+        INSERT INTO `File`
+        (Creator, RelativePath, ProjectID, Filename)
+        VALUES (username, relativePath, projectID, filename);
+        SELECT LAST_INSERT_ID();
+      END;
+    ELSE
+      BEGIN
+        SELECT null;
+      END;
+    END IF;
+END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -510,7 +520,7 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `user_project_permission`(username varchar(25), projectID bigint(20))
 BEGIN
-	SELECT Permissions.PermissionLevel
+  SELECT Permissions.PermissionLevel
     FROM Permissions
     WHERE Permissions.Username = username and Permissions.ProjectID = projectID
     UNION
