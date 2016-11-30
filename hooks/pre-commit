@@ -4,7 +4,7 @@
 
 STATUS=0
 
-./RunFormatter.sh
+./run_formatter.sh
 
 STATUS=$(($STATUS + $?))
 
@@ -14,7 +14,7 @@ if [ "$STATUS" != 0 ]; then
 fi
 
 printf -- "\n\n"
-./RunTests.sh
+./run_tests.sh
 
 STATUS=$(($STATUS + $?))
 
