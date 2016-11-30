@@ -10,7 +10,8 @@ RESULT_GOIMPORTS="  PASSED: Imports"
 
 STATUS=0
 
-printf -- "Checking Formatting:\n--------------------------------------------------------------------------------\n"
+printf -- "Checking Formatting:\n"
+printf -- "--------------------------------------------------------------------------------\n"
 
 # Check GoLint
 while read data; do
