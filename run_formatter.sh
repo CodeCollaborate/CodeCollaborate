@@ -13,36 +13,44 @@ STATUS=0
 printf -- "Checking Formatting:\n--------------------------------------------------------------------------------\n"
 
 # Check GoLint
-if [[ "$(for p in ${PACKAGES}; do golint ${p} 2>&1; done)" ]]; then
-    printf -- "GoLint errors:\n"
-    RESULT_GOLINT="->Failed: GoLint"
-    for p in ${PACKAGES}; do golint ${p} 2>&1; done
-    printf -- "\n"
-    STATUS=1
-fi
+while read data; do
+    if [[ ${data} ]] ; then
+        printf -- "GoLint errors:\n"
+        RESULT_GOLINT="->Failed: GoLint"
+        echo ${data}
+        printf -- "\n"
+        STATUS=1
+    fi
+done <<< "$(for p in ${PACKAGES}; do golint ${p} 2>&1; done)"
 
 # Check GoVet
-if [[ "$(go vet ${PACKAGES} 2>&1)" ]]; then
-    printf -- "GoVet errors:\n"
-    RESULT_GOVET="->Failed: GoVet"
-    go vet ${PACKAGES} 2>&1
-    printf -- "\n"
-    STATUS=1
-fi
+while read data; do
+    if [[ ${data} ]]; then
+        printf -- "GoVet errors:\n"
+        RESULT_GOVET="->Failed: GoVet"
+        echo ${data}
+        printf -- "\n"
+        STATUS=1
+    fi
+done <<< "$(go vet ${PACKAGES} 2>&1)"
 
 # Check GoFmt
-if [[ "$(gofmt -s -l ${FILES} 2>&1)" ]]; then
-    printf -- "GoFmt reformatting code.\n"
-    gofmt -s -w ${FILES} 2>&1
-    RESULT_GOFMT="  REFORMATTED: GoFmt"
-fi
+while read data; do
+    if [[ ${data} ]]; then
+        printf -- "GoFmt reformatting code.\n"
+        echo ${data}
+        RESULT_GOFMT="  REFORMATTED: GoFmt"
+    fi
+done <<< "$(gofmt -s -l -w ${FILES} 2>&1)"
 
 # Check GoImports
-if [[ "$(${GOPATH}/bin/goimports -l ${FILES} 2>&1)" ]]; then
-    printf -- "GoImports reformatting code.\n"
-    ${GOPATH}/bin/goimports -w ${FILES} 2>&1
-    RESULT_GOIMPORTS="  REFORMATTED: GoImports"
-fi
+while read data; do
+    if [[ ${data} ]]; then
+        printf -- "GoImports reformatting code.\n"
+        echo ${data}
+        RESULT_GOIMPORTS="  REFORMATTED: GoImports"
+    fi
+done <<< "$(${GOPATH}/bin/goimports -l -w ${FILES} 2>&1)"
 
 printf -- "\nSUMMARY:\n"
 printf -- "--------------------------------------------------------------------------------\n"
