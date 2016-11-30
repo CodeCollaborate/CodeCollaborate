@@ -25,7 +25,7 @@ while read data; do
     else
         printf -- "  %s\n" "$OUTPUT"
     fi
-done <<< "$(go test -v $(go list ./... | grep -v /vendor/))"
+done < <(go test -v $(go list ./... | grep -v /vendor/))
 
 printf -- "--------------------------------------------------------------------------------\n"
 
