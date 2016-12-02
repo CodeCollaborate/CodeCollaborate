@@ -1,6 +1,6 @@
 sudo: required
 dist: trusty
-group: stable
+group: deprecated
 language: go
 go:
   - 1.7
