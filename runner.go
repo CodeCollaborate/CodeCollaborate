@@ -65,10 +65,23 @@ func main() {
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
 	addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port)
+
+	_, certErr := os.Stat("config/TLS/cert.pem")
+	_, keyErr := os.Stat("config/TLS/key.pem")
+
+	useTLS := certErr == nil && keyErr == nil
 	utils.LogInfo("Starting server", utils.LogFields{
 		"Address": addr,
+		"TLS":     useTLS,
 	})
-	err = http.ListenAndServe(addr, nil)
+
+	if useTLS {
+		err = http.ListenAndServeTLS(addr, "config/TLS/cert.pem", "config/TLS/key.pem", nil)
+	} else {
+		utils.LogWarn("No Cert/Key pair found; starting without TLS", nil)
+		err = http.ListenAndServe(addr, nil)
+	}
+
 	utils.LogError("Could not bind to port", err, nil)
 
 	// Kill the SetupRabbitExchange thread (Multithreading control)
