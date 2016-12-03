@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-printf "%-60s" "Syncing to head"
-git pull
-if [ $? -eq 0 ]; then
-    printf "%-10s\n" "OK"
-else
-    printf "%-10s\n" "FAIL"
-fi
-
 printf "%-60s" "Syncing dependencies"
 govendor sync
 if [ $? -eq 0 ]; then
