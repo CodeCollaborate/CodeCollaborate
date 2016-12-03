@@ -9,7 +9,7 @@ else
 fi
 
 printf "%-60s" "Stopping CodeCollaborate daemon"
-sudo service CodeCollaborate stop
+sudo systemctl stop CodeCollaborate.service
 if [ $? -eq 0 ]; then
     printf "%-10s\n" "OK"
 else
@@ -39,7 +39,7 @@ else
 fi
 
 printf "%-60s" "Starting service"
-sudo service CodeCollaborate start
+sudo systemctl start CodeCollaborate.service
 if [ $? -eq 0 ]; then
     printf "%-10s\n" "OK"
 else
