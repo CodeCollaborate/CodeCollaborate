@@ -4,7 +4,13 @@
 
 STATUS=0
 
-./run_formatter.sh
+if [ -f ./run_formatter.sh ]; then
+    ./run_formatter.sh
+elif [ -f ./RunFormatter.sh ]; then
+    ./RunFormatter.sh
+else
+       printf -- "No formatting script found\n"
+fi
 
 STATUS=$(($STATUS + $?))
 
@@ -14,7 +20,14 @@ if [ "$STATUS" != 0 ]; then
 fi
 
 printf -- "\n\n"
-./run_tests.sh
+
+if [ -f ./run_tests.sh ]; then
+    ./run_tests.sh
+elif [ -f ./RunTests.sh ]; then
+    ./RunTests.sh
+else
+       printf -- "No test script found\n"
+fi
 
 STATUS=$(($STATUS + $?))
 
