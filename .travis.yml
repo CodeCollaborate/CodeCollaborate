@@ -31,18 +31,18 @@ before_install:
 
 install:
 - sudo apt-get install -y mysql-server
-- travisScripts/InstallCouchBase.sh
+- scripts/travis/InstallCouchBase.sh
 - cp ./config/defaults/* ./config
 - go get golang.org/x/tools/cmd/goimports
 - go get github.com/golang/lint/golint
-- "./GetDependencies.sh"
+- "./get_dependencies.sh"
 - cat ./config/mysql_testing_setup.sql | mysql -uroot
 - cat ./config/mysql_testing_schema_setup.sql | mysql -uroot
 
 script:
 # Run checks & tests
-- travisScripts/CheckFormatting.sh
-- "./RunTests.sh"
+- scripts/travis/CheckFormatting.sh
+- "./run_tests.sh"
 - GOOS=windows GOARCH=386 go build -o bin/server_windows_x86.exe
 - GOOS=linux GOARCH=386 go build -o bin/server_linux_x86
 - GOOS=windows GOARCH=amd64 go build -o bin/server_windows_amd64.exe

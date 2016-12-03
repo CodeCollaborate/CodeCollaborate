@@ -2,7 +2,8 @@
 
 FAILED=0
 
-printf -- "Running Tests:\n--------------------------------------------------------------------------------\n"
+printf -- "Running Tests:\n"
+printf -- "--------------------------------------------------------------------------------\n"
 
 re="\--- .*?:"
 ra="\=== RUN"
@@ -25,7 +26,7 @@ while read data; do
     else
         printf -- "  %s\n" "$OUTPUT"
     fi
-done <<< "$(go test -v $(go list ./... | grep -v /vendor/))"
+done < <(go test -v $(go list ./... | grep -v /vendor/))
 
 printf -- "--------------------------------------------------------------------------------\n"
 
