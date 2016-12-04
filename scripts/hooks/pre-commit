@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Check if formatting and tests pass before allowing commits.
+
+STATUS=0
+
+if [ -f ./run_formatter.sh ]; then
+    ./run_formatter.sh
+elif [ -f ./RunFormatter.sh ]; then
+    ./RunFormatter.sh
+else
+       printf -- "No formatting script found\n"
+fi
+
+STATUS=$(($STATUS + $?))
+
+if [ "$STATUS" != 0 ]; then
+    printf -- "Formatting Checks failed, aborting commit\n"
+    exit $STATUS
+fi
+
+printf -- "\n\n"
+
+if [ -f ./run_tests.sh ]; then
+    ./run_tests.sh
+elif [ -f ./RunTests.sh ]; then
+    ./RunTests.sh
+else
+       printf -- "No test script found\n"
+fi
+
+STATUS=$(($STATUS + $?))
+
+if [ "$STATUS" != 0 ]; then
+    printf -- "Tests failed, aborting commit\n"
+    exit $STATUS
+fi
+
+exit 0

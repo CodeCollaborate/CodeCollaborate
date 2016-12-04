@@ -24,9 +24,24 @@ _testmain.go
 *.prof
 
 # Eclipse, IntelliJ project files
-*.iml
 .idea
+*.iml
 *.project
 
 # Config files
-config/auth.cfg
+/config/*
+!/config/defaults/
+
+# Vendored files
+/vendor/*
+!/vendor/vendor.json
+
+# Filesystem testing temp
+/testing
+ProjectFiles
+data
+
+# misc
+*.swp
+/.vscode/
+/bin/
