@@ -3,6 +3,7 @@ package dbfs
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/CodeCollaborate/Server/utils"
@@ -16,24 +17,62 @@ var MinBufferLength = 50
 // MaxBufferLength specifies the maximum number of patches left in the database before scrunching
 var MaxBufferLength = MinBufferLength * 10
 
+// ScrunchingExpiryLength specifies the maximum time we will allow scrunching to occur before we
+// consider it failed and could retry
+var ScrunchingExpiryLength = uint32((5 * time.Minute).Seconds())
+
 // ScrunchFile scrunches all but the last minBufferLength items into the file on disk
 // It then removes the changes from Couchbase
 func (di *DatabaseImpl) ScrunchFile(meta FileMeta) error {
-	changes, baseFile, err := di.getForScrunching(meta, MinBufferLength)
+	utils.LogDebug("Scrunching: Starting", utils.LogFields{
+		"FileID": meta.FileID,
+	})
 
+	start := time.Now()
+
+	changes, baseFile, err := di.getForScrunching(meta, MinBufferLength)
 	if err != nil {
 		return fmt.Errorf("Scrunching - Failed to retrieve patches and file for scrunching: %v", err)
 	}
+	if len(changes) == 0 {
+		// nothing to do, return silently
+		return nil
+	}
+
+	utils.LogDebug("Scrunching: Got patches", utils.LogFields{
+		"FileID":     meta.FileID,
+		"Changes":    changes,
+		"NumChanges": len(changes),
+	})
+
 	result, err := patching.PatchTextFromString(string(baseFile), changes)
 	if err != nil {
 		return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
 	}
+
+	utils.LogDebug("Scrunching: Patched text", utils.LogFields{
+		"FileID":     meta.FileID,
+		"NumChanges": len(changes),
+	})
+
 	if err := di.FileWriteToSwap(meta, []byte(result)); err != nil {
 		return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
 	}
+
+	utils.LogDebug("Scrunching: Wrote to swap file", utils.LogFields{
+		"FileID": meta.FileID,
+	})
+
 	if err := di.deleteForScrunching(meta, len(changes)); err != nil {
 		return fmt.Errorf("Scrunching - Failed to removed scrunched changes: %v", err)
 	}
+
+	elapsed := time.Since(start)
+
+	utils.LogDebug("Scrunching: Done", utils.LogFields{
+		"FileID":         meta.FileID,
+		"Execution Time": elapsed.Seconds(),
+	})
 
 	return nil
 }
@@ -45,8 +84,9 @@ func (di *DatabaseImpl) getForScrunching(fileMeta FileMeta, remainder int) ([]st
 	if err != nil {
 		return []string{}, []byte{}, err
 	}
+	fileKey := strconv.FormatInt(fileMeta.FileID, 10)
 
-	frag, err := cb.bucket.LookupIn(strconv.FormatInt(fileMeta.FileID, 10)).Get("changes").Execute()
+	frag, err := cb.bucket.LookupIn(fileKey).Get("changes").Execute()
 	if err != nil {
 		return []string{}, []byte{}, ErrResourceNotFound
 	}
@@ -59,6 +99,18 @@ func (di *DatabaseImpl) getForScrunching(fileMeta FileMeta, remainder int) ([]st
 
 	if len(changes)-(remainder+1) < 0 {
 		return []string{}, []byte{}, ErrNoDbChange
+	}
+
+	err = di.scrunchingAddLock(fileKey)
+	if err != nil {
+		// If it finds a document, we're already scrunching and it will fail (because insert, not upsert).
+		// Unfortunately, couchbase doesn't have any better way to tell if a key exists,
+		// so we can't do any better than doing this and just eating the error *grumble*
+		utils.LogDebug("Scrunching: Scrunching (probably) already in progress, aborting", utils.LogFields{
+			"FileID":            fileMeta.FileID,
+			"Couchbase Message": err,
+		})
+		return []string{}, []byte{}, nil
 	}
 
 	swp, err := di.makeSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
@@ -76,10 +128,10 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 	// NOTE: the test for this in multi_test.go walks through this logic, ensuring pull works throughout
 	//		 therefore, any changes made here need to be reflected there as well
 
-	key := strconv.FormatInt(fileMeta.FileID, 10)
+	fileKey := strconv.FormatInt(fileMeta.FileID, 10)
 
 	// turn on writing to TempChanges
-	builder := cb.bucket.MutateIn(key, 0, 0)
+	builder := cb.bucket.MutateIn(fileKey, 0, 0)
 	builder = builder.Upsert("tempchanges", []string{}, false)
 	builder = builder.Upsert("usetemp", true, false)
 	_, err = builder.Execute()
@@ -88,7 +140,7 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 	}
 
 	// get changes in normal changes
-	frag, err := cb.bucket.LookupIn(key).Get("changes").Execute()
+	frag, err := cb.bucket.LookupIn(fileKey).Get("changes").Execute()
 	if err != nil {
 		return err
 	}
@@ -99,8 +151,17 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 		return ErrResourceNotFound
 	}
 
+	if len(changes) <= num {
+		// somehow something scrunched this file at the same time
+		utils.LogWarn("Scrunching: possible concurrent scrunching of the same file. "+
+			"Maybe `ScrunchingExpiryLength` isn't long enough?", utils.LogFields{
+			"FileID": fileMeta.FileID,
+		})
+		return nil
+	}
+
 	// turn off writing to TempChanges & reset normal changes
-	builder = cb.bucket.MutateIn(key, 0, 0)
+	builder = cb.bucket.MutateIn(fileKey, 0, 0)
 	builder = builder.Upsert("remaining_changes", changes[num:], false)
 	builder = builder.Upsert("changes", []string{}, false)
 	builder = builder.Upsert("usetemp", false, false)
@@ -111,7 +172,7 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 	}
 
 	// get changes in TempChanges
-	frag, err = cb.bucket.LookupIn(key).Get("tempchanges").Execute()
+	frag, err = cb.bucket.LookupIn(fileKey).Get("tempchanges").Execute()
 	if err != nil {
 		return err
 	}
@@ -130,7 +191,7 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 			"File relath": fileMeta.RelativePath,
 		})
 		// undo everything
-		builder = cb.bucket.MutateIn(key, 0, 0)
+		builder = cb.bucket.MutateIn(fileKey, 0, 0)
 		builder = builder.ArrayPrependMulti("changes", append(changes, tempChanges...), false)
 		builder = builder.Upsert("remaining_changes", []string{}, false)
 		builder = builder.Upsert("tempchanges", []string{}, false)
@@ -141,7 +202,7 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 	}
 
 	// prepend changes and reset temporarily stored changes
-	builder = cb.bucket.MutateIn(key, 0, 0)
+	builder = cb.bucket.MutateIn(fileKey, 0, 0)
 	builder = builder.ArrayPrependMulti("changes", append(changes[num:], tempChanges...), false)
 	builder = builder.Upsert("remaining_changes", []string{}, false)
 	builder = builder.Upsert("tempchanges", []string{}, false)
@@ -157,6 +218,37 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 		})
 	}
 
+	err = di.scrunchingRemoveLock(fileKey)
+	if err != nil {
+		utils.LogDebug("Scrunching: took longer than allocated scrunching time", utils.LogFields{
+			"FileID":       fileMeta.FileID,
+			"Allowed Time": ScrunchingExpiryLength,
+		})
+	}
+
+	return err
+}
+
+// scrunchingAddLock hints to the server that the file with key `key` is currently being scrunched
+func (di *DatabaseImpl) scrunchingAddLock(key string) error {
+	cb, err := di.openCouchBase()
+	if err != nil {
+		return err
+	}
+
+	empty := true
+	_, err = cb.scrunchingLocksBucket.Insert(key, &empty, ScrunchingExpiryLength)
+	return err
+}
+
+// scrunchingRemoveLock removes the scrunching lock on the file with key `key` so that it can be scrunched later
+func (di *DatabaseImpl) scrunchingRemoveLock(key string) error {
+	cb, err := di.openCouchBase()
+	if err != nil {
+		return err
+	}
+
+	_, err = cb.scrunchingLocksBucket.Remove(key, 0)
 	return err
 }
 
