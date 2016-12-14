@@ -161,7 +161,6 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// make sure they're right
 	changes1, raw1, err := di.getForScrunching(file, 1)
-	fmt.Println(changes1)
 	assert.NoError(t, err, "error getting changes for scrunching")
 	assert.EqualValues(t, string(defaultBaseFile), string(raw1), "swap was not made correctly")
 	assert.Len(t, changes1, num, "pulled wrong number of changes")
