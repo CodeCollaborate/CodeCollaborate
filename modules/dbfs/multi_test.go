@@ -100,6 +100,7 @@ func TestDatabaseImpl_GetForScrunching(t *testing.T) {
 
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 	defer di.CBDeleteFile(file.FileID)
+	defer di.scrunchingRemoveLock(strconv.FormatInt(file.FileID, 10))
 
 	changes, swp, err := di.getForScrunching(file, 1)
 	assert.NoError(t, err, "error getting swp or changes")

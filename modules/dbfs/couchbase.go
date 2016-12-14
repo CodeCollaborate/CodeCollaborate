@@ -8,12 +8,14 @@ import (
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
+	"github.com/CodeCollaborate/Server/utils"
 	"github.com/couchbase/gocb"
 )
 
 type couchbaseConn struct {
-	config config.ConnCfg
-	bucket *gocb.Bucket
+	config                config.ConnCfg
+	bucket                *gocb.Bucket
+	scrunchingLocksBucket *gocb.Bucket
 }
 
 type cbFile struct {
@@ -47,6 +49,9 @@ func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
 	}
 
 	if err != nil {
+		utils.LogError("Couchbase: could not connect to couchbase", err, utils.LogFields{
+			"Host": di.couchbaseDB.config.Host,
+		})
 		return di.couchbaseDB, err
 	}
 
@@ -54,11 +59,27 @@ func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
 		di.couchbaseDB.config.Schema = "documents"
 	}
 
-	myBucket, err := documentsCluster.OpenBucket(di.couchbaseDB.config.Schema, di.couchbaseDB.config.Password)
+	schemaBucket, err := documentsCluster.OpenBucket(di.couchbaseDB.config.Schema, di.couchbaseDB.config.Password)
 	if err != nil {
+		utils.LogError("Couchbase: could not open bucket", err, utils.LogFields{
+			"Host":   di.couchbaseDB.config.Host,
+			"Bucket": di.couchbaseDB.config.Schema,
+		})
 		return di.couchbaseDB, err
 	}
-	di.couchbaseDB.bucket = myBucket
+	di.couchbaseDB.bucket = schemaBucket
+
+	// need to use 2nd bucket b/c couchbase has document expiry, not key expiry
+	locksBucketName := di.couchbaseDB.config.Schema + "_scrunching_locks"
+	slBucket, err := documentsCluster.OpenBucket(locksBucketName, di.couchbaseDB.config.Password)
+	if err != nil {
+		utils.LogError("Couchbase: could not open bucket", err, utils.LogFields{
+			"Host":   di.couchbaseDB.config.Host,
+			"Bucket": locksBucketName,
+		})
+		return di.couchbaseDB, err
+	}
+	di.couchbaseDB.scrunchingLocksBucket = slBucket
 
 	return di.couchbaseDB, nil
 }
