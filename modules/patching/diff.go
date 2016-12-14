@@ -10,6 +10,20 @@ import (
 	"strings"
 )
 
+type Diffs []*Diff
+
+func (slice Diffs) Len() int {
+	return len(slice)
+}
+
+func (slice Diffs) Less(i, j int) bool {
+	return slice[i].StartIndex < slice[j].StartIndex;
+}
+
+func (slice Diffs) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
 // Diff represents a single change in the document.
 type Diff struct {
 	Insertion  bool

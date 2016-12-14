@@ -10,6 +10,8 @@ import (
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/couchbase/gocb"
+	"github.com/CodeCollaborate/Server/utils"
+	"sort"
 )
 
 type couchbaseConn struct {
@@ -155,7 +157,7 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
 // Returns the new version number, the missing patches, and an error, if any.
-func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error) {
+func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []string) (int64, []string, error) {
 	// TODO (non-immediate/required): verify changes are valid changes
 	cb, err := di.openCouchBase()
 	if err != nil {
@@ -184,10 +186,10 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []
 	}
 
 	minVersion := int64(math.MaxInt64)
-	transformedChanges := make([]string, len(changes))
+	transformedPatches := make([]*patching.Patch, len(patches))
 
 	// Build patch, transform changes against newer changes.
-	for i, changeStr := range changes {
+	for i, changeStr := range patches {
 		change, err := patching.NewPatchFromString(changeStr)
 		if err != nil {
 			return -1, nil, errors.New("Failed to parse patch")
@@ -195,42 +197,69 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []
 
 		// check to make sure the patch is being applied to the most recent revision
 		if change.BaseVersion > version {
+			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil);
 			return -1, nil, ErrVersionOutOfDate
 		}
 
-		if minVersion > change.BaseVersion {
+		if change.BaseVersion < minVersion {
 			minVersion = change.BaseVersion
 		}
 		// For every patch, calculate the patches that it does not have.
+		utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
+			"Version": version,
+			"BaseVersion": change.BaseVersion,
+			"Diff": int(version-change.BaseVersion),
+			"Len": len(prevChanges),
+			"ChangeStr": changeStr,
+			"PrevChanges": prevChanges,
+		})
 		startIndex := len(prevChanges) - int(version-change.BaseVersion)
 
 		if startIndex < 0 {
+			utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil);
 			return -1, nil, ErrVersionOutOfDate
 		}
 
 		// Apply patches from the change's baseVersion onwards
 		toApply := prevChanges[startIndex:]
 
-		transformedChange, err := change.TransformFromString(toApply) // rewrite change with transformed patch
+		utils.LogDebug("TRANSFORMING", utils.LogFields{
+			"PatchesToApply": toApply,
+			"Change": changeStr,
+		})
+
+		transformedPatch, err := change.TransformFromString(toApply) // rewrite change with transformed patch
 		if err != nil {
 			return -1, nil, ErrInternalServerError // Could not parse one of the old patches - should never happen.
 		}
 
 		// Update the BaseVersion to be be the previous change
-		transformedChange.BaseVersion += int64(i)
-		transformedChanges[i] = transformedChange.String()
+		transformedPatch.BaseVersion += int64(i)
+		transformedPatches[i] = transformedPatch
+	}
+
+	var consolidatedPatch *patching.Patch
+	for i, _ := range transformedPatches {
+		if consolidatedPatch == nil {
+			consolidatedPatch = transformedPatches[i]
+		} else {
+			hoistedPatch := transformedPatches[i].Transform([]*patching.Patch{consolidatedPatch.Undo()})
+			newChanges := append(consolidatedPatch.Changes, hoistedPatch.Changes...)
+			sort.Sort(patching.Diffs(newChanges))
+			consolidatedPatch.Changes = newChanges
+		}
 	}
 
 	// use the cas to make sure the document hasn't changed
 	builder := cb.bucket.MutateIn(key, cas, 0)
 
 	if !useTemp {
-		builder.ArrayAppendMulti("changes", transformedChanges, false)
+		builder.ArrayAppend("changes", consolidatedPatch.String(), false)
 	} else {
-		builder.ArrayAppendMulti("tempchanges", transformedChanges, false)
+		builder.ArrayAppend("tempchanges", consolidatedPatch.String(), false)
 	}
 
-	builder = builder.Counter("version", int64(len(transformedChanges)), false)
+	builder = builder.Counter("version", 1, false)
 
 	_, err = builder.Execute()
 	if err != nil {

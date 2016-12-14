@@ -39,7 +39,8 @@ func NewPatchFromString(str string) (*Patch, error) {
 	if len(parts[0]) <= 1 {
 		return nil, errors.New("Invalid base version")
 	}
-	patch.BaseVersion, err = strconv.ParseInt(string(parts[0][1]), 10, 64)
+
+	patch.BaseVersion, err = strconv.ParseInt(string(parts[0][1:]), 10, 64)
 
 	if err != nil {
 		return nil, err
