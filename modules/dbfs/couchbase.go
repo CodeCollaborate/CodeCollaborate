@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"strings"
 
+	"sort"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/couchbase/gocb"
-	"github.com/CodeCollaborate/Server/utils"
-	"sort"
 )
 
 type couchbaseConn struct {
@@ -197,7 +197,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 		// check to make sure the patch is being applied to the most recent revision
 		if change.BaseVersion > version {
-			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil);
+			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
 			return -1, nil, ErrVersionOutOfDate
 		}
 
@@ -206,17 +206,17 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		}
 		// For every patch, calculate the patches that it does not have.
 		utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
-			"Version": version,
+			"Version":     version,
 			"BaseVersion": change.BaseVersion,
-			"Diff": int(version-change.BaseVersion),
-			"Len": len(prevChanges),
-			"ChangeStr": changeStr,
+			"Diff":        int(version - change.BaseVersion),
+			"Len":         len(prevChanges),
+			"ChangeStr":   changeStr,
 			"PrevChanges": prevChanges,
 		})
 		startIndex := len(prevChanges) - int(version-change.BaseVersion)
 
 		if startIndex < 0 {
-			utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil);
+			utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
 			return -1, nil, ErrVersionOutOfDate
 		}
 
@@ -225,7 +225,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 		utils.LogDebug("TRANSFORMING", utils.LogFields{
 			"PatchesToApply": toApply,
-			"Change": changeStr,
+			"Change":         changeStr,
 		})
 
 		transformedPatch, err := change.TransformFromString(toApply) // rewrite change with transformed patch
@@ -239,13 +239,13 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 	}
 
 	var consolidatedPatch *patching.Patch
-	for i, _ := range transformedPatches {
+	for _, transformed := range transformedPatches {
 		if consolidatedPatch == nil {
-			consolidatedPatch = transformedPatches[i]
+			consolidatedPatch = transformed
 		} else {
-			hoistedPatch := transformedPatches[i].Transform([]*patching.Patch{consolidatedPatch.Undo()})
+			hoistedPatch := transformed.Transform([]*patching.Patch{consolidatedPatch.Undo()})
 			newChanges := append(consolidatedPatch.Changes, hoistedPatch.Changes...)
-			sort.Sort(patching.Diffs(newChanges))
+			sort.Sort(newChanges)
 			consolidatedPatch.Changes = newChanges
 		}
 	}

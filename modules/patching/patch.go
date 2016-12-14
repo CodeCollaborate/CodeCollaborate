@@ -15,11 +15,11 @@ type Patch struct {
 
 	// Changes is the list of changes that were applied to the document.
 	// When patching, changes MUST be applied in order.
-	Changes []*Diff
+	Changes Diffs
 }
 
 // NewPatch creates a new patch with the given parameters
-func NewPatch(baseVersion int64, changes []*Diff) *Patch {
+func NewPatch(baseVersion int64, changes Diffs) *Patch {
 	return &Patch{
 		BaseVersion: baseVersion,
 		Changes:     changes,
@@ -65,7 +65,7 @@ func NewPatchFromString(str string) (*Patch, error) {
 
 // ConvertToCRLF converts this patch from using LF to CRLF line separators given the base text to patch.
 func (patch *Patch) ConvertToCRLF(base string) *Patch {
-	newChanges := []*Diff{}
+	newChanges := Diffs{}
 
 	for _, diff := range patch.Changes {
 		newChanges = append(newChanges, diff.ConvertToCRLF(base))
@@ -76,7 +76,7 @@ func (patch *Patch) ConvertToCRLF(base string) *Patch {
 
 // ConvertToLF converts this patch from using CRLF to LF line separators given the base text to patch.
 func (patch *Patch) ConvertToLF(base string) *Patch {
-	newChanges := []*Diff{}
+	newChanges := Diffs{}
 
 	for _, diff := range patch.Changes {
 		newChanges = append(newChanges, diff.ConvertToLF(base))
@@ -87,7 +87,7 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 
 // Undo reverses this patch, producing a patch to undo the changes done by applying the patch.
 func (patch *Patch) Undo() *Patch {
-	newChanges := []*Diff{}
+	newChanges := Diffs{}
 
 	// This needs to be in reverse order, since all the diffs in a package will have been applied in order.
 	// The last diff will have been computed relative to the previous few.
@@ -121,7 +121,7 @@ func (patch *Patch) Transform(others []*Patch) *Patch {
 	maxVersionSeen := patch.BaseVersion
 
 	for _, otherPatch := range others {
-		newIntermediateDiffs := []*Diff{}
+		newIntermediateDiffs := Diffs{}
 
 		for _, diff := range intermediateDiffs {
 			newIntermediateDiffs = append(newIntermediateDiffs, diff.transform(otherPatch.Changes)...)

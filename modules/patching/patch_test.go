@@ -11,7 +11,7 @@ func TestPatch_NewPatch(t *testing.T) {
 
 	diff1 := NewDiff(false, 3, "deletion")
 	diff2 := NewDiff(true, 2, "insert")
-	patch := NewPatch(1, []*Diff{diff1, diff2})
+	patch := NewPatch(1, Diffs{diff1, diff2})
 	require.Equal(t, patchString, patch.String())
 }
 
