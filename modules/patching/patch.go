@@ -48,10 +48,6 @@ func NewPatchFromString(str string) (*Patch, error) {
 
 	diffStrs := strings.Split(parts[1], ",\n")
 
-	if len(diffStrs) == 0 {
-		return nil, errors.New("No changes attached to patch")
-	}
-
 	for _, diffStr := range diffStrs {
 		newDiff, err := NewDiffFromString(diffStr)
 		if err != nil {
@@ -142,10 +138,12 @@ func (patch *Patch) String() string {
 	buffer.WriteString("v")
 	buffer.WriteString(fmt.Sprintf("%d", patch.BaseVersion))
 	buffer.WriteString(":\n")
-	buffer.WriteString(patch.Changes[0].String())
-	for _, diff := range patch.Changes[1:] {
-		buffer.WriteString(",\n")
-		buffer.WriteString(diff.String())
+	if patch.Changes.Len() > 0 {
+		buffer.WriteString(patch.Changes[0].String())
+		for _, diff := range patch.Changes[1:] {
+			buffer.WriteString(",\n")
+			buffer.WriteString(diff.String())
+		}
 	}
 
 	return buffer.String()
