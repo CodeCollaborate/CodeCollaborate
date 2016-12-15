@@ -157,7 +157,6 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
 // Returns the new version number, the missing patches, and an error, if any.
 func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []string) (int64, []string, error) {
-	// TODO (non-immediate/required): verify changes are valid changes
 	cb, err := di.openCouchBase()
 	if err != nil {
 		return -1, nil, err
@@ -212,8 +211,8 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			"ChangeStr":   changeStr,
 			"PrevChanges": prevChanges,
 		})
-		startIndex := len(prevChanges) - int(version-change.BaseVersion)
 
+		startIndex := len(prevChanges) - int(version-change.BaseVersion)
 		if startIndex < 0 {
 			utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
 			return -1, nil, ErrVersionOutOfDate
