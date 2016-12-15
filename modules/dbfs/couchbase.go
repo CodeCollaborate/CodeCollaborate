@@ -212,7 +212,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			"ChangeStr":   changeStr,
 			"PrevChanges": prevChanges,
 		})
-		startIndex := len(prevChanges) - int(version - change.BaseVersion)
+		startIndex := len(prevChanges) - int(version-change.BaseVersion)
 
 		if startIndex < 0 {
 			utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
@@ -265,5 +265,5 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		return -1, nil, err
 	}
 
-	return version + 1, prevChanges[len(prevChanges) - int(version - minVersion):], err
+	return version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
 }
