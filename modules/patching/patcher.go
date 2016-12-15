@@ -34,7 +34,7 @@ func PatchText(text string, patches []*Patch) (string, error) {
 				utils.LogError("PatchText: Encountered invalid diff", errors.New("Slice out of bounds"), utils.LogFields{
 					"Diff":  diff,
 					"Patch": patch,
-					"Text", text,
+					"Text":  text,
 				})
 				return "", fmt.Errorf("Invalid patch range: [%d, %d] for text length %d", startIndex, diff.StartIndex, len(text))
 			}
