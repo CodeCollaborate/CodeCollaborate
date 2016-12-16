@@ -36,7 +36,7 @@ func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseIm
 	assert.NoError(t, err, "error writing file to disk")
 
 	for _, change := range baseChanges {
-		_, _, err = di.CBAppendFileChange(file.FileID, []string{change}, []string{})
+		_, _, _, err = di.CBAppendFileChange(file.FileID, []string{change}, []string{})
 		assert.NoError(t, err, "error appending change to file")
 	}
 
@@ -258,7 +258,7 @@ func nativeErr(t *testing.T, err error) {
 }
 
 func appendChangeToFile(t *testing.T, di *DatabaseImpl, changes []string) {
-	_, _, err := di.CBAppendFileChange(file.FileID, changes, []string{})
+	_, _, _, err := di.CBAppendFileChange(file.FileID, changes, []string{})
 	assert.NoError(t, err, "Error while appending more changes")
 }
 
