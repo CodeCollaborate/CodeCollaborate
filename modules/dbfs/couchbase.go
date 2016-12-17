@@ -221,11 +221,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		if startIndex < 0 {
 			startIndex = 0
 		}
-		for {
-			if startIndex <= 0 || len(prevChanges) <= startIndex {
-				break
-			}
-
+		for ; startIndex > 0 && startIndex < len(prevChanges); startIndex-- {
 			otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
 			utils.LogDebug("CHECKING", utils.LogFields{
@@ -236,12 +232,11 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 			if err != nil {
 				return nil, -1, nil, ErrInternalServerError
-			} else if change.BaseVersion < otherPatch.BaseVersion {
-				startIndex--
-			} else {
+			} else if change.BaseVersion > otherPatch.BaseVersion {
 				startIndex++ // go back to the actual base version
 				break
 			}
+			startIndex--
 		}
 
 		// Apply patches from the change's baseVersion onwards
@@ -260,7 +255,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		}
 
 		// Update the BaseVersion to be be the previous change
-		//transformedPatch.BaseVersion += int64(i)
+		transformedPatch.BaseVersion++
 		transformedPatches = append(transformedPatches, transformedPatch.String())
 	}
 
