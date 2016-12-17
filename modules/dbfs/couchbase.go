@@ -155,11 +155,10 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
 // Returns the new version number, the missing patches, and an error, if any.
-func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []string) (int64, []string, error) {
-	// TODO (non-immediate/required): verify changes are valid changes
+func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []string) ([]string, int64, []string, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
-		return -1, nil, err
+		return nil, -1, nil, err
 	}
 	key := strconv.FormatInt(fileID, 10)
 
@@ -168,7 +167,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []
 	// then use it in the MutateIn call to verify the document hasn't updated underneath us
 	frag, err := cb.bucket.LookupIn(key).Get("version").Get("usetemp").Execute()
 	if err != nil {
-		return -1, nil, ErrResourceNotFound
+		return nil, -1, nil, ErrResourceNotFound
 	}
 
 	cas := frag.Cas()
@@ -176,66 +175,142 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, changes, prevChanges []
 	var useTemp bool
 	err = frag.Content("version", &version)
 	if err != nil {
-		return -1, nil, ErrNoData
+		return nil, -1, nil, ErrNoData
 	}
 	err = frag.Content("usetemp", &useTemp)
 	if err != nil {
-		return -1, nil, ErrNoData
+		return nil, -1, nil, ErrNoData
 	}
 
-	minVersion := int64(math.MaxInt64)
-	transformedChanges := make([]string, len(changes))
+	minStartIndex := int64(math.MaxInt64)
+	transformedPatches := []string{}
 
 	// Build patch, transform changes against newer changes.
-	for i, changeStr := range changes {
+	for _, changeStr := range patches {
 		change, err := patching.NewPatchFromString(changeStr)
 		if err != nil {
-			return -1, nil, errors.New("Failed to parse patch")
+			return nil, -1, nil, errors.New("Failed to parse patch")
 		}
 
 		// check to make sure the patch is being applied to the most recent revision
 		if change.BaseVersion > version {
-			return -1, nil, ErrVersionOutOfDate
+			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
+			return nil, -1, nil, ErrVersionOutOfDate
 		}
 
-		if minVersion > change.BaseVersion {
-			minVersion = change.BaseVersion
-		}
 		// For every patch, calculate the patches that it does not have.
-		startIndex := len(prevChanges) - int(version-change.BaseVersion)
+		utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
+			"Version":     version,
+			"BaseVersion": change.BaseVersion,
+			"Diff":        int(version - change.BaseVersion),
+			"Len":         len(prevChanges),
+			"ChangeStr":   changeStr,
+			"PrevChanges": prevChanges,
+		})
 
-		if startIndex < 0 {
-			return -1, nil, ErrVersionOutOfDate
+		//startIndex := len(prevChanges) - int(version-change.BaseVersion)
+		//if startIndex < 0 {
+		//	utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
+		//	return nil, -1, nil, ErrVersionOutOfDate
+		//}
+
+		startIndex := int64(len(prevChanges) - 1)
+
+		// If we are building on the server's base version, don't need to transform.
+		if change.BaseVersion == version {
+			startIndex = int64(len(prevChanges))
+		} else {
+			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
+				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
+
+				if err != nil {
+					return nil, -1, nil, ErrInternalServerError
+				}
+
+				if change.BaseVersion > otherPatch.BaseVersion {
+					startIndex++ // go back to the actual base version
+					break
+				} else {
+					startIndex--
+				}
+			}
+
+			if startIndex < 0 {
+				return nil, -1, nil, ErrVersionOutOfDate
+			}
 		}
+
+		if startIndex < minStartIndex {
+			minStartIndex = startIndex
+		}
+
+		utils.LogDebug("FINISHED CHECKING", utils.LogFields{
+			"Change":     changeStr,
+			"StartIndex": startIndex,
+			"Len":        len(prevChanges),
+		})
 
 		// Apply patches from the change's baseVersion onwards
 		toApply := prevChanges[startIndex:]
 
-		transformedChange, err := change.TransformFromString(toApply) // rewrite change with transformed patch
+		utils.LogDebug("TRANSFORMING", utils.LogFields{
+			"PatchesToApply": toApply,
+			"Change":         changeStr,
+			"StartIndex":     startIndex,
+			"Len":            len(prevChanges),
+		})
+
+		transformedPatch, err := change.TransformFromString(toApply) // rewrite change with transformed patch
 		if err != nil {
-			return -1, nil, ErrInternalServerError // Could not parse one of the old patches - should never happen.
+			return nil, -1, nil, ErrInternalServerError // Could not parse one of the old patches - should never happen.
 		}
 
 		// Update the BaseVersion to be be the previous change
-		transformedChange.BaseVersion += int64(i)
-		transformedChanges[i] = transformedChange.String()
+		//transformedPatch.BaseVersion++
+		transformedPatches = append(transformedPatches, transformedPatch.String())
 	}
+
+	/*
+		// THIS BLOCK OF CODE HAS BEEN DISABLED BECAUSE PATCH CONSOLIDATION DOES NOT WORK AS EXPECTED
+		// For this to correctly work, a new OT-like algorithm will need to be implemented.
+
+		var consolidatedPatch *patching.Patch
+		for _, transformed := range transformedPatches {
+			if consolidatedPatch == nil {
+				consolidatedPatch = transformed
+			} else {
+				hoistedPatch := transformed.Transform([]*patching.Patch{consolidatedPatch.Undo()})
+				newChanges := append(consolidatedPatch.Changes, hoistedPatch.Changes...)
+				sort.Sort(newChanges)
+				consolidatedPatch.Changes = newChanges
+			}
+		}
+
+		// use the cas to make sure the document hasn't changed
+		builder := cb.bucket.MutateIn(key, cas, 0)
+
+		if !useTemp {
+			builder.ArrayAppend("changes", consolidatedPatch.String(), false)
+		} else {
+			builder.ArrayAppend("tempchanges", consolidatedPatch.String(), false)
+		}
+	*/
 
 	// use the cas to make sure the document hasn't changed
 	builder := cb.bucket.MutateIn(key, cas, 0)
 
 	if !useTemp {
-		builder.ArrayAppendMulti("changes", transformedChanges, false)
+		builder.ArrayAppendMulti("changes", transformedPatches, false)
 	} else {
-		builder.ArrayAppendMulti("tempchanges", transformedChanges, false)
+		builder.ArrayAppendMulti("tempchanges", transformedPatches, false)
 	}
 
-	builder = builder.Counter("version", int64(len(transformedChanges)), false)
+	builder = builder.Counter("version", 1, false)
 
 	_, err = builder.Execute()
 	if err != nil {
-		return -1, nil, err
+		return nil, -1, nil, err
 	}
 
-	return version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
+	return transformedPatches, version + 1, prevChanges[minStartIndex:], err
 }

@@ -13,7 +13,7 @@ import (
 )
 
 var defaultBaseFile = "this is a very important file"
-var defaultChanges = []string{"v0:\n1:+5:test1", "v0:\n10:+5:test2"}
+var defaultChanges = []string{"v0:\n1:+5:test1", "v1:\n10:+5:test2"}
 var transformedChanges = []string{"v0:\n1:+5:test1", "v1:\n10:+5:test2"}
 
 func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseImpl, FileMeta) {
@@ -35,8 +35,12 @@ func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseIm
 	_, err = di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte(baseFile))
 	assert.NoError(t, err, "error writing file to disk")
 
-	_, _, err = di.CBAppendFileChange(file.FileID, baseChanges, []string{})
-	assert.NoError(t, err, "error appending change to file")
+	for _, change := range baseChanges {
+		_, _, _, err = di.CBAppendFileChange(file.FileID, []string{change}, []string{})
+		assert.NoError(t, err, "error appending change to file")
+	}
+
+	di.scrunchingRemoveLock(strconv.FormatInt(file.FileID, 10))
 
 	return di, file
 }
@@ -60,9 +64,9 @@ func TestDatabaseImpl_ScrunchFile(t *testing.T) {
 
 	for i := 0; i < 50; i++ {
 		if i < 10 {
-			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d", 0, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d", i, i)
 		} else {
-			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d", 0, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d", i, i)
 		}
 	}
 
@@ -141,8 +145,8 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 	defer di.CBDeleteFile(file.FileID)
 
-	newChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v4:\n2:+1:4", "v5:\n2:+1:4", "v6:\n2:+1:5", "v7:\n2:+1:6", "v8:\n2:+1:7", "v9:\n2:+1:8", "v9:\n2:+1:9", "v9:\n2:+2:10"}
-	transformedNewChanges := []string{"v2:\n2:+1:2", "v3:\n2:+1:3", "v4:\n2:+1:4", "v5:\n2:+1:4", "v6:\n2:+1:5", "v7:\n2:+1:6", "v8:\n2:+1:7", "v9:\n2:+1:8", "v10:\n2:+1:9", "v11:\n2:+2:10"}
+	newChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
+	transformedNewChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
 	newRawFile := []byte(string(defaultBaseFile) + "\nit's a pretty cool file, not going to lie\n")
 
 	checkPullFile(t, di, file, transformedChanges, defaultBaseFile)
@@ -150,12 +154,14 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	// add more changes so it's more visible
 	appendChangeToFile(t, di, newChanges[:2])
 
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[0]), defaultBaseFile)
 	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), defaultBaseFile)
 
 	// arbitrarily saying we're going to scrunch off 2 patches
 	num := 2
 
 	// make sure they're right
+	//changes1, raw1, err := di.getForScrunching(file, 1)
 	changes1, raw1, err := di.getForScrunching(file, num)
 	assert.NoError(t, err, "error getting changes for scrunching")
 	assert.EqualValues(t, string(defaultBaseFile), string(raw1), "swap was not made correctly")
@@ -167,6 +173,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	assert.NoError(t, err, "Error while writing to swap file")
 
 	// check pull file (expecting old + new changes w/ old base)
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:1]...), string(defaultBaseFile))
 	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
 
 	// START DELETE
@@ -184,6 +191,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// add change
 	appendChangeToFile(t, di, newChanges[2:3])
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
 	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
 
 	// get changes in normal changes
@@ -196,6 +204,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// add change
 	appendChangeToFile(t, di, newChanges[3:4])
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
 	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:4]...), string(defaultBaseFile))
 
 	// turn off writing to TempChanges & reset normal changes
@@ -210,6 +219,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	// add change
 	// check switched to swap
 	appendChangeToFile(t, di, newChanges[4:5])
+	//checkPullFile(t, di, file, transformedNewChanges[:4], string(newRawFile))
 	checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
 
 	// get changes in TempChanges
@@ -223,6 +233,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	// add change
 	// check switched to swap
 	appendChangeToFile(t, di, newChanges[5:6])
+	//checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
 	checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
 
 	err = di.swapSwp(file.RelativePath, file.Filename, file.ProjectID)
@@ -230,6 +241,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// add change
 	appendChangeToFile(t, di, newChanges[6:7])
+	//checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
 	checkPullFile(t, di, file, transformedNewChanges[:7], string(newRawFile))
 
 	// prepend changes and reset temporarily stored changes
@@ -254,7 +266,7 @@ func nativeErr(t *testing.T, err error) {
 }
 
 func appendChangeToFile(t *testing.T, di *DatabaseImpl, changes []string) {
-	_, _, err := di.CBAppendFileChange(file.FileID, changes, []string{})
+	_, _, _, err := di.CBAppendFileChange(file.FileID, changes, []string{})
 	assert.NoError(t, err, "Error while appending more changes")
 }
 
