@@ -221,13 +221,12 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		}
 
 		for {
-			fmt.Println(startIndex)
 			if startIndex <= 0 || len(prevChanges) <= startIndex {
 				break
 			}
 
 			// Go until we find the last patch that generated the version before our base version
-			matched, err := regexp.Match(fmt.Sprintf("v%d:*", change.BaseVersion-2), []byte(prevChanges[startIndex]))
+			matched, err := regexp.Match(fmt.Sprintf("v%d:*", change.BaseVersion-1), []byte(prevChanges[startIndex]))
 			if err != nil {
 				return nil, -1, nil, ErrInvalidData
 			} else if !matched {
