@@ -6,9 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"fmt"
-	"regexp"
-
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/CodeCollaborate/Server/utils"
@@ -214,22 +211,25 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			"PrevChanges": prevChanges,
 		})
 
-		startIndex := len(prevChanges) - int(version-change.BaseVersion)
-		if startIndex < 0 {
-			utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, ErrVersionOutOfDate
-		}
+		//startIndex := len(prevChanges) - int(version-change.BaseVersion)
+		//if startIndex < 0 {
+		//	utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
+		//	return nil, -1, nil, ErrVersionOutOfDate
+		//}
 
+		startIndex := len(prevChanges) - 1
+		if startIndex < 0 {
+			startIndex = 0
+		}
 		for {
 			if startIndex <= 0 || len(prevChanges) <= startIndex {
 				break
 			}
 
-			// Go until we find the last patch that generated the version before our base version
-			matched, err := regexp.Match(fmt.Sprintf("v%d:*", change.BaseVersion-1), []byte(prevChanges[startIndex]))
+			otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 			if err != nil {
-				return nil, -1, nil, ErrInvalidData
-			} else if !matched {
+				return nil, -1, nil, ErrInternalServerError
+			} else if change.BaseVersion < otherPatch.BaseVersion {
 				startIndex--
 			} else {
 				startIndex++ // go back to the actual base version
