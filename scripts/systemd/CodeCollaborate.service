@@ -1,0 +1,14 @@
+[Unit]
+Description=CodeCollaborate server daemon
+After=syslog.target network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=on-failure
+WorkingDirectory=/CodeCollaborate/
+ExecStartPre=/usr/bin/docker start CodeCollaborate_RabbitMQ CodeCollaborate_MySQL
+ExecStart=/CodeCollaborate/Server
+
+[Install]
+WantedBy=multi-user.target
