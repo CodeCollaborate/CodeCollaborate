@@ -2,7 +2,10 @@ package patching
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 // PatchTextFromString applies the provided patches onto the given text. The patches are applied strictly in the order given.
@@ -27,6 +30,14 @@ func PatchText(text string, patches []*Patch) (string, error) {
 		var buffer bytes.Buffer
 		startIndex := 0
 		for _, diff := range patch.Changes {
+			if startIndex < 0 || startIndex >= len(text) || diff.StartIndex < 0 {
+				utils.LogError("PatchText: Encountered invalid diff", errors.New("Slice out of bounds"), utils.LogFields{
+					"Diff":  diff,
+					"Patch": patch,
+					"Text":  text,
+				})
+				return "", fmt.Errorf("Invalid patch range: [%d, %d] for text length %d", startIndex, diff.StartIndex, len(text))
+			}
 			// Copy anything before the changes
 			if startIndex < diff.StartIndex {
 				buffer.WriteString(text[startIndex:diff.StartIndex])

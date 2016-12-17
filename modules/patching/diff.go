@@ -10,6 +10,21 @@ import (
 	"strings"
 )
 
+// Diffs represents an array of Diff objects, mainly used for sorting
+type Diffs []*Diff
+
+func (slice Diffs) Len() int {
+	return len(slice)
+}
+
+func (slice Diffs) Less(i, j int) bool {
+	return slice[i].StartIndex < slice[j].StartIndex
+}
+
+func (slice Diffs) Swap(i, j int) {
+	slice[i], slice[j] = slice[j], slice[i]
+}
+
 // Diff represents a single change in the document.
 type Diff struct {
 	Insertion  bool
@@ -151,12 +166,12 @@ func (diff *Diff) subChangesEndingAt(end int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes[:end])
 }
 
-func (diff *Diff) transform(others []*Diff) []*Diff {
-	intermediateDiffs := []*Diff{}
+func (diff *Diff) transform(others Diffs) Diffs {
+	intermediateDiffs := Diffs{}
 	intermediateDiffs = append(intermediateDiffs, diff)
 
 	for _, other := range others {
-		newIntermediateDiffs := []*Diff{}
+		newIntermediateDiffs := Diffs{}
 		for _, current := range intermediateDiffs {
 			switch {
 			// CASE 1: IndexA < IndexB
@@ -215,61 +230,61 @@ func (diff *Diff) transform(others []*Diff) []*Diff {
 	return intermediateDiffs
 }
 
-func doTransform(transformFunc func(current, other *Diff) []*Diff, currResults []*Diff, current, other *Diff) []*Diff {
+func doTransform(transformFunc func(current, other *Diff) Diffs, currResults Diffs, current, other *Diff) Diffs {
 	return append(currResults, transformFunc(current, other)...)
 }
 
-func transformType1(current, other *Diff) []*Diff {
-	return []*Diff{current}
+func transformType1(current, other *Diff) Diffs {
+	return Diffs{current}
 }
 
-func transformType2(current, other *Diff) []*Diff {
-	return []*Diff{current.OffsetDiff(other.Length())}
+func transformType2(current, other *Diff) Diffs {
+	return Diffs{current.OffsetDiff(other.Length())}
 }
 
-func transformType3(current, other *Diff) []*Diff {
+func transformType3(current, other *Diff) Diffs {
 	if (other.StartIndex + other.Length()) > current.StartIndex {
-		return []*Diff{current.OffsetDiff(-(current.StartIndex - other.StartIndex))}
+		return Diffs{current.OffsetDiff(-(current.StartIndex - other.StartIndex))}
 	}
-	return []*Diff{current.OffsetDiff(-other.Length())}
+	return Diffs{current.OffsetDiff(-other.Length())}
 }
 
-func transformType4(current, other *Diff) []*Diff {
+func transformType4(current, other *Diff) Diffs {
 	if (other.StartIndex + other.Length()) <= current.StartIndex {
-		return []*Diff{current.OffsetDiff(-other.Length())}
+		return Diffs{current.OffsetDiff(-other.Length())}
 	} else if (other.StartIndex + other.Length()) >= (current.StartIndex + current.Length()) {
-		return []*Diff{} // Ignore change
+		return Diffs{} // Ignore change
 	}
 	overlap := other.StartIndex + other.Length() - current.StartIndex
 	newDiff := current.OffsetDiff(-other.Length() + overlap)
 	newDiff = newDiff.subChangesStartingFrom(overlap)
-	return []*Diff{newDiff}
+	return Diffs{newDiff}
 }
 
-func transformType5(current, other *Diff) []*Diff {
+func transformType5(current, other *Diff) Diffs {
 	if current.Length() > other.Length() {
-		return []*Diff{current.subChangesStartingFrom(other.Length())}
+		return Diffs{current.subChangesStartingFrom(other.Length())}
 	} // Else do nothing; already done by previous patch.
-	return []*Diff{}
+	return Diffs{}
 }
 
-func transformType6(current, other *Diff) []*Diff {
+func transformType6(current, other *Diff) Diffs {
 	if (current.StartIndex + current.Length()) > other.StartIndex {
 		length1 := other.StartIndex - current.StartIndex
 
 		diff1 := current.subChangesEndingAt(length1)
 		diff2 := current.subChangesStartingFrom(length1).OffsetDiff(other.Length())
 
-		return []*Diff{diff1, diff2}
+		return Diffs{diff1, diff2}
 	}
-	return []*Diff{current}
+	return Diffs{current}
 }
 
-func transformType7(current, other *Diff) []*Diff {
+func transformType7(current, other *Diff) Diffs {
 	if (current.StartIndex + current.Length()) > other.StartIndex {
 		nonOverlap := other.StartIndex - current.StartIndex
 
-		return []*Diff{current.subChangesEndingAt(current.Length() - nonOverlap)}
+		return Diffs{current.subChangesEndingAt(current.Length() - nonOverlap)}
 	}
-	return []*Diff{current}
+	return Diffs{current}
 }

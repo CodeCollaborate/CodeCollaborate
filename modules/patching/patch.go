@@ -15,11 +15,11 @@ type Patch struct {
 
 	// Changes is the list of changes that were applied to the document.
 	// When patching, changes MUST be applied in order.
-	Changes []*Diff
+	Changes Diffs
 }
 
 // NewPatch creates a new patch with the given parameters
-func NewPatch(baseVersion int64, changes []*Diff) *Patch {
+func NewPatch(baseVersion int64, changes Diffs) *Patch {
 	return &Patch{
 		BaseVersion: baseVersion,
 		Changes:     changes,
@@ -39,17 +39,14 @@ func NewPatchFromString(str string) (*Patch, error) {
 	if len(parts[0]) <= 1 {
 		return nil, errors.New("Invalid base version")
 	}
-	patch.BaseVersion, err = strconv.ParseInt(string(parts[0][1]), 10, 64)
+
+	patch.BaseVersion, err = strconv.ParseInt(string(parts[0][1:]), 10, 64)
 
 	if err != nil {
 		return nil, err
 	}
 
 	diffStrs := strings.Split(parts[1], ",\n")
-
-	if len(diffStrs) == 0 {
-		return nil, errors.New("No changes attached to patch")
-	}
 
 	for _, diffStr := range diffStrs {
 		newDiff, err := NewDiffFromString(diffStr)
@@ -64,7 +61,7 @@ func NewPatchFromString(str string) (*Patch, error) {
 
 // ConvertToCRLF converts this patch from using LF to CRLF line separators given the base text to patch.
 func (patch *Patch) ConvertToCRLF(base string) *Patch {
-	newChanges := []*Diff{}
+	newChanges := Diffs{}
 
 	for _, diff := range patch.Changes {
 		newChanges = append(newChanges, diff.ConvertToCRLF(base))
@@ -75,7 +72,7 @@ func (patch *Patch) ConvertToCRLF(base string) *Patch {
 
 // ConvertToLF converts this patch from using CRLF to LF line separators given the base text to patch.
 func (patch *Patch) ConvertToLF(base string) *Patch {
-	newChanges := []*Diff{}
+	newChanges := Diffs{}
 
 	for _, diff := range patch.Changes {
 		newChanges = append(newChanges, diff.ConvertToLF(base))
@@ -86,7 +83,7 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 
 // Undo reverses this patch, producing a patch to undo the changes done by applying the patch.
 func (patch *Patch) Undo() *Patch {
-	newChanges := []*Diff{}
+	newChanges := Diffs{}
 
 	// This needs to be in reverse order, since all the diffs in a package will have been applied in order.
 	// The last diff will have been computed relative to the previous few.
@@ -117,10 +114,10 @@ func (patch *Patch) TransformFromString(others []string) (*Patch, error) {
 // of changes relative to previously applied changes.
 func (patch *Patch) Transform(others []*Patch) *Patch {
 	intermediateDiffs := patch.Changes
-	maxVersionSeen := patch.BaseVersion
+	maxVersionSeen := patch.BaseVersion - 1
 
 	for _, otherPatch := range others {
-		newIntermediateDiffs := []*Diff{}
+		newIntermediateDiffs := Diffs{}
 
 		for _, diff := range intermediateDiffs {
 			newIntermediateDiffs = append(newIntermediateDiffs, diff.transform(otherPatch.Changes)...)
@@ -132,7 +129,7 @@ func (patch *Patch) Transform(others []*Patch) *Patch {
 		}
 	}
 
-	return NewPatch(maxVersionSeen, intermediateDiffs)
+	return NewPatch(maxVersionSeen+1, intermediateDiffs)
 }
 
 func (patch *Patch) String() string {
@@ -141,10 +138,12 @@ func (patch *Patch) String() string {
 	buffer.WriteString("v")
 	buffer.WriteString(fmt.Sprintf("%d", patch.BaseVersion))
 	buffer.WriteString(":\n")
-	buffer.WriteString(patch.Changes[0].String())
-	for _, diff := range patch.Changes[1:] {
-		buffer.WriteString(",\n")
-		buffer.WriteString(diff.String())
+	if patch.Changes.Len() > 0 {
+		buffer.WriteString(patch.Changes[0].String())
+		for _, diff := range patch.Changes[1:] {
+			buffer.WriteString(",\n")
+			buffer.WriteString(diff.String())
+		}
 	}
 
 	return buffer.String()

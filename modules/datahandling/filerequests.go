@@ -315,7 +315,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	prevChanges, err := db.PullChanges(fileMeta)
 
 	// TODO (normal/required): verify changes are valid changes
-	version, missing, err := db.CBAppendFileChange(f.FileID, f.Changes, prevChanges)
+	changes, version, missing, err := db.CBAppendFileChange(f.FileID, f.Changes, prevChanges)
 	if err != nil {
 		if err == dbfs.ErrVersionOutOfDate {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusVersionOutOfDate, f.Tag)}}, err
@@ -345,7 +345,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			Changes     []string
 		}{
 			FileVersion: version,
-			Changes:     f.Changes,
+			Changes:     changes,
 		},
 	}.Wrap()
 
