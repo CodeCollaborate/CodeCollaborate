@@ -146,7 +146,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	defer di.CBDeleteFile(file.FileID)
 
 	newChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
-	transformedNewChanges := []string{"v2:\n2:+1:2,\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8,\n2:+1:9,\n2:+2:10"}
+	transformedNewChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
 	newRawFile := []byte(string(defaultBaseFile) + "\nit's a pretty cool file, not going to lie\n")
 
 	checkPullFile(t, di, file, transformedChanges, defaultBaseFile)
@@ -154,13 +154,15 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	// add more changes so it's more visible
 	appendChangeToFile(t, di, newChanges[:2])
 
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[0]), defaultBaseFile)
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[0]), defaultBaseFile)
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), defaultBaseFile)
 
 	// arbitrarily saying we're going to scrunch off 2 patches
 	num := 2
 
 	// make sure they're right
-	changes1, raw1, err := di.getForScrunching(file, 1)
+	//changes1, raw1, err := di.getForScrunching(file, 1)
+	changes1, raw1, err := di.getForScrunching(file, num)
 	assert.NoError(t, err, "error getting changes for scrunching")
 	assert.EqualValues(t, string(defaultBaseFile), string(raw1), "swap was not made correctly")
 	assert.Len(t, changes1, num, "pulled wrong number of changes")
@@ -171,7 +173,8 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	assert.NoError(t, err, "Error while writing to swap file")
 
 	// check pull file (expecting old + new changes w/ old base)
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:1]...), string(defaultBaseFile))
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:1]...), string(defaultBaseFile))
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
 
 	// START DELETE
 	cb, err := di.openCouchBase()
@@ -188,7 +191,8 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// add change
 	appendChangeToFile(t, di, newChanges[2:3])
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
 
 	// get changes in normal changes
 	frag, err := cb.bucket.LookupIn(key).Get("changes").Execute()
@@ -200,7 +204,8 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// add change
 	appendChangeToFile(t, di, newChanges[3:4])
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
+	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:4]...), string(defaultBaseFile))
 
 	// turn off writing to TempChanges & reset normal changes
 	builder = cb.bucket.MutateIn(key, 0, 0)
@@ -214,7 +219,8 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	// add change
 	// check switched to swap
 	appendChangeToFile(t, di, newChanges[4:5])
-	checkPullFile(t, di, file, transformedNewChanges[:4], string(newRawFile))
+	//checkPullFile(t, di, file, transformedNewChanges[:4], string(newRawFile))
+	checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
 
 	// get changes in TempChanges
 	frag, err = cb.bucket.LookupIn(key).Get("tempchanges").Execute()
@@ -227,14 +233,16 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	// add change
 	// check switched to swap
 	appendChangeToFile(t, di, newChanges[5:6])
-	checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
+	//checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
+	checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
 
 	err = di.swapSwp(file.RelativePath, file.Filename, file.ProjectID)
 	assert.NoError(t, err, "Error swapping swap file, NOTE: the server WOULD normally be able to recover from here")
 
 	// add change
 	appendChangeToFile(t, di, newChanges[6:7])
-	checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
+	//checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
+	checkPullFile(t, di, file, transformedNewChanges[:7], string(newRawFile))
 
 	// prepend changes and reset temporarily stored changes
 	builder = cb.bucket.MutateIn(key, 0, 0)

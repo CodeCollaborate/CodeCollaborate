@@ -3,7 +3,6 @@ package dbfs
 import (
 	"errors"
 	"math"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -184,10 +183,10 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 	}
 
 	minVersion := int64(math.MaxInt64)
-	transformedPatches := []*patching.Patch{}
+	transformedPatches := []string{}
 
 	// Build patch, transform changes against newer changes.
-	for i, changeStr := range patches {
+	for _, changeStr := range patches {
 		change, err := patching.NewPatchFromString(changeStr)
 		if err != nil {
 			return nil, -1, nil, errors.New("Failed to parse patch")
@@ -232,29 +231,43 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		}
 
 		// Update the BaseVersion to be be the previous change
-		transformedPatch.BaseVersion += int64(i)
-		transformedPatches = append(transformedPatches, transformedPatch)
+		//transformedPatch.BaseVersion += int64(i)
+		transformedPatches = append(transformedPatches, transformedPatch.String())
 	}
 
-	var consolidatedPatch *patching.Patch
-	for _, transformed := range transformedPatches {
-		if consolidatedPatch == nil {
-			consolidatedPatch = transformed
-		} else {
-			hoistedPatch := transformed.Transform([]*patching.Patch{consolidatedPatch.Undo()})
-			newChanges := append(consolidatedPatch.Changes, hoistedPatch.Changes...)
-			sort.Sort(newChanges)
-			consolidatedPatch.Changes = newChanges
+	/*
+		// THIS BLOCK OF CODE HAS BEEN DISABLED BECAUSE PATCH CONSOLIDATION DOES NOT WORK AS EXPECTED
+		// For this to correctly work, a new OT-like algorithm will need to be implemented.
+
+		var consolidatedPatch *patching.Patch
+		for _, transformed := range transformedPatches {
+			if consolidatedPatch == nil {
+				consolidatedPatch = transformed
+			} else {
+				hoistedPatch := transformed.Transform([]*patching.Patch{consolidatedPatch.Undo()})
+				newChanges := append(consolidatedPatch.Changes, hoistedPatch.Changes...)
+				sort.Sort(newChanges)
+				consolidatedPatch.Changes = newChanges
+			}
 		}
-	}
+
+		// use the cas to make sure the document hasn't changed
+		builder := cb.bucket.MutateIn(key, cas, 0)
+
+		if !useTemp {
+			builder.ArrayAppend("changes", consolidatedPatch.String(), false)
+		} else {
+			builder.ArrayAppend("tempchanges", consolidatedPatch.String(), false)
+		}
+	*/
 
 	// use the cas to make sure the document hasn't changed
 	builder := cb.bucket.MutateIn(key, cas, 0)
 
 	if !useTemp {
-		builder.ArrayAppend("changes", consolidatedPatch.String(), false)
+		builder.ArrayAppendMulti("changes", transformedPatches, false)
 	} else {
-		builder.ArrayAppend("tempchanges", consolidatedPatch.String(), false)
+		builder.ArrayAppendMulti("tempchanges", transformedPatches, false)
 	}
 
 	builder = builder.Counter("version", 1, false)
@@ -264,5 +277,5 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		return nil, -1, nil, err
 	}
 
-	return []string{consolidatedPatch.String()}, version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
+	return transformedPatches, version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
 }
