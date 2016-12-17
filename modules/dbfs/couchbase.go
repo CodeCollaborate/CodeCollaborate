@@ -248,7 +248,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			}
 
 			if startIndex < 0 {
-				return -1, nil, ErrVersionOutOfDate
+				return nil, -1, nil, ErrVersionOutOfDate
 			}
 		}
 
