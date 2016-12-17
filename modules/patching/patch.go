@@ -114,7 +114,7 @@ func (patch *Patch) TransformFromString(others []string) (*Patch, error) {
 // of changes relative to previously applied changes.
 func (patch *Patch) Transform(others []*Patch) *Patch {
 	intermediateDiffs := patch.Changes
-	maxVersionSeen := patch.BaseVersion
+	maxVersionSeen := patch.BaseVersion - 1
 
 	for _, otherPatch := range others {
 		newIntermediateDiffs := Diffs{}
@@ -129,7 +129,7 @@ func (patch *Patch) Transform(others []*Patch) *Patch {
 		}
 	}
 
-	return NewPatch(maxVersionSeen, intermediateDiffs)
+	return NewPatch(maxVersionSeen+1, intermediateDiffs)
 }
 
 func (patch *Patch) String() string {

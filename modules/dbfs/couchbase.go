@@ -182,7 +182,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		return nil, -1, nil, ErrNoData
 	}
 
-	minVersion := int64(math.MaxInt64)
+	minStartIndex := int64(math.MaxInt64)
 	transformedPatches := []string{}
 
 	// Build patch, transform changes against newer changes.
@@ -198,9 +198,6 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			return nil, -1, nil, ErrVersionOutOfDate
 		}
 
-		if change.BaseVersion < minVersion {
-			minVersion = change.BaseVersion
-		}
 		// For every patch, calculate the patches that it does not have.
 		utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
 			"Version":     version,
@@ -217,27 +214,47 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		//	return nil, -1, nil, ErrVersionOutOfDate
 		//}
 
-		startIndex := len(prevChanges) - 1
-		if startIndex < 0 {
-			startIndex = 0
-		}
-		for ; startIndex > 0 && startIndex < len(prevChanges); startIndex-- {
+		startIndex := int64(len(prevChanges) - 1)
+		for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
 			otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
 			utils.LogDebug("CHECKING", utils.LogFields{
 				"Change":     changeStr,
 				"OtherPatch": prevChanges[startIndex],
-				"Result":     change.BaseVersion < otherPatch.BaseVersion,
+				"Result":     change.BaseVersion > otherPatch.BaseVersion,
+				"StartIndex": startIndex,
 			})
 
 			if err != nil {
 				return nil, -1, nil, ErrInternalServerError
-			} else if change.BaseVersion > otherPatch.BaseVersion {
+			}
+
+			if change.BaseVersion > otherPatch.BaseVersion {
+				utils.LogDebug("FOUND!", utils.LogFields{
+					"Change":     changeStr,
+					"StartIndex": startIndex,
+					"Len":        len(prevChanges),
+				})
 				startIndex++ // go back to the actual base version
 				break
+			} else {
+				startIndex--
 			}
-			startIndex--
 		}
+
+		if startIndex < 0 {
+			startIndex = int64(len(prevChanges))
+		}
+
+		if startIndex < minStartIndex {
+			minStartIndex = startIndex
+		}
+
+		utils.LogDebug("FINISHED CHECKING", utils.LogFields{
+			"Change":     changeStr,
+			"StartIndex": startIndex,
+			"Len":        len(prevChanges),
+		})
 
 		// Apply patches from the change's baseVersion onwards
 		toApply := prevChanges[startIndex:]
@@ -255,7 +272,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		}
 
 		// Update the BaseVersion to be be the previous change
-		transformedPatch.BaseVersion++
+		//transformedPatch.BaseVersion++
 		transformedPatches = append(transformedPatches, transformedPatch.String())
 	}
 
@@ -301,5 +318,5 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		return nil, -1, nil, err
 	}
 
-	return transformedPatches, version + 1, prevChanges[len(prevChanges)-int(version-minVersion):], err
+	return transformedPatches, version + 1, prevChanges[minStartIndex:], err
 }
