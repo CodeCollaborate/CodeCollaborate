@@ -223,23 +223,11 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
 				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
-				utils.LogDebug("CHECKING", utils.LogFields{
-					"Change":     changeStr,
-					"OtherPatch": prevChanges[startIndex],
-					"Result":     change.BaseVersion > otherPatch.BaseVersion,
-					"StartIndex": startIndex,
-				})
-
 				if err != nil {
 					return nil, -1, nil, ErrInternalServerError
 				}
 
 				if change.BaseVersion > otherPatch.BaseVersion {
-					utils.LogDebug("FOUND!", utils.LogFields{
-						"Change":     changeStr,
-						"StartIndex": startIndex,
-						"Len":        len(prevChanges),
-					})
 					startIndex++ // go back to the actual base version
 					break
 				} else {
