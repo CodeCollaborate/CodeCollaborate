@@ -215,35 +215,41 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		//}
 
 		startIndex := int64(len(prevChanges) - 1)
-		for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
-			otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
-			utils.LogDebug("CHECKING", utils.LogFields{
-				"Change":     changeStr,
-				"OtherPatch": prevChanges[startIndex],
-				"Result":     change.BaseVersion > otherPatch.BaseVersion,
-				"StartIndex": startIndex,
-			})
-
-			if err != nil {
-				return nil, -1, nil, ErrInternalServerError
-			}
-
-			if change.BaseVersion > otherPatch.BaseVersion {
-				utils.LogDebug("FOUND!", utils.LogFields{
-					"Change":     changeStr,
-					"StartIndex": startIndex,
-					"Len":        len(prevChanges),
-				})
-				startIndex++ // go back to the actual base version
-				break
-			} else {
-				startIndex--
-			}
-		}
-
-		if startIndex < 0 {
+		// If we are building on the server's base version, don't need to transform.
+		if change.BaseVersion == version {
 			startIndex = int64(len(prevChanges))
+		} else {
+			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
+				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
+
+				utils.LogDebug("CHECKING", utils.LogFields{
+					"Change":     changeStr,
+					"OtherPatch": prevChanges[startIndex],
+					"Result":     change.BaseVersion > otherPatch.BaseVersion,
+					"StartIndex": startIndex,
+				})
+
+				if err != nil {
+					return nil, -1, nil, ErrInternalServerError
+				}
+
+				if change.BaseVersion > otherPatch.BaseVersion {
+					utils.LogDebug("FOUND!", utils.LogFields{
+						"Change":     changeStr,
+						"StartIndex": startIndex,
+						"Len":        len(prevChanges),
+					})
+					startIndex++ // go back to the actual base version
+					break
+				} else {
+					startIndex--
+				}
+			}
+
+			if startIndex < 0 {
+				return -1, nil, ErrVersionOutOfDate
+			}
 		}
 
 		if startIndex < minStartIndex {
