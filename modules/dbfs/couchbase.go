@@ -227,6 +227,13 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			}
 
 			otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
+
+			utils.LogDebug("CHECKING", utils.LogFields{
+				"Change":     changeStr,
+				"OtherPatch": prevChanges[startIndex],
+				"Result":     change.BaseVersion < otherPatch.BaseVersion,
+			})
+
 			if err != nil {
 				return nil, -1, nil, ErrInternalServerError
 			} else if change.BaseVersion < otherPatch.BaseVersion {
@@ -243,6 +250,8 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		utils.LogDebug("TRANSFORMING", utils.LogFields{
 			"PatchesToApply": toApply,
 			"Change":         changeStr,
+			"StartIndex":     startIndex,
+			"Len":            len(prevChanges),
 		})
 
 		transformedPatch, err := change.TransformFromString(toApply) // rewrite change with transformed patch
