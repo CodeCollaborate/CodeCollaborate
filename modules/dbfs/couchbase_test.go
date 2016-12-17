@@ -185,8 +185,8 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 
 	di.CBDeleteFile(file.FileID)
 
-	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1", originalFileVersion)
-	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2", originalFileVersion)
+	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1", originalFileVersion-1)
+	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2", originalFileVersion-1)
 	patch3 := fmt.Sprintf("v%d:\n3:+6:patch3", originalFileVersion)
 	patch4 := fmt.Sprintf("v%d:\n4:+6:patch4", originalFileVersion)
 
