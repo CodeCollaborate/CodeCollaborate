@@ -8,13 +8,13 @@ else
     printf "%-10s\n" "FAIL"
 fi
 
-printf "%-60s" "Stopping CodeCollaborate daemon"
-sudo systemctl stop CodeCollaborate.service
-if [ $? -eq 0 ]; then
-    printf "%-10s\n" "OK"
-else
-    printf "%-10s\n" "FAIL"
-fi
+#printf "%-60s" "Stopping CodeCollaborate daemon"
+#sudo systemctl stop CodeCollaborate.service
+#if [ $? -eq 0 ]; then
+#    printf "%-10s\n" "OK"
+#else
+#    printf "%-10s\n" "FAIL"
+#fi
 
 printf "%-60s" "Building server binary"
 go build -o CodeCollaborateServer
@@ -38,8 +38,8 @@ else
     printf "\t%-10s\n" "CHMOD FAIL"
 fi
 
-printf "%-60s" "Starting service"
-sudo systemctl start CodeCollaborate.service
+printf "%-60s" "Restarting systemctl service"
+sudo systemctl restart CodeCollaborate.service
 if [ $? -eq 0 ]; then
     printf "%-10s\n" "OK"
 else
