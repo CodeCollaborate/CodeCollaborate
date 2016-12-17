@@ -1,5 +1,5 @@
 [Unit]
-Description=Designing for Scale Server Daemon
+Description=CodeCollaborate server daemon
 After=syslog.target network.target docker.service
 Requires=docker.service
 
