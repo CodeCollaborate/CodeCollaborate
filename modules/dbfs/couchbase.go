@@ -182,6 +182,15 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		return nil, -1, nil, ErrNoData
 	}
 
+	minVersion := version
+	if len(prevChanges) > 0 {
+		startPatch, err := patching.NewPatchFromString(prevChanges[0])
+		if err != nil {
+			return nil, -1, nil, ErrInternalServerError
+		}
+
+		minVersion = startPatch.BaseVersion + 1 // The patch with minVersion would have generated version minVersion + 1
+	}
 	minStartIndex := int64(math.MaxInt64)
 	transformedPatches := []string{}
 
@@ -216,28 +225,37 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 		startIndex := int64(len(prevChanges) - 1)
 
-		// If we are building on the server's base version, don't need to transform.
 		if change.BaseVersion == version {
+			// If we are building on the server's base version, don't need to transform.
 			startIndex = int64(len(prevChanges))
-		} else {
-			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
-				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
+		} else if change.BaseVersion == minVersion {
+			// If it's equal to the minVersion, we use the entire array
+			startIndex = int64(0)
+		} else if change.BaseVersion < minVersion {
+			// if it's less than the minVersion, we've scrunched.
+			utils.LogError("BaseVersion too low", ErrVersionOutOfDate, nil)
+			return nil, -1, nil, ErrVersionOutOfDate
+		}
+		// Otherwise, find the right starting point
+		startIndex = int64(len(prevChanges)) - (version - change.BaseVersion)
+		for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
+			otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
-				if err != nil {
-					return nil, -1, nil, ErrInternalServerError
-				}
-
-				if change.BaseVersion > otherPatch.BaseVersion {
-					startIndex++ // go back to the actual base version
-					break
-				} else {
-					startIndex--
-				}
+			if err != nil {
+				return nil, -1, nil, ErrInternalServerError
 			}
 
-			if startIndex < 0 {
-				return nil, -1, nil, ErrVersionOutOfDate
+			if change.BaseVersion > otherPatch.BaseVersion {
+				startIndex++ // go back to the actual base version
+				break
+			} else {
+				startIndex--
 			}
+		}
+
+		if startIndex < 0 {
+			utils.LogError("BaseVersion too low", ErrVersionOutOfDate, nil)
+			return nil, -1, nil, ErrVersionOutOfDate
 		}
 
 		if startIndex < minStartIndex {
