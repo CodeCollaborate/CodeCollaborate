@@ -189,7 +189,8 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			return nil, -1, nil, ErrInternalServerError
 		}
 
-		minVersion = startPatch.BaseVersion + 1 // The patch with minVersion would have generated version minVersion + 1
+		// Allow transform-patches to start on the same base version as the head (after linearization, we have all the necessary patches)
+		minVersion = startPatch.BaseVersion
 	}
 	minStartIndex := int64(math.MaxInt64)
 	transformedPatches := []string{}
