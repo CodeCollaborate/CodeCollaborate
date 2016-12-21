@@ -230,33 +230,35 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		if change.BaseVersion == version {
 			// If we are building on the server's base version, don't need to transform.
 			startIndex = int64(len(prevChanges))
-		} else if change.BaseVersion == minVersion {
-			// If it's equal to the minVersion, we use the entire array
-			startIndex = int64(0)
 		} else if change.BaseVersion < minVersion {
 			// if it's less than the minVersion, we've scrunched.
 			utils.LogError("BaseVersion less than minVersion", ErrVersionOutOfDate, nil)
 			return nil, -1, nil, ErrVersionOutOfDate
-		}
-		// Otherwise, find the right starting point
-		startIndex = int64(len(prevChanges)) - (version - change.BaseVersion)
-		for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
-			otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
+		} else if change.BaseVersion == minVersion {
+			// If it's equal to the minVersion, we use the entire array
+			startIndex = int64(0)
+		} else {
+			// Otherwise, find the right starting point
+			startIndex = int64(len(prevChanges)) - (version - change.BaseVersion)
+			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
+				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
-			if err != nil {
-				return nil, -1, nil, ErrInternalServerError
+				if err != nil {
+					return nil, -1, nil, ErrInternalServerError
+				}
+
+				if change.BaseVersion > otherPatch.BaseVersion {
+					break
+				} else {
+					startIndex--
+				}
 			}
-
-			if change.BaseVersion > otherPatch.BaseVersion {
-				startIndex++ // go back to the actual base version
-				break
-			} else {
-				startIndex--
-			}
+			startIndex++ // go back to the actual base version
 		}
 
+		// If it's negative at this point, it means startIndex was negative.
 		if startIndex < 0 {
-			utils.LogError("BaseVersion too low", ErrVersionOutOfDate, nil)
+			utils.LogError("StartIndex was negative", ErrVersionOutOfDate, nil)
 			return nil, -1, nil, ErrVersionOutOfDate
 		}
 
