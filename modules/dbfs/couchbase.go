@@ -254,7 +254,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			startIndex++ // go back to the actual base version
 		}
 
-		// If it's negative at this point, it means we started off with an index that was less than -1. 
+		// If it's negative at this point, it means we started off with an index that was less than -1.
 		// In other words, we've probably scrunched the changes we're looking for.
 		if startIndex < 0 {
 			utils.LogError("StartIndex was negative", ErrVersionOutOfDate, nil)
