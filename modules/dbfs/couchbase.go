@@ -202,12 +202,6 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			return nil, -1, nil, errors.New("Failed to parse patch")
 		}
 
-		// check to make sure the patch is being applied to the most recent revision
-		if change.BaseVersion > version {
-			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, ErrVersionOutOfDate
-		}
-
 		// For every patch, calculate the patches that it does not have.
 		utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
 			"Version":     version,
@@ -227,7 +221,11 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 		startIndex := int64(len(prevChanges) - 1)
 
-		if change.BaseVersion == version {
+		if change.BaseVersion > version {
+			// check to make sure the patch is being applied to the most recent revision
+			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
+			return nil, -1, nil, ErrVersionOutOfDate
+		} else if change.BaseVersion == version {
 			// If we are building on the server's base version, don't need to transform.
 			startIndex = int64(len(prevChanges))
 		} else if change.BaseVersion < minVersion {
