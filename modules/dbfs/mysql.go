@@ -440,7 +440,7 @@ func (di *DatabaseImpl) MySQLFileCreate(username string, filename string, relati
 	for rows.Next() {
 		err = rows.Scan(&fileID)
 		if err != nil {
-			return -1, err
+			return -1, ErrNoDbChange
 		}
 	}
 
