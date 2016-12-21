@@ -59,14 +59,14 @@ func main() {
 	//Create containers
 	//TODO(wongb): Create a new user, and delete root
 	fmt.Println("\nStarting MySQL Container:")
-	createAndStartDockerImage("MySQL", "-d", "-v", volumeName("MySQL")+":/var/lib/mysql", "-p", "3306:3306", "-e", "MYSQL_ROOT_PASSWORD="+*password, "mysql")
+	createAndStartDockerImage("MySQL", "-d", "-v", volumeName("MySQL")+":/var/lib/mysql", "-p", "3306", "-e", "MYSQL_ROOT_PASSWORD="+*password, "mysql")
 
 	fmt.Println("\nStarting RabbitMQ Container:")
 	//TODO(wongb): Create a new user, and delete guest
-	createAndStartDockerImage("RabbitMQ", "-d", "-p", "5672:5672", "-p", "15672:15672", "--hostname", "CodeCollaborate-RabbitMQ", "rabbitmq:management")
+	createAndStartDockerImage("RabbitMQ", "-d", "-p", "5672", "-p", "15672", "--hostname", "CodeCollaborate-RabbitMQ", "rabbitmq:management")
 
 	fmt.Println("\nStarting Couchbase Container:")
-	createAndStartDockerImage("Couchbase", "-d", "-v", volumeName("Couchbase")+":/opt/couchbase/var/lib/couchbase/data", "-p", "8091-8094:8091-8094", "-p", "11210-11300:11210-11300", "couchbase")
+	createAndStartDockerImage("Couchbase", "-d", "-v", volumeName("Couchbase")+":/opt/couchbase/var/lib/couchbase/data", "-p", "8091-8094", "-p", "11210-11300", "couchbase")
 
 	fmt.Println("\nWaiting for containers to start up:")
 	time.Sleep(15 * time.Second)
