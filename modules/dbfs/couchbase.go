@@ -215,6 +215,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			"Len":         len(prevChanges),
 			"ChangeStr":   changeStr,
 			"PrevChanges": prevChanges,
+			"minVersion":  minVersion,
 		})
 
 		//startIndex := len(prevChanges) - int(version-change.BaseVersion)
@@ -233,7 +234,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			startIndex = int64(0)
 		} else if change.BaseVersion < minVersion {
 			// if it's less than the minVersion, we've scrunched.
-			utils.LogError("BaseVersion too low", ErrVersionOutOfDate, nil)
+			utils.LogError("BaseVersion less than minVersion", ErrVersionOutOfDate, nil)
 			return nil, -1, nil, ErrVersionOutOfDate
 		}
 		// Otherwise, find the right starting point
