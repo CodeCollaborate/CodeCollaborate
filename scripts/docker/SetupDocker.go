@@ -27,21 +27,25 @@ func imageName(name string) string {
 func createAndStartDockerImage(iName string, args ...string) *exec.Cmd {
 	args = append([]string{"run", "--name", imageName(iName)}, args...) // prepend docker-command and name to argument set
 
+	fmt.Println(append([]string{"docker"}, args...))
+
 	c := exec.Command("docker", args...)
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stdout
-	c.Stdin = os.Stdin
-	c.Run()
+	// c.Stdout = os.Stdout
+	// c.Stderr = os.Stdout
+	// c.Stdin = os.Stdin
+	// c.Run()
 
 	return c
 }
 
 func createDockerVolume(vName string) *exec.Cmd {
+	fmt.Println("docker volume create --name" + volumeName(vName))
+
 	c := exec.Command("docker", "volume", "create", "--name", volumeName(vName))
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stdout
-	c.Stdin = os.Stdin
-	c.Run()
+	// c.Stdout = os.Stdout
+	// c.Stderr = os.Stdout
+	// c.Stdin = os.Stdin
+	// c.Run()
 
 	return c
 }
@@ -83,7 +87,7 @@ func main() {
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stdout
 	c.Stdin = f
-	c.Run()
+	// c.Run()
 
 	f, err = os.Open("../config/defaults/mysql_schema_setup.sql")
 	if err != nil {
@@ -96,22 +100,22 @@ func main() {
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stdout
 	c.Stdin = f
-	c.Run()
+	// c.Run()
 
 	fmt.Println("\nSetting up Couchbase:")
 	c = exec.Command("docker", "exec", imageName("Couchbase"), "couchbase-cli", "cluster-init", "-c", "localhost:8091", "--cluster-username="+*username, "--cluster-password="+*password, "--cluster-ramsize=512", "--wait")
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stdout
 	c.Stdin = os.Stdin
-	c.Run()
+	// c.Run()
 	c = exec.Command("docker", "exec", imageName("Couchbase"), "couchbase-cli", "bucket-create", "-c", "localhost:8091", "-u", *username, "-p", *password, "--bucket="+*schemaName, "--bucket-type=couchbase", "--bucket-password="+*password, "--bucket-ramsize=200", "--enable-index-replica=0", "--bucket-replica=0", "--enable-flush=1", "--wait")
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stdout
 	c.Stdin = os.Stdin
-	c.Run()
+	// c.Run()
 	c = exec.Command("docker", "exec", imageName("Couchbase"), "couchbase-cli", "bucket-create", "-c", "localhost:8091", "-u", *username, "-p", *password, "--bucket="+*schemaName+"_scrunching_locks", "--bucket-type=couchbase", "--bucket-password="+*password, "--bucket-ramsize=100", "--enable-index-replica=0", "--bucket-replica=0", "--enable-flush=1", "--wait")
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stdout
 	c.Stdin = os.Stdin
-	c.Run()
+	// c.Run()
 }
