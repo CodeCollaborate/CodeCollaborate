@@ -182,6 +182,16 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		return nil, -1, nil, ErrNoData
 	}
 
+	minVersion := version
+	if len(prevChanges) > 0 {
+		startPatch, err := patching.NewPatchFromString(prevChanges[0])
+		if err != nil {
+			return nil, -1, nil, ErrInternalServerError
+		}
+
+		// Allow transform-patches to start on the same base version as the head (after linearization, we have all the necessary patches)
+		minVersion = startPatch.BaseVersion
+	}
 	minStartIndex := int64(math.MaxInt64)
 	transformedPatches := []string{}
 
@@ -192,12 +202,6 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			return nil, -1, nil, errors.New("Failed to parse patch")
 		}
 
-		// check to make sure the patch is being applied to the most recent revision
-		if change.BaseVersion > version {
-			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, ErrVersionOutOfDate
-		}
-
 		// For every patch, calculate the patches that it does not have.
 		utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
 			"Version":     version,
@@ -206,6 +210,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 			"Len":         len(prevChanges),
 			"ChangeStr":   changeStr,
 			"PrevChanges": prevChanges,
+			"minVersion":  minVersion,
 		})
 
 		//startIndex := len(prevChanges) - int(version-change.BaseVersion)
@@ -216,10 +221,23 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 		startIndex := int64(len(prevChanges) - 1)
 
-		// If we are building on the server's base version, don't need to transform.
-		if change.BaseVersion == version {
+		if change.BaseVersion > version {
+			// check to make sure the patch is being applied to the most recent revision
+			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
+			return nil, -1, nil, ErrVersionOutOfDate
+		} else if change.BaseVersion == version {
+			// If we are building on the server's base version, don't need to transform.
 			startIndex = int64(len(prevChanges))
+		} else if change.BaseVersion < minVersion {
+			// if it's less than the minVersion, we've scrunched.
+			utils.LogError("BaseVersion less than minVersion", ErrVersionOutOfDate, nil)
+			return nil, -1, nil, ErrVersionOutOfDate
+		} else if change.BaseVersion == minVersion {
+			// If it's equal to the minVersion, we use the entire array
+			startIndex = int64(0)
 		} else {
+			// Otherwise, find the right starting point
+			startIndex = int64(len(prevChanges)) - (version - change.BaseVersion)
 			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
 				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
@@ -228,16 +246,19 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 				}
 
 				if change.BaseVersion > otherPatch.BaseVersion {
-					startIndex++ // go back to the actual base version
 					break
 				} else {
 					startIndex--
 				}
 			}
+			startIndex++ // go back to the actual base version
+		}
 
-			if startIndex < 0 {
-				return nil, -1, nil, ErrVersionOutOfDate
-			}
+		// If it's negative at this point, it means we started off with an index that was less than -1.
+		// In other words, we've probably scrunched the changes we're looking for.
+		if startIndex < 0 {
+			utils.LogError("StartIndex was negative", ErrVersionOutOfDate, nil)
+			return nil, -1, nil, ErrVersionOutOfDate
 		}
 
 		if startIndex < minStartIndex {
