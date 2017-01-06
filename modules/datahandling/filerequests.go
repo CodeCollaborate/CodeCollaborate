@@ -328,9 +328,11 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Tag:    f.Tag,
 		Data: struct {
 			FileVersion    int64
+			Changes        []string
 			MissingPatches []string
 		}{
 			FileVersion:    version,
+			Changes:        changes,
 			MissingPatches: missing,
 		},
 	}.Wrap()
