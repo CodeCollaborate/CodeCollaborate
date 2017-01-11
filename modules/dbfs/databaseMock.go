@@ -128,34 +128,34 @@ func (dm *DatabaseMock) PullFile(meta FileMeta) (*[]byte, []string, error) {
 }
 
 // PullChanges pulls the changes from the databases
-func (dm *DatabaseMock) PullChanges(meta FileMeta) ([]string, error) {
+func (dm *DatabaseMock) PullChanges(meta FileMeta) ([]string, uint64, error) {
 	dm.FunctionCallCount++
 	changes := dm.FileChanges[meta.FileID]
-	return changes, nil
+	return changes, 0, nil
 }
 
 // CBAppendFileChange is a mock of the real implementation
-func (dm *DatabaseMock) CBAppendFileChange(fileID int64, changes, prevChanges []string) ([]string, int64, []string, error) {
+func (dm *DatabaseMock) CBAppendFileChange(file FileMeta, patches []string) ([]string, int64, []string, int, error) {
 	dm.FunctionCallCount++
 
-	for _, changeStr := range changes {
+	for _, changeStr := range patches {
 		change, err := patching.NewPatchFromString(changeStr)
 		if err != nil {
-			return nil, -1, nil, errors.New("Failed to parse patch")
+			return nil, -1, nil, 0, errors.New("Failed to parse patch")
 		}
 
 		// check to make sure the patch is being applied to the most recent revision
-		if change.BaseVersion > dm.FileVersion[fileID] {
-			return nil, -1, nil, ErrVersionOutOfDate
+		if change.BaseVersion > dm.FileVersion[file.FileID] {
+			return nil, -1, nil, 0, ErrVersionOutOfDate
 		}
 	}
 
-	dm.FileVersion[fileID]++
+	dm.FileVersion[file.FileID]++
 
-	newChanges := append(dm.FileChanges[fileID], changes...)
-	dm.FileChanges[fileID] = newChanges
+	newChanges := append(dm.FileChanges[file.FileID], patches...)
+	dm.FileChanges[file.FileID] = newChanges
 
-	return changes, dm.FileVersion[fileID], nil, nil
+	return patches, dm.FileVersion[file.FileID], nil, len(dm.FileChanges[file.FileID]), nil
 }
 
 // mysql

@@ -288,17 +288,17 @@ func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
 	return bytes, changes, err
 }
 
-// PullChanges pulls the changes from the databases
-func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, error) {
+// PullChanges pulls the changes from the databases and returns the temporary lock value
+func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, uint64, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
-		return []string{}, err
+		return []string{}, 0, err
 	}
 
 	file := cbFile{}
-	_, err = cb.bucket.Get(strconv.FormatInt(meta.FileID, 10), &file)
+	cas, err := cb.bucket.Get(strconv.FormatInt(meta.FileID, 10), &file)
 	if err != nil {
-		return []string{}, err
+		return []string{}, 0, err
 	}
 	var changes []string
 
@@ -306,12 +306,12 @@ func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, error) {
 		changes = append(file.RemainingChanges, file.TempChanges...)
 		changes = append(changes, file.Changes...)
 
-		return changes, nil
+		return changes, uint64(cas), nil
 	} else if file.UseTemp {
 		changes = append(file.Changes, file.TempChanges...)
 	} else {
 		changes = file.Changes
 	}
 
-	return changes, err
+	return changes, uint64(cas), err
 }

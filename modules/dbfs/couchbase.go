@@ -154,39 +154,43 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 }
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
-// Returns the new version number, the missing patches, and an error, if any.
-func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []string) ([]string, int64, []string, error) {
+// Returns the new version number, the missing patches, the total count of patches tracked, and an error, if any.
+func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) ([]string, int64, []string, int, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
-		return nil, -1, nil, err
+		return nil, -1, nil, 0, err
 	}
-	key := strconv.FormatInt(fileID, 10)
+	key := strconv.FormatInt(fileMeta.FileID, 10)
 
 	// optimistic locking operation
 	// check the version is accurate and get the object's cas,
 	// then use it in the MutateIn call to verify the document hasn't updated underneath us
-	frag, err := cb.bucket.LookupIn(key).Get("version").Get("usetemp").Execute()
+	prevChanges, cas, err := di.PullChanges(fileMeta)
 	if err != nil {
-		return nil, -1, nil, ErrResourceNotFound
+		return nil, -1, nil, 0, err
 	}
 
-	cas := frag.Cas()
+	frag, err := cb.bucket.LookupIn(key).Get("version").Get("usetemp").Execute()
+	if err != nil {
+		return nil, -1, nil, 0, ErrResourceNotFound
+	}
+
 	var version int64
 	var useTemp bool
 	err = frag.Content("version", &version)
 	if err != nil {
-		return nil, -1, nil, ErrNoData
+		return nil, -1, nil, 0, ErrNoData
 	}
 	err = frag.Content("usetemp", &useTemp)
 	if err != nil {
-		return nil, -1, nil, ErrNoData
+		return nil, -1, nil, 0, ErrNoData
 	}
 
 	minVersion := version
 	if len(prevChanges) > 0 {
 		startPatch, err := patching.NewPatchFromString(prevChanges[0])
 		if err != nil {
-			return nil, -1, nil, ErrInternalServerError
+			return nil, -1, nil, 0, ErrInternalServerError
 		}
 
 		// Allow transform-patches to start on the same base version as the head (after linearization, we have all the necessary patches)
@@ -199,7 +203,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 	for _, changeStr := range patches {
 		change, err := patching.NewPatchFromString(changeStr)
 		if err != nil {
-			return nil, -1, nil, errors.New("Failed to parse patch")
+			return nil, -1, nil, 0, errors.New("Failed to parse patch")
 		}
 
 		// For every patch, calculate the patches that it does not have.
@@ -224,14 +228,14 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		if change.BaseVersion > version {
 			// check to make sure the patch is being applied to the most recent revision
 			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, ErrVersionOutOfDate
+			return nil, -1, nil, 0, ErrVersionOutOfDate
 		} else if change.BaseVersion == version {
 			// If we are building on the server's base version, don't need to transform.
 			startIndex = int64(len(prevChanges))
 		} else if change.BaseVersion < minVersion {
 			// if it's less than the minVersion, we've scrunched.
 			utils.LogError("BaseVersion less than minVersion", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, ErrVersionOutOfDate
+			return nil, -1, nil, 0, ErrVersionOutOfDate
 		} else if change.BaseVersion == minVersion {
 			// If it's equal to the minVersion, we use the entire array
 			startIndex = int64(0)
@@ -242,7 +246,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
 
 				if err != nil {
-					return nil, -1, nil, ErrInternalServerError
+					return nil, -1, nil, 0, ErrInternalServerError
 				}
 
 				if change.BaseVersion > otherPatch.BaseVersion {
@@ -258,7 +262,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 		// In other words, we've probably scrunched the changes we're looking for.
 		if startIndex < 0 {
 			utils.LogError("StartIndex was negative", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, ErrVersionOutOfDate
+			return nil, -1, nil, 0, ErrVersionOutOfDate
 		}
 
 		if startIndex < minStartIndex {
@@ -283,7 +287,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 		transformedPatch, err := change.TransformFromString(toApply) // rewrite change with transformed patch
 		if err != nil {
-			return nil, -1, nil, ErrInternalServerError // Could not parse one of the old patches - should never happen.
+			return nil, -1, nil, 0, ErrInternalServerError // Could not parse one of the old patches - should never happen.
 		}
 
 		// Update the BaseVersion to be be the previous change
@@ -318,7 +322,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 	*/
 
 	// use the cas to make sure the document hasn't changed
-	builder := cb.bucket.MutateIn(key, cas, 0)
+	builder := cb.bucket.MutateIn(key, gocb.Cas(cas), 0)
 
 	if !useTemp {
 		builder.ArrayAppendMulti("changes", transformedPatches, false)
@@ -330,8 +334,8 @@ func (di *DatabaseImpl) CBAppendFileChange(fileID int64, patches, prevChanges []
 
 	_, err = builder.Execute()
 	if err != nil {
-		return nil, -1, nil, err
+		return nil, -1, nil, 0, err
 	}
 
-	return transformedPatches, version + 1, prevChanges[minStartIndex:], err
+	return transformedPatches, version + 1, prevChanges[minStartIndex:], len(prevChanges) + len(transformedPatches), err
 }
