@@ -128,10 +128,10 @@ func (dm *DatabaseMock) PullFile(meta FileMeta) (*[]byte, []string, error) {
 }
 
 // PullChanges pulls the changes from the databases
-func (dm *DatabaseMock) PullChanges(meta FileMeta) ([]string, uint64, error) {
+func (dm *DatabaseMock) PullChanges(meta FileMeta) ([]string, uint64, int64, bool, error) {
 	dm.FunctionCallCount++
 	changes := dm.FileChanges[meta.FileID]
-	return changes, 0, nil
+	return changes, 0, dm.FileVersion[meta.FileID], false, nil
 }
 
 // CBAppendFileChange is a mock of the real implementation

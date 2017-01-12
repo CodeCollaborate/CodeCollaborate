@@ -196,7 +196,8 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	// NOTE: this was added as a need by us changing to dbfs.PullFile
 	di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte{})
 
-	changes, _, err := di.PullChanges(file)
+	changes, _, pulledVersion, _, err := di.PullChanges(file)
+	assert.Equal(t, originalFileVersion, pulledVersion, "failed set up verification")
 
 	transformed, version, missing, lenChanges, err := di.CBAppendFileChange(file, []string{patch3})
 	assert.NoError(t, err, "unexpected error appending changes")
@@ -218,7 +219,8 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	assert.EqualValues(t, transformed[0], changes[2], "newly inserted change was not correct")
 
 	// Expect AppendFileChange to transform patch4, since it was based on the version created by patch2
-	changes, _, err = di.PullChanges(file)
+	changes, _, pulledVersion, _, err = di.PullChanges(file)
+	assert.Equal(t, pulledVersion, version, "version pulled from the database does not match the one given when appending the change")
 
 	transformed, version, missing, lenChanges, err = di.CBAppendFileChange(file, []string{patch4})
 	assert.NoError(t, err, "unexpected error appending changes")

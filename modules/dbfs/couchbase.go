@@ -160,30 +160,13 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 	if err != nil {
 		return nil, -1, nil, 0, err
 	}
-	key := strconv.FormatInt(fileMeta.FileID, 10)
 
 	// optimistic locking operation
 	// check the version is accurate and get the object's cas,
 	// then use it in the MutateIn call to verify the document hasn't updated underneath us
-	prevChanges, cas, err := di.PullChanges(fileMeta)
+	prevChanges, cas, version, useTemp, err := di.PullChanges(fileMeta)
 	if err != nil {
 		return nil, -1, nil, 0, err
-	}
-
-	frag, err := cb.bucket.LookupIn(key).Get("version").Get("usetemp").Execute()
-	if err != nil {
-		return nil, -1, nil, 0, ErrResourceNotFound
-	}
-
-	var version int64
-	var useTemp bool
-	err = frag.Content("version", &version)
-	if err != nil {
-		return nil, -1, nil, 0, ErrNoData
-	}
-	err = frag.Content("usetemp", &useTemp)
-	if err != nil {
-		return nil, -1, nil, 0, ErrNoData
 	}
 
 	minVersion := version
@@ -322,7 +305,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 	*/
 
 	// use the cas to make sure the document hasn't changed
-	builder := cb.bucket.MutateIn(key, gocb.Cas(cas), 0)
+	builder := cb.bucket.MutateIn(strconv.FormatInt(fileMeta.FileID, 10), gocb.Cas(cas), 0)
 
 	if !useTemp {
 		builder.ArrayAppendMulti("changes", transformedPatches, false)

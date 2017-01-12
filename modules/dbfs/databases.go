@@ -22,8 +22,9 @@ type DBFS interface {
 	// PullFile pulls the changes and the file bytes from the databases
 	PullFile(meta FileMeta) (*[]byte, []string, error)
 
-	// PullChanges pulls the changes from the databases and returns the temporary lock value
-	PullChanges(meta FileMeta) ([]string, uint64, error)
+	// PullChanges pulls the changes from the databases and returns them along with the temporary lock value,
+	// the file version, and the useTemp flag
+	PullChanges(meta FileMeta) ([]string, uint64, int64, bool, error)
 
 	// Couchbase
 
