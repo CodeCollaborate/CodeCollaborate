@@ -196,9 +196,10 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	// NOTE: this was added as a need by us changing to dbfs.PullFile
 	di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte{})
 
-	changes, err := di.PullChanges(file)
+	changes, _, pulledVersion, _, err := di.PullChanges(file)
+	assert.Equal(t, originalFileVersion, pulledVersion, "failed set up verification")
 
-	transformed, version, missing, err := di.CBAppendFileChange(file.FileID, []string{patch3}, changes)
+	transformed, version, missing, lenChanges, err := di.CBAppendFileChange(file, []string{patch3})
 	assert.NoError(t, err, "unexpected error appending changes")
 	assert.Empty(t, missing, "Unexpected missing patches")
 
@@ -209,6 +210,7 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 
 	assert.Empty(t, *raw, "we shouldn't have scrunched")
 	assert.Len(t, changes, 3, "resultant changes not the correct length")
+	assert.Equal(t, len(changes), lenChanges, "did not return correct change count")
 
 	assert.Equal(t, patch1, changes[0], "first change was not correct")
 	assert.Equal(t, patch2, changes[1], "second change was not correct")
@@ -217,9 +219,10 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	assert.EqualValues(t, transformed[0], changes[2], "newly inserted change was not correct")
 
 	// Expect AppendFileChange to transform patch4, since it was based on the version created by patch2
-	changes, err = di.PullChanges(file)
+	changes, _, pulledVersion, _, err = di.PullChanges(file)
+	assert.Equal(t, pulledVersion, version, "version pulled from the database does not match the one given when appending the change")
 
-	transformed, version, missing, err = di.CBAppendFileChange(file.FileID, []string{patch4}, changes)
+	transformed, version, missing, lenChanges, err = di.CBAppendFileChange(file, []string{patch4})
 	assert.NoError(t, err, "unexpected error appending changes")
 
 	assert.Len(t, missing, 1, "Unexpected number of missing patches")
@@ -232,6 +235,7 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 
 	assert.Empty(t, *raw, "we shouldn't have scrunched")
 	assert.Len(t, changes, 4, "resultant changes not the correct length")
+	assert.Equal(t, len(changes), lenChanges, "did not return correct change count")
 
 	assert.Equal(t, patch1, changes[0], "first change was not correct")
 	assert.Equal(t, patch2, changes[1], "second change was not correct")

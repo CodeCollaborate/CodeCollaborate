@@ -312,10 +312,8 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
-	prevChanges, err := db.PullChanges(fileMeta)
-
-	// TODO (normal/required): verify changes are valid changes
-	changes, version, missing, err := db.CBAppendFileChange(f.FileID, f.Changes, prevChanges)
+	// TODO (normal/optional): verify changes are valid changes
+	changes, version, missing, numchanges, err := db.CBAppendFileChange(fileMeta, f.Changes)
 	if err != nil {
 		if err == dbfs.ErrVersionOutOfDate {
 			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusVersionOutOfDate, f.Tag)}}, err
@@ -350,7 +348,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}.Wrap()
 
 	// Trigger scrunching if longer than maxBufferLength
-	if len(prevChanges) > dbfs.MaxBufferLength {
+	if numchanges > dbfs.MaxBufferLength {
 		go func() {
 			db.ScrunchFile(fileMeta)
 		}()

@@ -2,6 +2,7 @@ package dbfs
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"time"
 
@@ -288,17 +289,18 @@ func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
 	return bytes, changes, err
 }
 
-// PullChanges pulls the changes from the databases
-func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, error) {
+// PullChanges pulls the changes from the databases and returns them along with the temporary lock value,
+// the file version, and the useTemp flag
+func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, uint64, int64, bool, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
-		return []string{}, err
+		return []string{}, 0, math.MaxInt64, false, err
 	}
 
 	file := cbFile{}
-	_, err = cb.bucket.Get(strconv.FormatInt(meta.FileID, 10), &file)
+	cas, err := cb.bucket.Get(strconv.FormatInt(meta.FileID, 10), &file)
 	if err != nil {
-		return []string{}, err
+		return []string{}, 0, math.MaxInt64, false, err
 	}
 	var changes []string
 
@@ -306,12 +308,12 @@ func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, error) {
 		changes = append(file.RemainingChanges, file.TempChanges...)
 		changes = append(changes, file.Changes...)
 
-		return changes, nil
+		return changes, uint64(cas), file.Version, file.UseTemp, nil
 	} else if file.UseTemp {
 		changes = append(file.Changes, file.TempChanges...)
 	} else {
 		changes = file.Changes
 	}
 
-	return changes, err
+	return changes, uint64(cas), file.Version, file.UseTemp, err
 }

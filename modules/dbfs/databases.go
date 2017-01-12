@@ -22,8 +22,9 @@ type DBFS interface {
 	// PullFile pulls the changes and the file bytes from the databases
 	PullFile(meta FileMeta) (*[]byte, []string, error)
 
-	// PullChanges pulls the changes and file version from the databases
-	PullChanges(meta FileMeta) ([]string, error)
+	// PullChanges pulls the changes from the databases and returns them along with the temporary lock value,
+	// the file version, and the useTemp flag
+	PullChanges(meta FileMeta) ([]string, uint64, int64, bool, error)
 
 	// Couchbase
 
@@ -41,7 +42,8 @@ type DBFS interface {
 	CBGetFileVersion(fileID int64) (int64, error)
 
 	// CBAppendFileChange mutates the file document with the new change and sets the new version number
-	CBAppendFileChange(fileID int64, changes, prevChanges []string) ([]string, int64, []string, error)
+	// Returns the new version number, the missing patches, the total count of patches tracked, and an error, if any.
+	CBAppendFileChange(file FileMeta, patches []string) ([]string, int64, []string, int, error)
 
 	// MySQL
 
