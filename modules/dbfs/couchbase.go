@@ -169,6 +169,13 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 		return nil, -1, nil, 0, err
 	}
 
+	if cas == uint64(0) {
+		utils.LogWarn("Couchbase returned a CAS value of 0, optimistic locking is unavailable", utils.LogFields{
+			"cas":  cas,
+			"File": fileMeta,
+		})
+	}
+
 	minVersion := version
 	if len(prevChanges) > 0 {
 		startPatch, err := patching.NewPatchFromString(prevChanges[0])
