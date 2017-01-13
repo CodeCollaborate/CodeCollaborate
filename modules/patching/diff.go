@@ -166,7 +166,7 @@ func (diff *Diff) subChangesEndingAt(end int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes[:end])
 }
 
-func (diff *Diff) transform(others Diffs) Diffs {
+func (diff *Diff) transform(others Diffs, othersHavePrecedence bool) Diffs {
 	intermediateDiffs := Diffs{}
 	intermediateDiffs = append(intermediateDiffs, diff)
 
@@ -193,8 +193,15 @@ func (diff *Diff) transform(others Diffs) Diffs {
 			// CASE 2: IndexA = IndexB
 			case other.StartIndex == current.StartIndex:
 				switch {
-				// CASES 2a, 2b: Ins - Ins, Ins - Rmv
-				case other.Insertion && current.Insertion, other.Insertion && !current.Insertion:
+				// CASES 2a: Ins - Ins
+				case other.Insertion && current.Insertion:
+					if othersHavePrecedence {
+						newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
+					} else {
+						newIntermediateDiffs = doTransform(transformType1, newIntermediateDiffs, current, other)
+					}
+				// CASES 2b: Ins - Rmv
+				case other.Insertion && !current.Insertion:
 					newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
 				// CASE 2c: Rmv - Ins
 				// Do nothing

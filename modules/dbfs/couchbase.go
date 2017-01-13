@@ -275,9 +275,19 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 			"Len":            len(prevChanges),
 		})
 
-		transformedPatch, err := change.TransformFromString(toApply) // rewrite change with transformed patch
+		transformedPatch, err := change.TransformFromString(toApply, false) // rewrite change with transformed patch
 		if err != nil {
 			return nil, -1, nil, 0, ErrInternalServerError // Could not parse one of the old patches - should never happen.
+		}
+
+		// Transform against new patch; new patch has precedence.
+		// This allows multiple patches constructing a single block of text to stay together. (17/01/13)
+		for i := 0; i < len(toApply); i++ {
+			donePatch, err := patching.NewPatchFromString(toApply[i])
+			if err != nil {
+				return nil, -1, nil, 0, ErrInternalServerError
+			}
+			toApply[i] = donePatch.Transform([]*patching.Patch{donePatch}, true).String()
 		}
 
 		// Update the BaseVersion to be be the previous change

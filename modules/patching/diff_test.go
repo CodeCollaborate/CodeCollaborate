@@ -139,7 +139,7 @@ func TestDiff_Transform1A(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "8:+4:str2", result[0].String())
 
@@ -147,7 +147,7 @@ func TestDiff_Transform1A(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("1:+4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "5:+4:str2", result[0].String())
 }
@@ -157,7 +157,7 @@ func TestDiff_Transform1B(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "8:-4:str2", result[0].String())
 
@@ -165,7 +165,7 @@ func TestDiff_Transform1B(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("1:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "5:-4:str2", result[0].String())
 }
@@ -176,7 +176,7 @@ func TestDiff_Transform1C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "2:+4:str2", result[0].String())
 
@@ -184,7 +184,7 @@ func TestDiff_Transform1C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "2:+4:str2", result[0].String())
 
@@ -193,7 +193,7 @@ func TestDiff_Transform1C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("6:+4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "2:+4:str2", result[0].String())
 
@@ -201,7 +201,7 @@ func TestDiff_Transform1C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("8:+4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:+4:str2", result[0].String())
 }
@@ -212,7 +212,7 @@ func TestDiff_Transform1D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("8:-4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:-4:str2", result[0].String())
 
@@ -220,7 +220,7 @@ func TestDiff_Transform1D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("6:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "2:-4:str2", result[0].String())
 
@@ -229,7 +229,7 @@ func TestDiff_Transform1D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 0, len(result))
 
 	// Test else cases: if overlapping, shorten B by overlap, shift down by LenA - overlap
@@ -237,7 +237,7 @@ func TestDiff_Transform1D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "2:-2:r2", result[0].String())
 }
@@ -247,7 +247,7 @@ func TestDiff_Transform2A(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "8:+4:str2", result[0].String())
 
@@ -255,9 +255,25 @@ func TestDiff_Transform2A(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("0:+4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "15:+4:str2", result[0].String())
+
+	diff1, err = NewDiffFromString("4:+4:str1")
+	require.Nil(t, err)
+	diff2, err = NewDiffFromString("4:+4:str2")
+	require.Nil(t, err)
+	result = diff2.transform(Diffs{diff1}, false)
+	require.Equal(t, 1, len(result))
+	require.Equal(t, "4:+4:str2", result[0].String())
+
+	diff1, err = NewDiffFromString("0:+15:longTestString1")
+	require.Nil(t, err)
+	diff2, err = NewDiffFromString("0:+4:str2")
+	require.Nil(t, err)
+	result = diff2.transform(Diffs{diff1}, false)
+	require.Equal(t, 1, len(result))
+	require.Equal(t, "0:+4:str2", result[0].String())
 }
 
 func TestDiff_Transform2B(t *testing.T) {
@@ -265,7 +281,7 @@ func TestDiff_Transform2B(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "8:-4:str2", result[0].String())
 
@@ -273,7 +289,7 @@ func TestDiff_Transform2B(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("0:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "15:-4:str2", result[0].String())
 }
@@ -283,7 +299,7 @@ func TestDiff_Transform2C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:+4:str2", result[0].String())
 
@@ -291,7 +307,7 @@ func TestDiff_Transform2C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("0:+4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "0:+4:str2", result[0].String())
 }
@@ -302,7 +318,7 @@ func TestDiff_Transform2D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-15:longTestString2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:-11:TestString2", result[0].String())
 
@@ -311,14 +327,14 @@ func TestDiff_Transform2D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("0:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 0, len(result))
 
 	diff1, err = NewDiffFromString("4:-4:str1")
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 0, len(result))
 }
 
@@ -327,7 +343,7 @@ func TestDiff_Transform3A(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:+4:str2", result[0].String())
 
@@ -335,7 +351,7 @@ func TestDiff_Transform3A(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("0:+15:longTestString2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "0:+15:longTestString2", result[0].String())
 }
@@ -346,7 +362,7 @@ func TestDiff_Transform3B(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-8:longStr2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 2, len(result))
 	require.Equal(t, "4:-1:l", result[0].String())
 	require.Equal(t, "8:-7:ongStr2", result[1].String())
@@ -356,7 +372,7 @@ func TestDiff_Transform3B(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("0:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "0:-4:str2", result[0].String())
 }
@@ -366,7 +382,7 @@ func TestDiff_Transform3C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:+4:str2", result[0].String())
 
@@ -374,7 +390,7 @@ func TestDiff_Transform3C(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("4:+4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:+4:str2", result[0].String())
 }
@@ -385,7 +401,7 @@ func TestDiff_Transform3D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result := diff2.transform(Diffs{diff1})
+	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:-2:st", result[0].String())
 
@@ -394,7 +410,7 @@ func TestDiff_Transform3D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:-4:str2", result[0].String())
 
@@ -402,7 +418,7 @@ func TestDiff_Transform3D(t *testing.T) {
 	require.Nil(t, err)
 	diff2, err = NewDiffFromString("4:-4:str2")
 	require.Nil(t, err)
-	result = diff2.transform(Diffs{diff1})
+	result = diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:-4:str2", result[0].String())
 }

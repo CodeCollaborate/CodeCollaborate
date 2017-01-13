@@ -186,7 +186,7 @@ func TestPatch_Transform(t *testing.T) {
 	require.Nil(t, err)
 	patch2, err := NewPatchFromString("v0:\n3:-8:deletion,\n3:+6:insert")
 	require.Nil(t, err)
-	newPatch := patch2.Transform([]*Patch{patch1})
+	newPatch := patch2.Transform([]*Patch{patch1}, true)
 	require.Equal(t, 2, len(newPatch.Changes))
 	require.Equal(t, "v2:\n2:-8:deletion,\n2:+6:insert", newPatch.String())
 
@@ -197,7 +197,7 @@ func TestPatch_Transform(t *testing.T) {
 	require.Nil(t, err)
 	patch3, err := NewPatchFromString("v0:\n3:-8:deletion,\n3:+6:insert")
 	require.Nil(t, err)
-	newPatch = patch3.Transform([]*Patch{patch1, patch2})
+	newPatch = patch3.Transform([]*Patch{patch1, patch2}, true)
 	require.Equal(t, 2, len(newPatch.Changes))
 	require.Equal(t, "v3:\n1:-8:deletion,\n1:+6:insert", newPatch.String())
 }
