@@ -188,6 +188,8 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 	}
 	minStartIndex := int64(math.MaxInt64)
 	transformedPatches := []string{}
+	prevChangesCopy := make([]string, len(prevChanges))
+	copy(prevChangesCopy, prevChanges)
 
 	// Build patch, transform changes against newer changes.
 	for _, changeStr := range patches {
@@ -287,7 +289,13 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 			if err != nil {
 				return nil, -1, nil, 0, ErrInternalServerError
 			}
-			toApply[i] = donePatch.Transform([]*patching.Patch{donePatch}, true).String()
+
+			// Maintain donePatch's base version, so we don't mess anything up.
+			donePatchBaseVersion := donePatch.BaseVersion
+			donePatch = donePatch.Transform([]*patching.Patch{donePatch}, true)
+			donePatch.BaseVersion = donePatchBaseVersion
+
+			toApply[i] = donePatch.String()
 		}
 
 		// Update the BaseVersion to be be the previous change
@@ -337,5 +345,7 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 		return nil, -1, nil, 0, err
 	}
 
-	return transformedPatches, version + 1, prevChanges[minStartIndex:], len(prevChanges) + len(transformedPatches), err
+	// TODO: Evaluate whether prevChangesCopy is the correct item to send back
+	// use prevChangesCopy, so we don't send back the transformed patch set
+	return transformedPatches, version + 1, prevChangesCopy[minStartIndex:], len(prevChanges) + len(transformedPatches), err
 }
