@@ -19,7 +19,7 @@ var config *Config
 var configDir = "./config"
 
 func init() {
-	log.SetFormatter(&log.TextFormatter{})
+	log.SetFormatter(&log.JSONFormatter{})
 }
 
 // SetConfigDir sets config directory to be read from.
