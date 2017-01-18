@@ -603,13 +603,38 @@ type projectDeleteRequest struct {
 
 func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "owner", db)
-	if err != nil || !hasPermission {
+	if err != nil {
 		utils.LogError("API permission error", err, utils.LogFields{
 			"Resource":  p.Resource,
 			"Method":    p.Method,
 			"SenderID":  p.SenderID,
 			"ProjectID": p.ProjectID,
 		})
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
+	}
+
+	if !hasPermission {
+		hasCurrentProjectPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "read", db)
+		if err != nil {
+			utils.LogError("API permission error", err, utils.LogFields{
+				"Resource":  p.Resource,
+				"Method":    p.Method,
+				"SenderID":  p.SenderID,
+				"ProjectID": p.ProjectID,
+			})
+			return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
+		}
+
+		if hasCurrentProjectPermission {
+			// replace this delete request with a self revoke permissions request
+			realRequest := projectRevokePermissionsRequest{
+				ProjectID:       p.ProjectID,
+				RevokeUsername:  p.SenderID,
+				abstractRequest: p.abstractRequest,
+			}
+			return realRequest.process(db)
+		}
+
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
