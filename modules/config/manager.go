@@ -18,14 +18,9 @@ import (
 var config *Config
 var configDir = "./config"
 
-func init() {
-	log.SetFormatter(&log.JSONFormatter{})
-}
-
 // SetConfigDir sets config directory to be read from.
 func SetConfigDir(dir string) {
 	configDir = dir
-
 }
 
 // LoadConfig gets the configuration from the configDir, defaulting to ./config
@@ -88,7 +83,7 @@ func EnableLoggingToFile(logDir string) {
 			return
 		}
 		log.SetOutput(f)
-		log.AddHook(new(utils.ConsoleHook))
+		log.AddHook(utils.MakeConsoleHook())
 	} else {
 		log.Error("No logging directory specified, logging to console")
 	}
