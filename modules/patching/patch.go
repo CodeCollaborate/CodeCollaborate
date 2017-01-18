@@ -96,7 +96,7 @@ func (patch *Patch) Undo() *Patch {
 
 // TransformFromString does an Operational Transform against the other patches, creating a set
 // of changes relative to previously applied changes.
-func (patch *Patch) TransformFromString(others []string) (*Patch, error) {
+func (patch *Patch) TransformFromString(others []string, othersHavePrecedence bool) (*Patch, error) {
 	patches := make([]*Patch, len(others))
 
 	for i, v := range others {
@@ -107,12 +107,12 @@ func (patch *Patch) TransformFromString(others []string) (*Patch, error) {
 		patches[i] = patch
 	}
 
-	return patch.Transform(patches), nil
+	return patch.Transform(patches, othersHavePrecedence), nil
 }
 
 // Transform does an Operational Transform against the other patches, creating a set
 // of changes relative to previously applied changes.
-func (patch *Patch) Transform(others []*Patch) *Patch {
+func (patch *Patch) Transform(others []*Patch, othersHavePrecedence bool) *Patch {
 	intermediateDiffs := patch.Changes
 	maxVersionSeen := patch.BaseVersion - 1
 
@@ -120,7 +120,7 @@ func (patch *Patch) Transform(others []*Patch) *Patch {
 		newIntermediateDiffs := Diffs{}
 
 		for _, diff := range intermediateDiffs {
-			newIntermediateDiffs = append(newIntermediateDiffs, diff.transform(otherPatch.Changes)...)
+			newIntermediateDiffs = append(newIntermediateDiffs, diff.transform(otherPatch.Changes, othersHavePrecedence)...)
 		}
 
 		intermediateDiffs = newIntermediateDiffs
