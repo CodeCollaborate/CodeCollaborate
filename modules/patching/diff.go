@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // Diffs represents an array of Diff objects, mainly used for sorting
@@ -83,7 +84,7 @@ func NewDiffFromString(str string) (*Diff, error) {
 	}
 
 	// Validate changes
-	if length != len(unescapedChanges) {
+	if length != utf8.RuneCountInString(unescapedChanges) {
 		return nil, fmt.Errorf("Length does not match length of change: %d != %s", length, parts[2])
 	}
 
@@ -93,7 +94,7 @@ func NewDiffFromString(str string) (*Diff, error) {
 
 // Length returns the number of characters changed.
 func (diff *Diff) Length() int {
-	return len(diff.Changes)
+	return utf8.RuneCountInString(diff.Changes)
 }
 
 // String gives the encoded format of a diff as a String.
@@ -107,7 +108,7 @@ func (diff *Diff) String() string {
 	} else {
 		buffer.WriteString("-")
 	}
-	buffer.WriteString(strconv.Itoa(len(diff.Changes)))
+	buffer.WriteString(strconv.Itoa(utf8.RuneCountInString(diff.Changes)))
 	buffer.WriteString(":")
 	buffer.WriteString(url.QueryEscape(diff.Changes))
 
@@ -120,7 +121,7 @@ func (diff *Diff) ConvertToCRLF(base string) *Diff {
 	newStartIndex := diff.StartIndex
 	newChanges := strings.Replace(diff.Changes, "\n", "\r\n", -1)
 
-	for i := 0; i < newStartIndex && i < len(base)-1; i++ {
+	for i := 0; i < newStartIndex && i < utf8.RuneCountInString(base)-1; i++ {
 		if base[i] == '\r' && base[i+1] == '\n' {
 			newStartIndex++
 		}
@@ -135,7 +136,7 @@ func (diff *Diff) ConvertToLF(base string) *Diff {
 	newStartIndex := diff.StartIndex
 	newChanges := strings.Replace(diff.Changes, "\r\n", "\n", -1)
 
-	for i := 0; i < diff.StartIndex-1 && i < len(base)-1; i++ {
+	for i := 0; i < diff.StartIndex-1 && i < utf8.RuneCountInString(base)-1; i++ {
 		if base[i] == '\r' && base[i+1] == '\n' {
 			newStartIndex--
 		}
@@ -177,7 +178,7 @@ func (diff *Diff) transform(others Diffs, othersHavePrecedence bool) Diffs {
 			// CASE 1: IndexA < IndexB
 			case other.StartIndex < current.StartIndex:
 				switch {
-				// CASE 1a, 1b: Ins - Ins, Ins - Rmv
+				// CASES 1a, 1b: Ins - Ins, Ins - Rmv
 				case other.Insertion && current.Insertion, other.Insertion && !current.Insertion:
 					newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
 				// CASE 1c: Rmv - Ins
@@ -188,23 +189,22 @@ func (diff *Diff) transform(others Diffs, othersHavePrecedence bool) Diffs {
 					newIntermediateDiffs = doTransform(transformType4, newIntermediateDiffs, current, other)
 				// Fail; should never have gotten to here.
 				default:
-					panic(fmt.Sprintf("Got to invalid state 1e while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
+					panic(fmt.Sprintf("Got to invalid state while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
 				}
 			// CASE 2: IndexA = IndexB
 			case other.StartIndex == current.StartIndex:
 				switch {
-				// CASES 2a: Ins - Ins
+				// CASE 2a: Ins - Ins
 				case other.Insertion && current.Insertion:
 					if othersHavePrecedence {
 						newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
 					} else {
 						newIntermediateDiffs = doTransform(transformType1, newIntermediateDiffs, current, other)
 					}
-				// CASES 2b: Ins - Rmv
+				// CASE 2b: Ins - Rmv
 				case other.Insertion && !current.Insertion:
 					newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
 				// CASE 2c: Rmv - Ins
-				// Do nothing
 				case !other.Insertion && current.Insertion:
 					newIntermediateDiffs = doTransform(transformType1, newIntermediateDiffs, current, other)
 				// CASE 2d: Rmv - Ins
@@ -212,12 +212,12 @@ func (diff *Diff) transform(others Diffs, othersHavePrecedence bool) Diffs {
 					newIntermediateDiffs = doTransform(transformType5, newIntermediateDiffs, current, other)
 				// Fail; should never have gotten to here.
 				default:
-					panic(fmt.Sprintf("Got to invalid state 2e while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
+					panic(fmt.Sprintf("Got to invalid state while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
 				}
 			// CASE 3: IndexA > IndexB
 			case other.StartIndex > current.StartIndex:
 				switch {
-				// CASE 3a, 3c: Ins - Ins, Rmv - Ins
+				// CASES 3a, 3c: Ins - Ins, Rmv - Ins
 				case other.Insertion && current.Insertion, !other.Insertion && current.Insertion:
 					newIntermediateDiffs = doTransform(transformType1, newIntermediateDiffs, current, other)
 				// CASE 3b: Ins - Rmv
@@ -228,7 +228,7 @@ func (diff *Diff) transform(others Diffs, othersHavePrecedence bool) Diffs {
 					newIntermediateDiffs = doTransform(transformType7, newIntermediateDiffs, current, other)
 				// Fail; should never have gotten to here.
 				default:
-					panic(fmt.Sprintf("Got to invalid state 3e while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
+					panic(fmt.Sprintf("Got to invalid state while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
 				}
 			}
 		}
