@@ -94,7 +94,7 @@ func NewDiffFromString(str string) (*Diff, error) {
 
 // Length returns the number of characters changed.
 func (diff *Diff) Length() int {
-	return len(diff.Changes)
+	return utf8.RuneCountInString(diff.Changes)
 }
 
 // String gives the encoded format of a diff as a String.
@@ -108,7 +108,7 @@ func (diff *Diff) String() string {
 	} else {
 		buffer.WriteString("-")
 	}
-	buffer.WriteString(strconv.Itoa(len(diff.Changes)))
+	buffer.WriteString(strconv.Itoa(utf8.RuneCountInString(diff.Changes)))
 	buffer.WriteString(":")
 	buffer.WriteString(url.QueryEscape(diff.Changes))
 
@@ -121,7 +121,7 @@ func (diff *Diff) ConvertToCRLF(base string) *Diff {
 	newStartIndex := diff.StartIndex
 	newChanges := strings.Replace(diff.Changes, "\n", "\r\n", -1)
 
-	for i := 0; i < newStartIndex && i < len(base)-1; i++ {
+	for i := 0; i < newStartIndex && i < utf8.RuneCountInString(base)-1; i++ {
 		if base[i] == '\r' && base[i+1] == '\n' {
 			newStartIndex++
 		}
@@ -136,7 +136,7 @@ func (diff *Diff) ConvertToLF(base string) *Diff {
 	newStartIndex := diff.StartIndex
 	newChanges := strings.Replace(diff.Changes, "\r\n", "\n", -1)
 
-	for i := 0; i < diff.StartIndex-1 && i < len(base)-1; i++ {
+	for i := 0; i < diff.StartIndex-1 && i < utf8.RuneCountInString(base)-1; i++ {
 		if base[i] == '\r' && base[i+1] == '\n' {
 			newStartIndex--
 		}

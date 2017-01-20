@@ -35,6 +35,14 @@ func TestDiff_NewDiffFromString(t *testing.T) {
 	require.Equal(t, false, diff.Insertion)
 	require.Equal(t, 3, diff.StartIndex)
 	require.Equal(t, "del", diff.Changes)
+
+	// Test emoji from string
+	diff, err = NewDiffFromString("3:-1:ω")
+	require.Nil(t, err)
+	require.Equal(t, false, diff.Insertion)
+	require.Equal(t, 3, diff.StartIndex)
+	require.Equal(t, 1, diff.Length())
+	require.Equal(t, "ω", diff.Changes)
 }
 
 func TestDiff_NewDiffFromStringInvalidFormats(t *testing.T) {
