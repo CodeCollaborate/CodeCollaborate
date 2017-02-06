@@ -30,7 +30,7 @@ func PatchText(text string, patches []*Patch) (string, error) {
 		var buffer bytes.Buffer
 		startIndex := 0
 		for _, diff := range patch.Changes {
-			if startIndex < 0 || startIndex >= len(text) || diff.StartIndex < 0 {
+			if startIndex < 0 || startIndex > len(text) || diff.StartIndex < 0 {
 				utils.LogError("PatchText: Encountered invalid diff", errors.New("Slice out of bounds"), utils.LogFields{
 					"Diff":  diff,
 					"Patch": patch,
