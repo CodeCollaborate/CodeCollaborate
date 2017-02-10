@@ -1,11 +1,18 @@
 package patching
 
-import "fmt"
+import (
+	"errors"
+)
 
 // ConsolidatePatches consolidates patch others with patch A.
 // Patches should be fed into this function in dependency order (A -> B -> C)
-func ConsolidatePatches(patchA *Patch, others ...*Patch) *Patch {
-	for _, patchB := range others {
+func ConsolidatePatches(patches []*Patch) (*Patch, error) {
+	if len(patches) <= 0 {
+		return nil, errors.New("ConsolidatePatches: No patches provided")
+	}
+
+	patchA := patches[0]
+	for _, patchB := range patches[1:] {
 		indexA := -1
 		indexB := -1
 		resultDiffs := Diffs{}
@@ -22,8 +29,6 @@ func ConsolidatePatches(patchA *Patch, others ...*Patch) *Patch {
 
 		currIndex := 0
 		for diffA != nil && diffB != nil {
-			fmt.Printf("DiffA: [%s], DiffB: [%s]\n", diffA.String(), diffB.String())
-
 			if !diffA.Insertion && !isNoOp(diffA) {
 				resultDiffs = append(resultDiffs, NewDiff(diffA.Insertion, currIndex, diffA.Changes))
 				currIndex += diffA.Length()
@@ -101,22 +106,21 @@ func ConsolidatePatches(patchA *Patch, others ...*Patch) *Patch {
 					getNextDiffA()
 				}
 			} else {
-				panic("WHAT IS GOING ON")
+				return nil, errors.New("Invalid state entered when consolidating diffs")
 			}
 		}
 
-		fmt.Println(resultDiffs)
-		//return
-
 		patchA = NewPatch(patchA.BaseVersion, resultDiffs, patchA.DocLength)
 	}
-	return patchA
+	return patchA, nil
 }
 
 func getNextDiff(patch *Patch, currIndex int, wasNoOp bool) (*Diff, int) {
 	if currIndex == -1 {
 		if !wasNoOp {
 			return NewDiff(true, 0, ""), -1
+		} else if patch.Changes.Len() <= 0 {
+			return nil, -1
 		}
 		return patch.Changes[0].clone(), 0
 
