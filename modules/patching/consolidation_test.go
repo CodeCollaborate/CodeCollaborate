@@ -3,609 +3,11 @@ package patching
 import (
 	"testing"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-//type diffConsolidationTest struct {
-//	desc      string
-//	diffA     *Diff
-//	diffB     *Diff
-//	expectedA Diffs
-//	expectedB *Diff
-//	offset    int
-//	error     string
-//}
-//
-//func runTests(t *testing.T, testName string, tests []diffConsolidationTest) {
-//	for _, test := range tests {
-//		diffsA, diffB, offset, err := ConsolidateDiffs(test.diffA, test.diffB)
-//
-//		if test.error != "" {
-//			if err == nil {
-//				t.Errorf("%s[%s]: Expected error: %q", testName, test.desc, test.error)
-//				continue
-//			}
-//			if want, got := test.error, err.Error(); !strings.Contains(got, want) {
-//				t.Error(pretty.Sprintf("%s[%s]: Expected %q, got %q. Diffs: %v", testName, test.desc, want, got, pretty.Diff(want, got)))
-//				continue
-//			}
-//		} else if err != nil {
-//			t.Errorf("%s[%s]: Unexpected error: %q", testName, test.desc, err)
-//			continue
-//		} else {
-//			require.Equal(t, test.offset, offset)
-//			require.Equal(t, test.expectedA.Len(), diffsA.Len(),
-//				"%s[%s]: DiffsA unequal length; Expected %d, but got %d", testName, test.desc, test.expectedA.Len(), diffsA.Len())
-//			for i := 0; i < test.expectedA.Len(); i++ {
-//				require.Equal(t, test.expectedA[i].String(), diffsA[i].String(),
-//					"%s[%s]: Expected %s, but got %s", testName, test.desc, test.expectedA[i].String(), diffsA[i].String())
-//			}
-//			if test.expectedB != nil {
-//				if diffB == nil {
-//					t.Errorf("%s[%s]: DiffB was nil, expected %s", testName, test.desc, test.expectedB.String())
-//				} else {
-//					require.Equal(t, test.expectedB.String(), diffB.String(),
-//						"%s[%s]: Expected %s, but got %s", testName, test.desc, test.expectedB.String(), diffB.String())
-//				}
-//			} else {
-//				if diffB != nil {
-//					t.Errorf("%s[%s]: DiffB was not nil, got %s", testName, test.desc, diffB.String())
-//				}
-//			}
-//		}
-//	}
-//}
-//
-//func TestConsolidate_Diff1A(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "0:+2:ab"),
-//			diffB:     getDiffOrDie(t, "3:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+2:ab")},
-//			expectedB: getDiffOrDie(t, "3:+2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Adjacent",
-//			diffA:     getDiffOrDie(t, "0:+2:ab"),
-//			diffB:     getDiffOrDie(t, "2:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+4:abcd")},
-//			expectedB: nil,
-//			offset:    2,
-//		},
-//		{
-//			desc:      "Overlapping 1",
-//			diffA:     getDiffOrDie(t, "0:+2:ad"),
-//			diffB:     getDiffOrDie(t, "1:+2:bc"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+4:abcd")},
-//			expectedB: nil,
-//			offset:    2,
-//		},
-//		{
-//			desc:      "Overlapping 2",
-//			diffA:     getDiffOrDie(t, "0:+2:ag"),
-//			diffB:     getDiffOrDie(t, "1:+5:bcdef"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+7:abcdefg")},
-//			expectedB: nil,
-//			offset:    5,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff1A", tests)
-//}
-//
-//func TestConsolidate_Diff1B(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "0:+2:ab"),
-//			diffB:     getDiffOrDie(t, "3:-2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+2:ab")},
-//			expectedB: getDiffOrDie(t, "3:-2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Adjacent",
-//			diffA:     getDiffOrDie(t, "0:+2:ab"),
-//			diffB:     getDiffOrDie(t, "2:-2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+2:ab")},
-//			expectedB: getDiffOrDie(t, "2:-2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping, DiffA longer",
-//			diffA:     getDiffOrDie(t, "0:+4:abcd"),
-//			diffB:     getDiffOrDie(t, "1:-2:bc"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+2:ad")},
-//			expectedB: nil,
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "Overlapping, same ending point",
-//			diffA:     getDiffOrDie(t, "0:+4:abcd"),
-//			diffB:     getDiffOrDie(t, "1:-3:bcd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+1:a")},
-//			expectedB: nil,
-//			offset:    -3,
-//		},
-//		{
-//			desc:      "Overlapping, DiffB longer",
-//			diffA:     getDiffOrDie(t, "0:+4:abcd"),
-//			diffB:     getDiffOrDie(t, "1:-5:bcdef"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+1:a")},
-//			expectedB: getDiffOrDie(t, "1:-2:ef"),
-//			offset:    -3,
-//		},
-//		{
-//			desc:  "Overlapping, DiffA longer, non-matching overlap",
-//			diffA: getDiffOrDie(t, "0:+4:abcd"),
-//			diffB: getDiffOrDie(t, "1:-2:xy"),
-//			error: "Overlapping strings did not match",
-//		},
-//		{
-//			desc:  "Overlapping, same ending point, non-matching overlap",
-//			diffA: getDiffOrDie(t, "0:+4:abcd"),
-//			diffB: getDiffOrDie(t, "1:-3:xyz"),
-//			error: "Overlapping strings did not match",
-//		},
-//		{
-//			desc:  "Overlapping, DiffB longer, non-matching overlap",
-//			diffA: getDiffOrDie(t, "0:+4:abcd"),
-//			diffB: getDiffOrDie(t, "1:-4:wxyz"),
-//			error: "Overlapping strings did not match",
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff1B", tests)
-//}
-//
-//func TestConsolidate_Diff1C(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "0:-2:ab"),
-//			diffB:     getDiffOrDie(t, "3:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ab")},
-//			expectedB: getDiffOrDie(t, "5:+2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Adjacent",
-//			diffA:     getDiffOrDie(t, "0:-2:ab"),
-//			diffB:     getDiffOrDie(t, "2:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ab")},
-//			expectedB: getDiffOrDie(t, "4:+2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping 1",
-//			diffA:     getDiffOrDie(t, "0:-2:ad"),
-//			diffB:     getDiffOrDie(t, "1:+2:bc"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ad")},
-//			expectedB: getDiffOrDie(t, "3:+2:bc"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping 2",
-//			diffA:     getDiffOrDie(t, "0:-2:ag"),
-//			diffB:     getDiffOrDie(t, "1:+5:bcdef"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ag")},
-//			expectedB: getDiffOrDie(t, "3:+5:bcdef"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping 2",
-//			diffA:     getDiffOrDie(t, "0:-8:abcdefgh"),
-//			diffB:     getDiffOrDie(t, "1:+2:ij"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-8:abcdefgh")},
-//			expectedB: getDiffOrDie(t, "9:+2:ij"),
-//			offset:    0,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff1C", tests)
-//}
-//
-//func TestConsolidate_Diff1D(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "0:-2:ab"),
-//			diffB:     getDiffOrDie(t, "3:-2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ab")},
-//			expectedB: getDiffOrDie(t, "5:-2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Adjacent",
-//			diffA:     getDiffOrDie(t, "0:-2:ab"),
-//			diffB:     getDiffOrDie(t, "2:-2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ab")},
-//			expectedB: getDiffOrDie(t, "4:-2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping 1",
-//			diffA:     getDiffOrDie(t, "0:-2:ad"),
-//			diffB:     getDiffOrDie(t, "1:-2:bc"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ad")},
-//			expectedB: getDiffOrDie(t, "3:-2:bc"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping 2",
-//			diffA:     getDiffOrDie(t, "0:-2:ag"),
-//			diffB:     getDiffOrDie(t, "1:-5:bcdef"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-2:ag")},
-//			expectedB: getDiffOrDie(t, "3:-5:bcdef"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping 2",
-//			diffA:     getDiffOrDie(t, "0:-8:abcdefgh"),
-//			diffB:     getDiffOrDie(t, "1:-2:ij"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-8:abcdefgh")},
-//			expectedB: getDiffOrDie(t, "9:-2:ij"),
-//			offset:    0,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff1D", tests)
-//}
-//
-//func TestConsolidate_Diff2A(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Overlapping 1",
-//			diffA:     getDiffOrDie(t, "2:+2:ab"),
-//			diffB:     getDiffOrDie(t, "2:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:+4:cdab")},
-//			expectedB: nil,
-//			offset:    2,
-//		},
-//		{
-//			desc:      "Overlapping 2",
-//			diffA:     getDiffOrDie(t, "1:+2:ad"),
-//			diffB:     getDiffOrDie(t, "1:+2:bc"),
-//			expectedA: Diffs{getDiffOrDie(t, "1:+4:bcad")},
-//			expectedB: nil,
-//			offset:    2,
-//		},
-//		{
-//			desc:      "Overlapping 3",
-//			diffA:     getDiffOrDie(t, "0:+2:ag"),
-//			diffB:     getDiffOrDie(t, "0:+5:bcdef"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:+7:bcdefag")},
-//			expectedB: nil,
-//			offset:    5,
-//		},
-//		{
-//			desc:      "Overlapping 4",
-//			diffA:     getDiffOrDie(t, "5:+8:abcdefgh"),
-//			diffB:     getDiffOrDie(t, "5:+2:ij"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:+10:ijabcdefgh")},
-//			expectedB: nil,
-//			offset:    2,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff2A", tests)
-//}
-//
-//func TestConsolidate_Diff2B(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "DiffA longer",
-//			diffA:     getDiffOrDie(t, "2:+4:abcd"),
-//			diffB:     getDiffOrDie(t, "2:-2:ab"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:+2:cd")},
-//			expectedB: nil,
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "Same length",
-//			diffA:     getDiffOrDie(t, "1:+2:ad"),
-//			diffB:     getDiffOrDie(t, "1:-2:ad"),
-//			expectedA: Diffs{},
-//			expectedB: nil,
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "DiffB longer",
-//			diffA:     getDiffOrDie(t, "0:+2:ag"),
-//			diffB:     getDiffOrDie(t, "0:-5:aghed"),
-//			expectedA: Diffs{},
-//			expectedB: getDiffOrDie(t, "0:-3:hed"),
-//			offset:    -2,
-//		},
-//		{
-//			desc:  "DiffA longer, non-matching overlap",
-//			diffA: getDiffOrDie(t, "2:+4:abcd"),
-//			diffB: getDiffOrDie(t, "2:-2:xy"),
-//			error: "Overlapping strings did not match",
-//		},
-//		{
-//			desc:  "Same length",
-//			diffA: getDiffOrDie(t, "1:+2:ad"),
-//			diffB: getDiffOrDie(t, "1:-2:xy"),
-//			error: "Overlapping strings did not match",
-//		},
-//		{
-//			desc:  "DiffB longer",
-//			diffA: getDiffOrDie(t, "0:+2:ag"),
-//			diffB: getDiffOrDie(t, "0:-5:xyhed"),
-//			error: "Overlapping strings did not match",
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff2B", tests)
-//}
-//
-//func TestConsolidate_Diff2C(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "No shared string, equal lengths",
-//			diffA:     getDiffOrDie(t, "2:-4:abcd"),
-//			diffB:     getDiffOrDie(t, "2:+4:efgh"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:-4:abcd"), getDiffOrDie(t, "6:+4:efgh")},
-//			expectedB: nil,
-//			offset:    4,
-//		},
-//		{
-//			desc:      "No shared string, diffB longer",
-//			diffA:     getDiffOrDie(t, "2:-3:foo"),
-//			diffB:     getDiffOrDie(t, "2:+6:barbaz"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:-3:foo"), getDiffOrDie(t, "5:+6:barbaz")},
-//			expectedB: nil,
-//			offset:    6,
-//		},
-//		{
-//			desc:      "No shared string, diffA longer",
-//			diffA:     getDiffOrDie(t, "2:-6:barbaz"),
-//			diffB:     getDiffOrDie(t, "2:+3:foo"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:-6:barbaz"), getDiffOrDie(t, "8:+3:foo")},
-//			expectedB: nil,
-//			offset:    3,
-//		},
-//		{
-//			desc:      "Shared prefix, equal lengths",
-//			diffA:     getDiffOrDie(t, "2:-7:fooabcd"),
-//			diffB:     getDiffOrDie(t, "2:+7:foowxyz"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:-4:abcd"), getDiffOrDie(t, "9:+4:wxyz")},
-//			expectedB: nil,
-//			offset:    7,
-//		},
-//		{
-//			desc:      "Shared prefix, diffA longer",
-//			diffA:     getDiffOrDie(t, "2:-7:fooabcd"),
-//			diffB:     getDiffOrDie(t, "2:+5:foowx"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:-4:abcd"), getDiffOrDie(t, "9:+2:wx")},
-//			expectedB: nil,
-//			offset:    5,
-//		},
-//		{
-//			desc:      "Shared prefix, diffB longer",
-//			diffA:     getDiffOrDie(t, "2:-5:fooab"),
-//			diffB:     getDiffOrDie(t, "2:+7:foowxyz"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:-2:ab"), getDiffOrDie(t, "7:+4:wxyz")},
-//			expectedB: nil,
-//			offset:    7,
-//		},
-//		{
-//			desc:      "Shared suffix, equal lengths",
-//			diffA:     getDiffOrDie(t, "2:-7:abcdfoo"),
-//			diffB:     getDiffOrDie(t, "2:+7:wxyzfoo"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:-4:abcd"), getDiffOrDie(t, "6:+4:wxyz")},
-//			expectedB: nil,
-//			offset:    7,
-//		},
-//		{
-//			desc:      "Shared suffix, diffA longer",
-//			diffA:     getDiffOrDie(t, "2:-7:abcdfoo"),
-//			diffB:     getDiffOrDie(t, "2:+5:wxfoo"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:-4:abcd"), getDiffOrDie(t, "6:+2:wx")},
-//			expectedB: nil,
-//			offset:    5,
-//		},
-//		{
-//			desc:      "Shared suffix, diffB longer",
-//			diffA:     getDiffOrDie(t, "2:-5:abfoo"),
-//			diffB:     getDiffOrDie(t, "2:+7:wxyzfoo"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:-2:ab"), getDiffOrDie(t, "4:+4:wxyz")},
-//			expectedB: nil,
-//			offset:    7,
-//		},
-//		{
-//			desc:      "Mid-string change, differing lengths",
-//			diffA:     getDiffOrDie(t, "2:-19:+thequickbrownfox++"),
-//			diffB:     getDiffOrDie(t, "2:+10:+lazyfox++"),
-//			expectedA: Diffs{getDiffOrDie(t, "3:-13:thequickbrown"), getDiffOrDie(t, "16:+4:lazy")},
-//			expectedB: nil,
-//			offset:    10,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff2C", tests)
-//}
-//
-//func TestConsolidate_Diff2D(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Equal lengths 1",
-//			diffA:     getDiffOrDie(t, "0:-2:ab"),
-//			diffB:     getDiffOrDie(t, "0:-2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-4:abcd")},
-//			expectedB: nil,
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "Equal lengths 2",
-//			diffA:     getDiffOrDie(t, "2:-2:ab"),
-//			diffB:     getDiffOrDie(t, "2:-2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "2:-4:abcd")},
-//			expectedB: nil,
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "DiffB longer",
-//			diffA:     getDiffOrDie(t, "5:-2:ag"),
-//			diffB:     getDiffOrDie(t, "5:-5:bcdef"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:-7:agbcdef")},
-//			expectedB: nil,
-//			offset:    0 - 5,
-//		},
-//		{
-//			desc:      "DiffA longer",
-//			diffA:     getDiffOrDie(t, "21:-8:abcdefgh"),
-//			diffB:     getDiffOrDie(t, "21:-2:ij"),
-//			expectedA: Diffs{getDiffOrDie(t, "21:-10:abcdefghij")},
-//			expectedB: nil,
-//			offset:    -2,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff2D", tests)
-//}
-//
-//func TestConsolidate_Diff3A(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "5:+2:ab"),
-//			diffB:     getDiffOrDie(t, "0:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:+2:ab")},
-//			expectedB: getDiffOrDie(t, "0:+2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping",
-//			diffA:     getDiffOrDie(t, "1:+2:ab"),
-//			diffB:     getDiffOrDie(t, "0:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "1:+2:ab")},
-//			expectedB: getDiffOrDie(t, "0:+2:cd"),
-//			offset:    0,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff3A", tests)
-//}
-//
-//func TestConsolidate_Diff3B(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "5:+2:ab"),
-//			diffB:     getDiffOrDie(t, "0:-2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:+2:ab")},
-//			expectedB: getDiffOrDie(t, "0:-2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping",
-//			diffA:     getDiffOrDie(t, "1:+2:ab"),
-//			diffB:     getDiffOrDie(t, "0:-2:ca"),
-//			expectedA: Diffs{getDiffOrDie(t, "1:+1:b")},
-//			expectedB: getDiffOrDie(t, "0:-1:c"),
-//			offset:    -1,
-//		},
-//		{
-//			desc:  "Overlapping, non-matching overlap",
-//			diffA: getDiffOrDie(t, "1:+2:ab"),
-//			diffB: getDiffOrDie(t, "0:-2:cd"),
-//			error: "Overlapping strings did not match",
-//		},
-//		{
-//			desc:      "Overlapping, EndIndexA < EndIndexB",
-//			diffA:     getDiffOrDie(t, "1:+2:ab"),
-//			diffB:     getDiffOrDie(t, "0:-4:cabd"),
-//			expectedA: Diffs{},
-//			expectedB: getDiffOrDie(t, "0:-2:cd"),
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "Overlapping, EndIndexA == EndIndexB",
-//			diffA:     getDiffOrDie(t, "1:+2:ab"),
-//			diffB:     getDiffOrDie(t, "0:-3:cab"),
-//			expectedA: Diffs{},
-//			expectedB: getDiffOrDie(t, "0:-1:c"),
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "Overlapping, EndIndexA > EndIndexB",
-//			diffA:     getDiffOrDie(t, "1:+2:ab"),
-//			diffB:     getDiffOrDie(t, "0:-2:ca"),
-//			expectedA: Diffs{getDiffOrDie(t, "1:+1:b")},
-//			expectedB: getDiffOrDie(t, "0:-1:c"),
-//			offset:    -1,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff3B", tests)
-//}
-//
-//func TestConsolidate_Diff3C(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "5:-2:ab"),
-//			diffB:     getDiffOrDie(t, "0:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "5:-2:ab")},
-//			expectedB: getDiffOrDie(t, "0:+2:cd"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Overlapping",
-//			diffA:     getDiffOrDie(t, "1:-2:ab"),
-//			diffB:     getDiffOrDie(t, "0:+2:cd"),
-//			expectedA: Diffs{getDiffOrDie(t, "1:-2:ab")},
-//			expectedB: getDiffOrDie(t, "0:+2:cd"),
-//			offset:    0,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff3C", tests)
-//}
-//
-//func TestConsolidate_Diff3D(t *testing.T) {
-//	tests := []diffConsolidationTest{
-//		{
-//			desc:      "Non-overlapping",
-//			diffA:     getDiffOrDie(t, "3:-2:cd"),
-//			diffB:     getDiffOrDie(t, "0:-2:ab"),
-//			expectedA: Diffs{getDiffOrDie(t, "3:-2:cd")},
-//			expectedB: getDiffOrDie(t, "0:-2:ab"),
-//			offset:    0,
-//		},
-//		{
-//			desc:      "Adjacent",
-//			diffA:     getDiffOrDie(t, "2:-2:cd"),
-//			diffB:     getDiffOrDie(t, "0:-2:ab"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-4:abcd")},
-//			expectedB: nil,
-//			offset:    -2,
-//		},
-//		{
-//			desc:      "Overlapping 1",
-//			diffA:     getDiffOrDie(t, "1:-2:bc"),
-//			diffB:     getDiffOrDie(t, "0:-2:ad"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-3:abc")},
-//			expectedB: getDiffOrDie(t, "3:-1:d"),
-//			offset:    -1,
-//		},
-//		{
-//			desc:      "Overlapping 2",
-//			diffA:     getDiffOrDie(t, "1:-5:bcdef"),
-//			diffB:     getDiffOrDie(t, "0:-2:ag"),
-//			expectedA: Diffs{getDiffOrDie(t, "0:-6:abcdef")},
-//			expectedB: getDiffOrDie(t, "6:-1:g"),
-//			offset:    -1,
-//		},
-//	}
-//
-//	runTests(t, "TestConsolidate_Diff3D", tests)
-//}
 
 func TestGetNextDiff(t *testing.T) {
 	tests := []struct {
@@ -799,10 +201,9 @@ func TestConsolidatePatch(t *testing.T) {
 }
 
 func TestConsolidatePatchLong(t *testing.T) {
-
 	tests := []overallConsolidationTest{
 		{
-			desc:     "Simple Add-Only test",
+			desc:     "File construction 1",
 			baseText: "",
 			patches: getPatchesOrDie(t,
 				"v1:\n0:+1:y:\n0", "v2:\n1:+1:e:\n1", "v3:\n2:+1:p:\n2", "v4:\n3:+1:%0A:\n3", "v5:\n4:+1:%0A:\n4",
@@ -885,6 +286,235 @@ func TestConsolidatePatchLong(t *testing.T) {
 				"v232:\n13:+1:e:\n13", "v233:\n14:+1:s:\n14", "v234:\n15:+1:a:\n15", "v235:\n16:+1:f:\n16",
 			),
 		},
+		{
+			desc:     "File construction 2",
+			baseText: "",
+			patches: getPatchesOrDie(t,
+				"v1:\n0:+1:t:\n0", "v2:\n1:+1:e:\n1", "v2:\n2:+1:s:\n2", "v2:\n3:+1:t:\n3", "v3:\n4:+1:t:\n4",
+				"v4:\n4:-1:t:\n5", "v5:\n3:-1:t:\n4", "v6:\n2:-1:s:\n3", "v7:\n1:-1:e:\n2", "v8:\n0:-1:t:\n1",
+				"v9:\n0:+1:k:\n0", "v10:\n0:+1:j:\n1", "v11:\n2:+1:e:\n2", "v12:\n2:-1:e:\n3", "v13:\n1:-1:k:\n2",
+				"v13:\n0:-1:j:\n1", "v14:\n0:+1:k:\n0", "v15:\n1:+1:j:\n1", "v16:\n1:-1:j:\n2", "v17:\n0:-1:k:\n1",
+				"v18:\n0:+1:k:\n0", "v19:\n0:+1:l:\n1", "v20:\n2:+1:j:\n2", "v20:\n3:+1:n:\n3", "v21:\n1:+1:k:\n4",
+				"v21:\n2:+1:m:\n5", "v22:\n0:-6:lkmkjn,\n0:+1:h:\n6", "v23:\n1:+1:e:\n1", "v23:\n2:+1:l:\n2", "v23:\n3:+1:l:\n3",
+				"v24:\n4:+1:o:\n4", "v24:\n5:+1:m:\n5", "v25:\n6:+1:y:\n6", "v25:\n7:+1:n:\n7", "v25:\n8:+1:a:\n8",
+				"v26:\n9:+1:m:\n9", "v26:\n10:+1:e:\n10", "v26:\n11:+1:i:\n11", "v27:\n0:+1:h:\n12", "v28:\n13:+1:s:\n13",
+				"v28:\n14:+1:b:\n14", "v28:\n15:+1:e:\n15", "v28:\n16:+1:n:\n16", "v29:\n1:+1:e:\n17", "v29:\n2:+1:y:\n18",
+				"v30:\n3:+1:a:\n19", "v31:\n0:-20:heyahellomynameisben:\n20", "v32:\n0:+1:t:\n0", "v33:\n1:+1:r:\n1", "v34:\n1:-1:r:\n2",
+				"v35:\n0:-1:t:\n1", "v36:\n0:+1:t:\n0", "v37:\n1:+1:e:\n1", "v38:\n2:+1:s:\n2", "v39:\n3:+1:t:\n3",
+				"v40:\n3:-1:t:\n4", "v41:\n2:-1:s:\n3", "v42:\n1:-1:e:\n2", "v43:\n0:-1:t:\n1", "v44:\n0:+1:a:\n0",
+				"v45:\n0:+1:%3B:\n1", "v46:\n2:+1:s:\n2", "v47:\n3:+1:d:\n3", "v47:\n4:+1:f:\n4", "v48:\n1:+1:l:\n5",
+				"v48:\n2:+1:k:\n6", "v48:\n3:+1:j:\n7", "v49:\n8:+1:a:\n8", "v50:\n9:+1:s:\n9", "v50:\n10:+1:d:\n10",
+				"v51:\n11:+1:f:\n11", "v52:\n0:-12:%3Blkjasdfasdf,\n0:+12:%3Blkjasdfasdf:\n12", "v53:\n0:-12:%3Blkjasdfasdf,\n0:+1:t:\n12", "v54:\n1:+1:e:\n1", "v55:\n2:+1:s:\n2",
+				"v56:\n3:+1:t:\n3", "v57:\n1:-1:e:\n4", "v58:\n0:-1:t:\n3", "v59:\n0:+1:t:\n2", "v60:\n1:+1:e:\n3",
+				"v61:\n1:-1:e:\n4", "v62:\n0:-1:t:\n3", "v63:\n0:+1:t:\n2", "v64:\n1:+1:e:\n3", "v65:\n3:-1:t:\n4",
+				"v66:\n2:-1:s:\n3", "v67:\n1:-1:e:\n2", "v68:\n0:-1:t:\n1", "v69:\n0:+1:t:\n0", "v70:\n1:+1:e:\n1",
+				"v71:\n2:+1:s:\n2", "v72:\n3:+1:t:\n3", "v73:\n3:-1:t:\n4", "v74:\n0:-1:t:\n3", "v75:\n1:-1:s:\n2",
+				"v76:\n0:-1:e:\n1", "v77:\n0:+1:a:\n0", "v78:\n0:+1:%3B:\n1", "v79:\n2:+1:d:\n2", "v79:\n3:+1:s:\n3",
+				"v80:\n4:+1:f:\n4", "v81:\n5:+1:a:\n5", "v82:\n6:+1:s:\n6", "v82:\n7:+1:d:\n7", "v82:\n8:+1:f:\n8",
+				"v83:\n1:+1:l:\n9", "v83:\n2:+1:k:\n10", "v83:\n3:+1:j:\n11", "v83:\n4:+1:%3B:\n12", "v83:\n5:+1:l:\n13",
+				"v83:\n6:+1:k:\n14", "v83:\n7:+1:j:\n15", "v84:\n8:+1:%0A:\n16", "v85:\n9:+1:%0A:\n17", "v86:\n10:-8:adsfasdf,\n10:+1:h:\n18",
+				"v87:\n11:+1:e:\n11", "v88:\n12:+1:l:\n12", "v89:\n13:+1:l:\n13", "v90:\n14:+1:o:\n14", "v91:\n15:+1:+:\n15",
+				"v92:\n16:+1:m:\n16", "v93:\n17:+1:y:\n17", "v94:\n18:+1:+:\n18", "v95:\n19:+1:n:\n19", "v96:\n20:+1:a:\n20",
+				"v97:\n21:+1:m:\n21", "v98:\n22:+1:e:\n22", "v99:\n23:+1:+:\n23", "v100:\n24:+1:i:\n24", "v101:\n25:+1:s:\n25",
+				"v102:\n26:+1:+:\n26", "v103:\n27:+1:b:\n27", "v104:\n28:+1:e:\n28", "v105:\n29:+1:n:\n29", "v106:\n30:+1:.:\n30",
+				"v107:\n27:-4:ben.:\n31", "v108:\n24:-3:is+:\n27", "v109:\n19:-5:name+:\n24", "v110:\n16:-3:my+:\n19", "v111:\n10:-6:hello+:\n16",
+				"v112:\n0:-8:%3Blkj%3Blkj,\n0:+1:H:\n10", "v113:\n1:+1:e:\n3", "v114:\n2:+1:l:\n4", "v115:\n3:+1:l:\n5", "v116:\n4:+1:o:\n6",
+				"v117:\n5:+1:+:\n7", "v118:\n6:+1:f:\n8", "v119:\n7:+1:r:\n9", "v120:\n8:+1:o:\n10", "v121:\n9:+1:m:\n11",
+				"v122:\n10:+1:+:\n12", "v123:\n11:+1:c:\n13", "v124:\n12:+1:o:\n14", "v125:\n13:+1:m:\n15", "v126:\n14:+1:p:\n16",
+				"v127:\n15:+1:2:\n17", "v128:\n16:+1:+:\n18", "v129:\n16:-1:+:\n19", "v130:\n18:+1:H:\n18", "v131:\n19:+1:e:\n19",
+				"v132:\n20:+1:l:\n20", "v133:\n21:+1:l:\n21", "v134:\n22:+1:o:\n22", "v135:\n23:+1:+:\n23", "v136:\n24:+1:f:\n24",
+				"v137:\n25:+1:r:\n25", "v138:\n26:+1:o:\n26", "v139:\n27:+1:m:\n27", "v140:\n28:+1:+:\n28", "v141:\n29:+1:c:\n29",
+				"v142:\n30:+1:o:\n30", "v143:\n31:+1:m:\n31", "v144:\n32:+1:p:\n32", "v145:\n33:+1:1:\n33", "v146:\n29:-5:comp1:\n34",
+				"v147:\n24:-5:from+:\n29", "v148:\n18:-6:Hello+:\n24", "v149:\n0:-16:Hello+from+comp2,\n0:+1:a:\n18", "v150:\n0:-1:a:\n3", "v151:\n0:+1:a:\n2",
+				"v152:\n1:+1:s:\n3", "v153:\n2:+1:d:\n4", "v154:\n5:+1:H:\n5", "v155:\n3:+1:f:\n6", "v156:\n4:+1:a:\n7",
+				"v157:\n5:+1:s:\n8", "v158:\n6:+1:d:\n9", "v159:\n7:+1:f:\n10", "v160:\n8:+1:a:\n11", "v161:\n9:+1:s:\n12",
+				"v162:\n10:+1:d:\n13", "v163:\n11:+1:f:\n14", "v164:\n12:+1:a:\n15", "v165:\n16:+1:i:\n16", "v165:\n17:+1:+:\n17",
+				"v165:\n18:+1:m:\n18", "v165:\n19:+1:y:\n19", "v166:\n13:+1:s:\n20", "v166:\n14:+1:d:\n21", "v167:\n15:+1:f:\n22",
+				"v168:\n16:+1:a:\n23", "v169:\n17:+1:s:\n24", "v170:\n18:+1:d:\n25", "v171:\n26:+1:+:\n26", "v171:\n27:+1:n:\n27",
+				"v171:\n28:+1:a:\n28", "v171:\n29:+1:m:\n29", "v172:\n19:+1:f:\n30", "v173:\n20:+1:a:\n31", "v174:\n32:+1:e:\n32",
+				"v174:\n33:+1:+:\n33", "v175:\n21:+1:s:\n34", "v176:\n22:+1:d:\n35", "v176:\n23:+1:f:\n36", "v177:\n37:+1:i:\n37",
+				"v178:\n24:+1:a:\n38", "v179:\n25:+1:s:\n39", "v180:\n26:+1:d:\n40", "v181:\n27:+1:f:\n41", "v182:\n28:+1:a:\n42",
+				"v183:\n43:+1:s:\n43", "v183:\n44:+1:+:\n44", "v183:\n45:+1:b:\n45", "v184:\n29:+1:s:\n46", "v184:\n30:+1:d:\n47",
+				"v184:\n31:+1:f:\n48", "v184:\n32:+1:a:\n49", "v185:\n33:+1:s:\n50", "v185:\n34:+1:d:\n51", "v186:\n35:+1:f:\n52",
+				"v187:\n36:+1:a:\n53", "v188:\n37:+1:s:\n54", "v189:\n38:+1:d:\n55", "v189:\n39:+1:f:\n56", "v190:\n56:-1:b:\n57",
+				"v191:\n40:+1:a:\n56", "v192:\n41:+1:s:\n57", "v193:\n58:+1:w:\n58", "v194:\n42:+1:d:\n59", "v194:\n43:+1:f:\n60",
+				"v194:\n44:+1:j:\n61", "v195:\n62:+1:l:\n62", "v196:\n45:+1:%3B:\n63", "v196:\n46:+1:l:\n64", "v197:\n47:+1:k:\n65",
+				"v197:\n48:+1:j:\n66", "v198:\n49:+1:a:\n67", "v199:\n50:+1:%3B:\n68", "v199:\n51:+1:o:\n69", "v200:\n52:+1:f:\n70",
+				"v200:\n53:+1:i:\n71", "v200:\n54:+1:w:\n72", "v200:\n55:+1:e:\n73", "v201:\n56:+1:o:\n74", "v202:\n57:+1:a:\n75",
+				"v203:\n58:+1:e:\n76", "v203:\n59:+1:j:\n77", "v204:\n60:+1:f:\n78", "v205:\n61:+1:o:\n79", "v206:\n62:+1:j:\n80",
+				"v207:\n63:+1:a:\n81", "v207:\n64:+1:d:\n82", "v207:\n65:+1:%3B:\n83", "v207:\n66:+1:s:\n84", "v208:\n67:+1:l:\n85",
+				"v208:\n68:+1:k:\n86", "v209:\n69:+1:j:\n87", "v210:\n70:+1:o:\n88", "v211:\n71:+1:w:\n89", "v211:\n72:+1:a:\n90",
+				"v212:\n73:+1:e:\n91", "v212:\n74:+1:i:\n92", "v212:\n75:+1:u:\n93", "v213:\n76:+1:p:\n94", "v213:\n77:+1:r:\n95",
+				"v214:\n77:-1:r:\n96", "v215:\n95:+1:k:\n95", "v215:\n96:+1:e:\n96", "v215:\n97:+1:j:\n97", "v215:\n98:+1:f:\n98",
+				"v215:\n99:+1:a:\n99", "v215:\n100:+1:s:\n100", "v215:\n93:-8:wlkejfas:\n101", "v215:\n90:-3:is+:\n93", "v216:\n76:-1:p:\n90",
+				"v217:\n75:-1:u:\n89", "v218:\n74:-1:i:\n88", "v219:\n73:-1:e:\n87", "v219:\n72:-1:a:\n86", "v220:\n71:-1:w:\n85",
+				"v220:\n70:-1:o:\n84", "v221:\n69:-1:j:\n83", "v221:\n68:-1:k:\n82", "v222:\n67:-1:l:\n81", "v222:\n66:-1:s:\n80",
+				"v223:\n65:-1:%3B:\n79", "v223:\n64:-1:d:\n78", "v224:\n63:-1:a:\n77", "v224:\n62:-1:j:\n76", "v225:\n61:-1:o:\n75",
+				"v225:\n60:-1:f:\n74", "v226:\n59:-1:j:\n73", "v226:\n58:-1:e:\n72", "v227:\n57:-1:a:\n71", "v227:\n56:-1:o:\n70",
+				"v228:\n55:-1:e:\n69", "v228:\n54:-1:w:\n68", "v229:\n53:-1:i:\n67", "v229:\n52:-1:f:\n66", "v230:\n51:-1:o:\n65",
+				"v230:\n50:-1:%3B:\n64", "v231:\n49:-1:a:\n63", "v231:\n48:-1:j:\n62", "v232:\n47:-1:k:\n61", "v232:\n46:-1:l:\n60",
+				"v233:\n45:-1:%3B:\n59", "v233:\n44:-1:j:\n58", "v234:\n43:-1:f:\n57", "v234:\n42:-1:d:\n56", "v235:\n41:-1:s:\n55",
+				"v235:\n40:-1:a:\n54", "v236:\n39:-1:f:\n53", "v236:\n38:-1:d:\n52", "v237:\n37:-1:s:\n51", "v237:\n36:-1:a:\n50",
+				"v238:\n35:-1:f:\n49", "v238:\n34:-1:d:\n48", "v239:\n33:-1:s:\n47", "v239:\n32:-1:a:\n46", "v239:\n31:-1:f:\n45",
+				"v239:\n30:-1:d:\n44", "v240:\n29:-1:s:\n43", "v240:\n28:-1:a:\n42", "v240:\n27:-1:f:\n41", "v241:\n26:-1:d:\n40",
+				"v241:\n25:-1:s:\n39", "v242:\n24:-1:a:\n38", "v242:\n23:-1:f:\n37", "v242:\n22:-1:d:\n36", "v243:\n21:-1:s:\n35",
+				"v243:\n20:-1:a:\n34", "v244:\n19:-1:f:\n33", "v244:\n18:-1:d:\n32", "v245:\n17:-1:s:\n31", "v245:\n16:-1:a:\n30",
+				"v246:\n15:-1:f:\n29", "v246:\n14:-1:d:\n28", "v247:\n13:-1:s:\n27", "v247:\n12:-1:a:\n26", "v248:\n11:-1:f:\n25",
+				"v248:\n10:-1:d:\n24", "v249:\n9:-1:s:\n23", "v249:\n8:-1:a:\n22", "v250:\n7:-1:f:\n21", "v250:\n6:-1:d:\n20",
+				"v251:\n5:-1:s:\n19", "v251:\n4:-1:a:\n18", "v252:\n3:-1:f:\n17", "v252:\n2:-1:d:\n16", "v253:\n1:-1:s:\n15",
+				"v254:\n0:-1:a:\n14", "v255:\n2:-11:Hi+my+name+:\n13", "v256:\n2:+1:H:\n2", "v257:\n3:+1:e:\n3", "v258:\n4:+1:l:\n4",
+				"v259:\n5:+1:l:\n5", "v260:\n6:+1:o:\n6", "v261:\n7:+1:+:\n7", "v262:\n8:+1:m:\n8", "v263:\n9:+1:y:\n9",
+				"v264:\n10:+1:+:\n10", "v265:\n11:+1:n:\n11", "v266:\n12:+1:a:\n12", "v267:\n13:+1:m:\n13", "v268:\n14:+1:+:\n14",
+				"v269:\n15:+1:e:\n15", "v270:\n0:+1:L:\n16", "v271:\n1:+1:p:\n17", "v272:\n17:-1:e:\n18", "v273:\n2:+1:o:\n17",
+				"v273:\n3:+1:r:\n18", "v274:\n18:-1:+:\n19", "v275:\n18:+1:e:\n18", "v276:\n19:+1:+:\n19", "v277:\n20:+1:i:\n20",
+				"v278:\n21:+1:s:\n21", "v279:\n22:+1:+:\n22", "v280:\n3:-1:r:\n23", "v281:\n22:+1:b:\n22", "v282:\n2:-1:o:\n23",
+				"v283:\n22:+1:e:\n22", "v284:\n1:-1:p:\n23", "v285:\n22:+1:n:\n22", "v286:\n23:+1:.:\n23", "v287:\n1:+1:r:\n24",
+				"v288:\n25:+1:+:\n25", "v289:\n2:+1:o:\n26", "v290:\n27:+1:C:\n27", "v291:\n2:-1:o:\n28", "v292:\n27:+1:a:\n27",
+				"v293:\n1:-1:r:\n28", "v294:\n27:+1:n:\n27", "v295:\n28:+1:+:\n28", "v296:\n29:+1:i:\n29", "v297:\n1:+1:o:\n30",
+				"v298:\n2:+1:r:\n31", "v299:\n3:+1:e:\n32", "v300:\n32:-1:i:\n33", "v301:\n4:+1:m:\n32", "v302:\n5:+1:+:\n33",
+				"v303:\n6:+1:i:\n34", "v304:\n7:+1:p:\n35", "v305:\n8:+1:s:\n36", "v306:\n9:+1:u:\n37", "v307:\n10:+1:m:\n38",
+				"v308:\n11:+1:+:\n39", "v309:\n12:+1:d:\n40", "v310:\n13:+1:o:\n41", "v311:\n14:+1:l:\n42", "v312:\n15:+1:o:\n43",
+				"v313:\n16:+1:r:\n44", "v313:\n17:+1:+:\n45", "v314:\n18:+1:s:\n46", "v314:\n19:+1:i:\n47", "v314:\n20:+1:t:\n48",
+				"v315:\n21:+1:+:\n49", "v316:\n22:+1:a:\n50", "v317:\n23:+1:m:\n51", "v318:\n24:+1:e:\n52", "v319:\n25:+1:t:\n53",
+				"v320:\n26:+1:+:\n54", "v321:\n55:+1:y:\n55", "v321:\n56:+1:o:\n56", "v321:\n57:+1:u:\n57", "v321:\n58:+1:+:\n58",
+				"v321:\n59:+1:s:\n59", "v321:\n60:+1:e:\n60", "v321:\n61:+1:e:\n61", "v321:\n62:+1:+:\n62", "v321:\n63:+1:t:\n63",
+				"v321:\n64:+1:h:\n64", "v321:\n65:+1:i:\n65", "v321:\n66:+1:s:\n66", "v321:\n67:+1:+:\n67", "v321:\n68:+1:c:\n68",
+				"v321:\n69:+1:o:\n69", "v321:\n70:+1:r:\n70", "v321:\n71:+1:r:\n71", "v321:\n72:+1:e:\n72", "v321:\n73:+1:c:\n73",
+				"v321:\n74:+1:t:\n74", "v321:\n75:+1:l:\n75", "v321:\n76:+1:y:\n76", "v321:\n77:+1:%3F:\n77", "v322:\n0:-78:Lorem+ipsum+dolor+sit+amet+%0A%0AHello+my+name+is+ben.+Can+you+see+this+correctly%3F:\n78",
+				"v323:\n0:+1:t:\n0", "v324:\n1:+1:e:\n1", "v325:\n2:+1:s:\n2", "v326:\n3:+1:t:\n3", "v327:\n4:+1:i:\n4",
+				"v328:\n5:+1:n:\n5", "v329:\n6:+1:g:\n6", "v330:\n6:-1:g:\n7", "v331:\n5:-1:n:\n6", "v332:\n4:-1:i:\n5",
+				"v333:\n3:-1:t:\n4", "v334:\n2:-1:s:\n3", "v335:\n1:-1:e:\n2", "v336:\n0:-1:t:\n1", "v337:\n0:+1:%0A:\n0",
+				"v338:\n1:+1:O:\n1", "v339:\n2:+1:k:\n2", "v340:\n3:+1:.:\n3", "v341:\n4:+1:+:\n4", "v342:\n5:+1:T:\n5",
+				"v343:\n6:+1:h:\n6", "v344:\n7:+1:i:\n7", "v345:\n8:+1:s:\n8", "v346:\n9:+1:+:\n9", "v347:\n10:+1:i:\n10",
+				"v348:\n11:+1:s:\n11", "v349:\n12:+1:+:\n12", "v350:\n13:+1:a:\n13", "v351:\n14:+1:+:\n14", "v352:\n15:+1:n:\n15",
+				"v353:\n0:+1:H:\n16", "v354:\n16:-1:n:\n17", "v355:\n1:+1:i:\n16", "v356:\n16:-1:+:\n17", "v357:\n2:+1:+:\n16",
+				"v358:\n3:+1:t:\n17", "v359:\n18:+1:n:\n18", "v360:\n4:+1:h:\n19", "v361:\n5:+1:i:\n20", "v362:\n6:+1:s:\n21",
+				"v363:\n7:+1:+:\n22", "v364:\n8:+1:i:\n23", "v365:\n9:+1:s:\n24", "v366:\n10:+1:+:\n25", "v367:\n11:+1:m:\n26",
+				"v368:\n12:+1:y:\n27", "v369:\n13:+1:+:\n28", "v370:\n14:+1:t:\n29", "v371:\n15:+1:y:\n30", "v372:\n16:+1:p:\n31",
+				"v373:\n17:+1:i:\n32", "v374:\n18:+1:n:\n33", "v375:\n19:+1:g:\n34", "v376:\n20:+1:+:\n35", "v377:\n21:+1:e:\n36",
+				"v378:\n22:+1:x:\n37", "v379:\n23:+1:a:\n38", "v380:\n24:+1:m:\n39", "v381:\n25:+1:p:\n40", "v382:\n26:+1:l:\n41",
+				"v383:\n27:+1:e:\n42", "v384:\n28:+1:s:\n43", "v385:\n44:+1:o:\n44", "v385:\n45:+1:t:\n45", "v385:\n46:+1:h:\n46",
+				"v385:\n47:+1:e:\n47", "v385:\n48:+1:r:\n48", "v385:\n49:+1:+:\n49", "v385:\n50:+1:t:\n50", "v385:\n51:+1:e:\n51",
+				"v385:\n52:+1:s:\n52", "v385:\n53:+1:t:\n53", "v385:\n54:+1:+:\n54", "v385:\n55:+1:o:\n55", "v385:\n56:+1:f:\n56",
+				"v385:\n57:+1:+:\n57", "v385:\n58:+1:t:\n58", "v385:\n59:+1:h:\n59", "v385:\n60:+1:e:\n60", "v385:\n61:+1:+:\n61",
+				"v385:\n62:+1:s:\n62", "v385:\n63:+1:y:\n63", "v385:\n64:+1:n:\n64", "v385:\n65:+1:c:\n65", "v385:\n66:+1:h:\n66",
+				"v385:\n67:+1:r:\n67", "v385:\n68:+1:o:\n68", "v385:\n69:+1:n:\n69", "v385:\n70:+1:i:\n70", "v385:\n71:+1:z:\n71",
+				"v385:\n72:+1:a:\n72", "v385:\n73:+1:t:\n73", "v385:\n74:+1:i:\n74", "v386:\n75:+1:o:\n75", "v387:\n76:+1:n:\n76",
+				"v388:\n77:+1:+:\n77", "v389:\n78:+1:e:\n78", "v390:\n79:+1:x:\n79", "v391:\n80:+1:a:\n80", "v392:\n81:+1:m:\n81",
+				"v393:\n82:+1:p:\n82", "v394:\n29:+1:j:\n83", "v395:\n84:+1:l:\n84", "v396:\n30:+1:o:\n85", "v397:\n86:+1:e:\n86",
+				"v398:\n87:+1:.:\n87", "v399:\n88:+1:+:\n88", "v400:\n30:-1:o:\n89", "v401:\n29:-1:j:\n88", "v402:\n87:+1:W:\n87",
+				"v403:\n29:+1:+:\n88", "v404:\n89:+1:h:\n89", "v405:\n90:+1:a:\n90", "v406:\n91:+1:t:\n91", "v407:\n92:+1:+:\n92",
+				"v408:\n30:+1:n:\n93", "v409:\n31:+1:l:\n94", "v410:\n90:-5:What+:\n95", "v411:\n32:+1:z:\n90", "v412:\n82:-9:example.+:\n91",
+				"v413:\n32:-1:z:\n82", "v414:\n31:-1:l:\n81", "v415:\n80:+1:.:\n80", "v416:\n30:-1:n:\n81", "v417:\n79:-1:.:\n80",
+				"v418:\n78:-1:+:\n79", "v419:\n77:-1:n:\n78", "v420:\n30:+1:b:\n77", "v421:\n31:+1:l:\n78", "v422:\n32:+1:a:\n79",
+				"v423:\n33:+1:h:\n80", "v424:\n34:+1:+:\n81", "v425:\n82:+1:n:\n82", "v426:\n35:+1:b:\n83", "v427:\n84:+1:.:\n84",
+				"v428:\n36:+1:l:\n85", "v429:\n37:+1:a:\n86", "v430:\n87:+1:+:\n87", "v431:\n38:+1:h:\n88", "v432:\n39:+1:+:\n89",
+				"v433:\n90:+1:I:\n90", "v434:\n40:+1:b:\n91", "v435:\n92:+1:t:\n92", "v436:\n41:+1:l:\n93", "v437:\n42:+1:a:\n94",
+				"v438:\n95:+1:+:\n95", "v438:\n96:+1:s:\n96", "v439:\n43:+1:h:\n97", "v440:\n44:+1:+:\n98", "v441:\n99:+1:e:\n99",
+				"v441:\n100:+1:e:\n100", "v441:\n101:+1:m:\n101", "v441:\n102:+1:s:\n102", "v442:\n103:+1:+:\n103", "v443:\n104:+1:l:\n104",
+				"v444:\n105:+1:i:\n105", "v445:\n45:+1:h:\n106", "v446:\n46:+1:e:\n107", "v447:\n108:+1:k:\n108", "v448:\n47:+1:y:\n109",
+				"v449:\n110:+1:e:\n110", "v450:\n111:+1:+:\n111", "v451:\n112:+1:n:\n112", "v452:\n113:+1:o:\n113", "v453:\n47:-1:y:\n114",
+				"v454:\n112:-1:o:\n113", "v455:\n47:+1:l:\n112", "v456:\n48:+1:l:\n113", "v457:\n113:-1:n:\n114", "v458:\n49:+1:o:\n113",
+				"v459:\n114:+1:f:\n114", "v460:\n50:+1:+:\n115", "v461:\n116:+1:a:\n116", "v462:\n117:+1:i:\n117", "v463:\n51:+1:w:\n118",
+				"v464:\n119:+1:r:\n119", "v465:\n52:+1:o:\n120", "v466:\n121:+1:+:\n121", "v467:\n53:+1:r:\n122", "v468:\n54:+1:l:\n123",
+				"v469:\n55:+1:d:\n124", "v470:\n125:+1:s:\n125", "v470:\n126:+1:y:\n126", "v470:\n127:+1:n:\n127", "v471:\n56:+1:%21:\n128",
+				"v472:\n129:+1:c:\n129", "v473:\n130:+1:+:\n130", "v474:\n131:+1:h:\n131", "v475:\n132:+1:e:\n132", "v476:\n133:+1:l:\n133",
+				"v477:\n134:+1:s:\n134", "v478:\n57:+1:+:\n135", "v479:\n136:+1:p:\n136", "v480:\n136:-1:p:\n137", "v481:\n135:-1:s:\n136",
+				"v482:\n135:+1:p:\n135", "v483:\n136:+1:s:\n136", "v484:\n137:+1:e:\n137", "v485:\n138:+1:+:\n138", "v486:\n139:+1:s:\n139",
+				"v487:\n140:+1:o:\n140", "v488:\n141:+1:m:\n141", "v489:\n142:+1:e:\n142", "v490:\n58:+1:j:\n143", "v491:\n144:+1:w:\n144",
+				"v492:\n145:+1:h:\n145", "v493:\n146:+1:a:\n146", "v494:\n147:+1:t:\n147", "v495:\n148:+1:.:\n148", "v496:\n149:+1:+:\n149",
+				"v497:\n140:-10:somewhat.+:\n150", "v498:\n133:-7:helpse+:\n140", "v499:\n128:-5:sync+:\n133", "v500:\n128:+1:h:\n128", "v501:\n129:+1:e:\n129",
+				"v502:\n130:+1:l:\n130", "v503:\n131:+1:p:\n131", "v504:\n132:+1:s:\n132", "v505:\n133:+1:+:\n133", "v506:\n134:+1:s:\n134",
+				"v507:\n135:+1:o:\n135", "v508:\n136:+1:m:\n136", "v509:\n137:+1:w:\n137", "v510:\n138:+1:e:\n138", "v511:\n138:-1:e:\n139",
+				"v512:\n137:-1:w:\n138", "v513:\n137:+1:e:\n137", "v514:\n138:+1:w:\n138", "v515:\n139:+1:h:\n139", "v516:\n140:+1:a:\n140",
+				"v517:\n59:+1:j:\n141", "v517:\n60:+1:s:\n142", "v517:\n61:+1:j:\n143", "v517:\n61:-1:j:\n144", "v517:\n60:-1:s:\n143",
+				"v517:\n59:-1:j:\n142", "v517:\n58:-1:j:\n141", "v517:\n58:+1:A:\n140", "v517:\n59:+1:r:\n141", "v517:\n60:+1:e:\n142",
+				"v517:\n61:+1:+:\n143", "v517:\n62:+1:w:\n144", "v517:\n63:+1:e:\n145", "v517:\n64:+1:+:\n146", "v517:\n65:+1:h:\n147",
+				"v517:\n66:+1:a:\n148", "v517:\n67:+1:v:\n149", "v518:\n150:+1:t:\n150", "v519:\n68:+1:e:\n151", "v520:\n68:-1:e:\n152",
+				"v521:\n68:+1:i:\n151", "v522:\n69:+1:n:\n152", "v523:\n70:+1:g:\n153", "v524:\n154:+1:.:\n154", "v525:\n71:+1:+:\n155",
+				"v526:\n72:+1:f:\n156", "v527:\n73:+1:u:\n157", "v528:\n74:+1:n:\n158", "v529:\n159:+1:+:\n159", "v530:\n75:+1:+:\n160",
+				"v531:\n76:+1:y:\n161", "v532:\n77:+1:e:\n162", "v533:\n162:-1:+:\n163", "v534:\n78:+1:t:\n162", "v535:\n163:+1:%0A:\n163",
+				"v536:\n164:+1:%0A:\n164", "v537:\n79:+1:%21:\n165", "v538:\n166:+1:I:\n166", "v539:\n167:+1:+:\n167", "v540:\n168:+1:t:\n168",
+				"v541:\n169:+1:h:\n169", "v542:\n79:-1:%21:\n170", "v543:\n169:+1:i:\n169", "v544:\n170:+1:n:\n170", "v545:\n171:+1:k:\n171",
+				"v546:\n172:+1:+:\n172", "v547:\n79:+1:%3F:\n173", "v548:\n174:+1:i:\n174", "v549:\n175:+1:t:\n175", "v550:\n176:+1:+:\n176",
+				"v551:\n177:+1:a:\n177", "v552:\n177:-1:a:\n178", "v553:\n176:-1:+:\n177", "v554:\n175:-1:t:\n176", "v555:\n174:-1:i:\n175",
+				"v556:\n174:+1:t:\n174", "v557:\n175:+1:h:\n175", "v558:\n176:+1:e:\n176", "v559:\n177:+1:r:\n177", "v560:\n178:+1:e:\n178",
+				"v561:\n179:+1:+:\n179", "v562:\n180:+1:i:\n180", "v563:\n181:+1:s:\n181", "v564:\n182:+1:+:\n182", "v565:\n183:+1:s:\n183",
+				"v566:\n184:+1:o:\n184", "v567:\n185:+1:m:\n185", "v568:\n186:+1:e:\n186", "v569:\n187:+1:+:\n187", "v570:\n188:+1:l:\n188",
+				"v571:\n189:+1:a:\n189", "v572:\n190:+1:g:\n190", "v573:\n191:+1:%2C:\n191", "v574:\n192:+1:+:\n192", "v575:\n193:+1:b:\n193",
+				"v576:\n194:+1:u:\n194", "v577:\n195:+1:t:\n195", "v578:\n196:+1:+:\n196", "v579:\n197:+1:i:\n197", "v580:\n198:+1:t:\n198",
+				"v581:\n199:+1:%27:\n199", "v582:\n200:+1:s:\n200", "v583:\n201:+1:+:\n201", "v584:\n202:+1:n:\n202", "v585:\n203:+1:o:\n203",
+				"v586:\n204:+1:t:\n204", "v587:\n205:+1:+:\n205", "v588:\n206:+1:t:\n206", "v589:\n207:+1:o:\n207", "v590:\n208:+1:o:\n208",
+				"v591:\n209:+1:+:\n209", "v592:\n210:+1:b:\n210", "v593:\n211:+1:a:\n211", "v594:\n212:+1:d:\n212", "v595:\n213:+1:.:\n213",
+				"v596:\n214:+1:+:\n214", "v597:\n215:+1:H:\n215", "v598:\n216:+1:o:\n216", "v599:\n217:+1:n:\n217", "v600:\n218:+1:e:\n218",
+				"v601:\n219:+1:s:\n219", "v602:\n220:+1:t:\n220", "v603:\n221:+1:l:\n221", "v604:\n222:+1:y:\n222", "v605:\n223:+1:+:\n223",
+				"v606:\n224:+1:i:\n224", "v607:\n225:+1:%27:\n225", "v608:\n226:+1:m:\n226", "v609:\n227:+1:+:\n227", "v610:\n228:+1:h:\n228",
+				"v611:\n229:+1:a:\n229", "v611:\n230:+1:p:\n230", "v612:\n231:+1:p:\n231", "v613:\n232:+1:y:\n232", "v614:\n233:+1:+:\n233",
+				"v614:\n234:+1:w:\n234", "v615:\n235:+1:i:\n235", "v616:\n80:+1:a:\n236", "v617:\n237:+1:t:\n237", "v618:\n81:+1:s:\n238",
+				"v619:\n239:+1:+:\n239", "v620:\n82:+1:d:\n240", "v621:\n241:+1:t:\n241", "v622:\n83:+1:f:\n242", "v623:\n243:+1:h:\n243",
+				"v623:\n244:+1:i:\n244", "v623:\n245:+1:s:\n245", "v624:\n83:-1:f:\n246", "v625:\n82:-1:d:\n245", "v626:\n244:+1:.:\n244",
+				"v626:\n245:+1:+:\n245", "v627:\n81:-1:s:\n246", "v628:\n80:-1:a:\n245", "v629:\n80:+1:+:\n244", "v630:\n81:+1:H:\n245",
+				"v631:\n82:+1:e:\n246", "v632:\n83:+1:l:\n247", "v633:\n84:+1:o:\n248", "v634:\n249:+1:%0A:\n249", "v635:\n84:-1:o:\n250",
+				"v636:\n249:+1:%0A:\n249", "v637:\n83:-1:l:\n250", "v638:\n82:-1:e:\n249", "v639:\n248:+1:C:\n248", "v640:\n249:+1:a:\n249",
+				"v641:\n81:-1:H:\n250", "v642:\n248:-1:a:\n249", "v643:\n247:-1:C:\n248", "v644:\n247:+1:H:\n247", "v645:\n248:+1:I:\n248",
+				"v646:\n249:+1:+:\n249", "v647:\n250:+1:C:\n250", "v648:\n251:+1:R:\n251", "v649:\n252:+1:H:\n252", "v650:\n253:+1:I:\n253",
+				"v651:\n253:-1:I:\n254", "v652:\n252:-1:H:\n253", "v653:\n251:-1:R:\n252", "v654:\n251:+1:H:\n251", "v655:\n252:+1:R:\n252",
+				"v656:\n253:+1:I:\n253", "v657:\n254:+1:S:\n254", "v658:\n255:+1:.:\n255", "v659:\n256:+1:%0A:\n256", "v660:\n257:+1:%0A:\n257",
+				"v661:\n258:+1:M:\n258", "v662:\n259:+1:a:\n259", "v663:\n260:+1:x:\n260", "v664:\n261:+1:+:\n261", "v665:\n262:+1:i:\n262",
+				"v666:\n263:+1:s:\n263", "v667:\n264:+1:+:\n264", "v668:\n265:+1:a:\n265", "v669:\n81:+1:a:\n266", "v670:\n267:+1:+:\n267",
+				"v671:\n268:+1:s:\n268", "v672:\n82:+1:s:\n269", "v673:\n270:+1:r:\n270", "v674:\n83:+1:d:\n271", "v675:\n271:-1:r:\n272",
+				"v676:\n84:+1:f:\n271", "v677:\n272:+1:c:\n272", "v678:\n84:-1:f:\n273", "v679:\n272:+1:r:\n272", "v680:\n273:+1:u:\n273",
+				"v681:\n83:-1:d:\n274", "v682:\n273:+1:.:\n273", "v683:\n82:-1:s:\n274", "v684:\n81:-1:a:\n273", "v685:\n271:-1:.:\n272",
+				"v686:\n271:+1:b:\n271", "v687:\n272:+1:.:\n272", "v688:\n81:+1:%0A:\n273", "v689:\n82:+1:%0A:\n274", "v690:\n83:+1:%0A:\n275",
+				"v691:\n84:+1:%0A:\n276", "v692:\n277:+1:%0A:\n277", "v693:\n85:+1:%0A:\n278", "v694:\n279:+1:%0A:\n279", "v695:\n86:+1:%0A:\n280",
+				"v696:\n281:+1:A:\n281", "v697:\n282:+1:+:\n282", "v698:\n86:-1:%0A:\n283", "v699:\n282:+1:h:\n282", "v700:\n85:-1:%0A:\n283",
+				"v701:\n282:+1:u:\n282", "v702:\n283:+1:g:\n283", "v703:\n84:-1:%0A:\n284", "v704:\n83:-1:%0A:\n283", "v705:\n83:+1:%0A:\n282",
+				"v706:\n83:-1:%0A:\n283", "v707:\n83:+1:%0A:\n282", "v708:\n83:-1:%0A:\n283", "v709:\n83:+1:%0A:\n282", "v710:\n83:-1:%0A:\n283",
+				"v711:\n83:+1:%0A:\n282", "v712:\n83:-1:%0A:\n283", "v713:\n83:+1:%0A:\n282", "v714:\n83:-1:%0A:\n283", "v715:\n83:+1:%0A:\n282",
+				"v716:\n83:-1:%0A:\n283", "v717:\n83:+1:%0A:\n282", "v718:\n83:-1:%0A:\n283", "v719:\n83:+1:%0A:\n282", "v720:\n83:-1:%0A:\n283",
+				"v721:\n282:+1:e:\n282", "v721:\n283:+1:+:\n283", "v721:\n284:+1:o:\n284", "v721:\n285:+1:n:\n285", "v721:\n286:+1:e:\n286",
+				"v721:\n287:+1:.:\n287", "v721:\n288:+1:%0A:\n288", "v722:\n289:+1:%0A:\n289", "v723:\n290:+1:T:\n290", "v724:\n291:+1:h:\n291",
+				"v725:\n292:+1:a:\n292", "v726:\n293:+1:t:\n293", "v726:\n294:+1:+:\n294", "v727:\n295:+1:r:\n295", "v728:\n296:+1:e:\n296",
+				"v729:\n297:+1:p:\n297", "v730:\n298:+1:l:\n298", "v731:\n299:+1:a:\n299", "v732:\n300:+1:y:\n300", "v733:\n301:+1:+:\n301",
+				"v734:\n302:+1:t:\n302", "v735:\n303:+1:h:\n303", "v736:\n304:+1:o:\n304", "v737:\n305:+1:.:\n305", "v738:\n83:+1:%09:\n306",
+				"v739:\n84:+1:%09:\n307", "v740:\n85:+1:%09:\n308", "v741:\n86:+1:%09:\n309", "v742:\n87:+1:%09:\n310", "v743:\n88:+1:%09:\n311",
+				"v744:\n89:+1:j:\n312", "v745:\n90:+1:a:\n313", "v746:\n91:+1:s:\n314", "v747:\n92:+1:d:\n315", "v747:\n93:+1:f:\n316",
+				"v748:\n94:+7:%0A%09%09%09%09%09%09:\n317", "v749:\n101:+1:o:\n324", "v750:\n102:+1:w:\n325", "v750:\n103:+1:e:\n326", "v750:\n104:+1:i:\n327",
+				"v751:\n105:+1:j:\n328", "v751:\n106:+1:r:\n329", "v752:\n107:+1:o:\n330", "v752:\n108:+1:w:\n331", "v752:\n109:+1:i:\n332",
+				"v752:\n110:+1:e:\n333", "v753:\n111:+1:u:\n334", "v753:\n112:+1:r:\n335", "v753:\n113:+1:o:\n336", "v753:\n114:+1:w:\n337",
+				"v754:\n115:+7:%0A%09%09%09%09%09%09:\n338", "v755:\n122:+1:w:\n345", "v755:\n123:+1:e:\n346", "v756:\n124:+1:r:\n347", "v756:\n125:+1:o:\n348",
+				"v757:\n126:+1:i:\n349", "v758:\n127:+1:w:\n350", "v758:\n128:+1:e:\n351", "v759:\n129:+1:o:\n352", "v759:\n130:+1:i:\n353",
+				"v760:\n131:+1:w:\n354", "v760:\n132:+1:e:\n355", "v760:\n133:+1:j:\n356", "v761:\n134:+1:r:\n357", "v762:\n135:+7:%0A%09%09%09%09%09%09:\n358",
+				"v763:\n142:+1:a:\n365", "v764:\n366:+1:S:\n366", "v764:\n367:+1:e:\n367", "v765:\n368:+1:e:\n368", "v766:\n368:-1:e:\n369",
+				"v767:\n142:-1:a:\n368", "v768:\n366:-1:e:\n367", "v769:\n365:-1:S:\n366", "v770:\n141:-1:%09:\n365", "v771:\n364:+1:%0A:\n364",
+				"v772:\n365:+1:%0A:\n365", "v773:\n366:+1:S:\n366", "v774:\n140:-1:%09:\n367", "v775:\n366:+1:o:\n366", "v776:\n367:+1:+:\n367",
+				"v777:\n139:-1:%09:\n368", "v778:\n367:+1:f:\n367", "v779:\n138:-1:%09:\n368", "v780:\n367:+1:a:\n367", "v781:\n368:+1:r:\n368",
+				"v782:\n369:+1:%2C:\n369", "v783:\n370:+1:+:\n370", "v784:\n137:-1:%09:\n371", "v785:\n370:+1:i:\n370", "v786:\n371:+1:t:\n371",
+				"v787:\n372:+1:+:\n372", "v788:\n373:+1:s:\n373", "v789:\n374:+1:e:\n374", "v790:\n136:-1:%09:\n375", "v791:\n374:+1:e:\n374",
+				"v792:\n375:+1:m:\n375", "v793:\n376:+1:s:\n376", "v794:\n377:+1:+:\n377", "v795:\n378:+1:g:\n378", "v796:\n379:+1:o:\n379",
+				"v797:\n380:+1:o:\n380", "v798:\n381:+1:d:\n381", "v799:\n382:+1:.:\n382", "v800:\n383:+1:%0A:\n383", "v801:\n384:+1:%0A:\n384",
+				"v802:\n385:+1:T:\n385", "v803:\n386:+1:h:\n386", "v804:\n387:+1:e:\n387", "v805:\n388:+1:r:\n388", "v806:\n389:+1:e:\n389",
+				"v807:\n390:+1:%27:\n390", "v808:\n391:+1:s:\n391", "v809:\n392:+1:+:\n392", "v810:\n393:+1:a:\n393", "v811:\n394:+1:+:\n394",
+				"v812:\n395:+1:l:\n395", "v813:\n396:+1:i:\n396", "v814:\n397:+1:t:\n397", "v815:\n398:+1:t:\n398", "v816:\n399:+1:l:\n399",
+				"v817:\n400:+1:e:\n400", "v818:\n401:+1:+:\n401", "v819:\n402:+1:l:\n402", "v820:\n403:+1:a:\n403", "v821:\n404:+1:g:\n404",
+				"v822:\n405:+1:%2C:\n405", "v823:\n406:+1:+:\n406", "v824:\n407:+1:b:\n407", "v825:\n408:+1:u:\n408", "v826:\n409:+1:t:\n409",
+				"v827:\n410:+1:+:\n410", "v828:\n411:+1:t:\n411", "v829:\n412:+1:h:\n412", "v829:\n413:+1:a:\n413", "v830:\n414:+1:t:\n414",
+				"v830:\n415:+1:%27:\n415", "v831:\n416:+1:s:\n416", "v832:\n417:+1:+:\n417", "v833:\n418:+1:f:\n418", "v834:\n419:+1:i:\n419",
+				"v835:\n420:+1:n:\n420", "v836:\n421:+1:e:\n421", "v837:\n422:+1:.:\n422", "v838:\n423:+1:%0A:\n423", "v839:\n424:+1:x:\n424",
+				"v840:\n425:+1:%60:\n425", "v841:\n424:-2:x%60:\n426", "v842:\n0:-424:Hi+this+is+my+typing+examples+blah+blah+blah+hello+world%21+Are+we+having+fun+yet%3F+%0A%0A%09%09%09%09%09%09jasdf%0A%09%09%09%09%09%09oweijrowieurow%0A%09%09%09%09%09%09weroiweoiwejr%0A%0AOk.+This+is+another+test+of+the+synchronization.+It+seems+like+fair+helps+somewhat.%0A%0AI+think+there+is+some+lag%2C+but+it%27s+not+too+bad.+Honestly+i%27m+happy+wit+this.+%0A%0AHI+CHRIS.%0A%0AMax+is+a+scrub.%0A%0AA+huge+one.%0A%0AThat+replay+tho.%0A%0ASo+far%2C+it+seems+good.%0A%0AThere%27s+a+little+lag%2C+but+that%27s+fine.%0A:\n424", "v843:\n0:+1:t:\n0", "v844:\n1:+1:e:\n1",
+				"v845:\n2:+1:s:\n2", "v846:\n3:+1:t:\n3", "v847:\n4:+1:i:\n4", "v848:\n5:+1:n:\n5", "v849:\n6:+1:g:\n6",
+				"v850:\n7:+1:+:\n7", "v851:\n8:+1:t:\n8", "v852:\n9:+1:e:\n9", "v853:\n10:+1:s:\n10", "v853:\n11:+1:t:\n11",
+				"v854:\n12:+1:i:\n12", "v854:\n13:+1:n:\n13", "v854:\n14:+1:g:\n14", "v855:\n15:+1:+:\n15", "v856:\n16:+1:t:\n16",
+				"v857:\n17:+1:e:\n17", "v858:\n18:+1:s:\n18", "v859:\n19:+1:t:\n19", "v860:\n20:+1:i:\n20", "v861:\n21:+1:n:\n21",
+				"v862:\n22:+1:g:\n22", "v863:\n23:+1:%0A:\n23", "v864:\n24:+1:%0A:\n24", "v865:\n25:+1:S:\n25", "v866:\n26:+1:e:\n26",
+				"v867:\n27:+1:e:\n27", "v868:\n28:+1:+:\n28", "v869:\n29:+1:i:\n29", "v870:\n30:+1:f:\n30", "v870:\n31:+1:+:\n31",
+				"v871:\n32:+1:t:\n32", "v871:\n33:+1:h:\n33", "v872:\n34:+1:i:\n34", "v873:\n35:+1:s:\n35", "v873:\n36:+1:+:\n36",
+				"v874:\n37:+1:w:\n37", "v875:\n38:+1:o:\n38", "v875:\n39:+1:r:\n39", "v876:\n40:+1:k:\n40", "v877:\n41:+1:s:\n41",
+				"v878:\n42:+1:.:\n42", "v879:\n43:+1:%0A:\n43", "v880:\n44:+1:%0A:\n44", "v881:\n45:+1:S:\n45", "v882:\n46:+1:o:\n46",
+				"v882:\n47:+1:+:\n47", "v883:\n48:+1:f:\n48", "v884:\n49:+1:a:\n49", "v885:\n50:+1:r:\n50", "v885:\n51:+1:+:\n51",
+				"v886:\n52:+1:s:\n52", "v886:\n53:+1:o:\n53", "v887:\n54:+1:+:\n54", "v888:\n55:+1:g:\n55", "v889:\n56:+1:o:\n56",
+			),
+		},
 	}
 
 	for _, test := range tests {
@@ -896,5 +526,6 @@ func TestConsolidatePatchLong(t *testing.T) {
 
 		consolidatedPatchedText, err := PatchText(test.baseText, []*Patch{consolidatedPatch})
 		require.Equal(t, patchedText, consolidatedPatchedText, "TestConsolidatePatchLong[%s]: Expected %s but got %s", test.desc, patchedText, consolidatedPatchedText)
+		fmt.Printf("Passed TestConsolidatePatchLong[%s]\n", test.desc)
 	}
 }
