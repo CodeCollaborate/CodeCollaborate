@@ -26,6 +26,44 @@ func (slice Diffs) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
+// DeepCopy returns a deep copy of the given Diff object.
+func (slice Diffs) DeepCopy() Diffs {
+	newDiffs := make(Diffs, slice.Len())
+	for i, diff := range slice {
+		newDiffs[i] = diff
+	}
+	return newDiffs
+}
+
+// Simplify merges deletion slice within this patch.
+// This does not merge insertions, because insertions within the same patch are not actually adjacent
+// due to the character that is in between.
+func (slice Diffs) Simplify() Diffs {
+	if len(slice) == 0 {
+		return slice
+	}
+
+	result := Diffs{}
+	result = append(result, slice[0].clone())
+
+	for i, j := 1, 0; i < len(slice); i++ {
+		if slice[i] == nil {
+			break
+		}
+		curr := slice[i].clone()
+		if !curr.Insertion && !result[j].Insertion && result[j].StartIndex+result[j].Length() == curr.StartIndex {
+			result[j].Changes = result[j].Changes + curr.Changes
+		} else if curr.Insertion && result[j].Insertion && result[j].StartIndex == curr.StartIndex {
+			result[j].Changes = result[j].Changes + curr.Changes
+		} else {
+			j++
+			result = append(result, curr)
+		}
+	}
+
+	return result
+}
+
 // Diff represents a single change in the document.
 type Diff struct {
 	Insertion  bool
@@ -294,4 +332,8 @@ func transformType7(current, other *Diff) Diffs {
 		return Diffs{current.subChangesEndingAt(current.Length() - nonOverlap)}
 	}
 	return Diffs{current}
+}
+
+func (diff *Diff) clone() *Diff {
+	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes)
 }

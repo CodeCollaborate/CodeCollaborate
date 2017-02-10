@@ -6,6 +6,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func getDiffOrDie(t *testing.T, diffStr string) *Diff {
+	diff, err := NewDiffFromString(diffStr)
+	if err != nil {
+		t.Fatalf("Failed to build diff from string %s", diffStr)
+	}
+
+	return diff
+}
+
 func TestDiff_NewDiff(t *testing.T) {
 	// Test addition
 	diff := NewDiff(true, 1, "test")
@@ -365,7 +374,7 @@ func TestDiff_Transform3A(t *testing.T) {
 }
 
 func TestDiff_Transform3B(t *testing.T) {
-	// Test case 1: If IndexB + LenB > IndexA, split B into two diffs
+	// Test case 1: If IndexB + LenB > IndexA, split B into two slice
 	diff1, err := NewDiffFromString("5:+4:str1")
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-8:longStr2")

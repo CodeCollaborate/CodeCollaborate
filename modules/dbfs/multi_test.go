@@ -13,8 +13,8 @@ import (
 )
 
 var defaultBaseFile = "this is a very important file"
-var defaultChanges = []string{"v0:\n1:+5:test1", "v1:\n10:+5:test2"}
-var transformedChanges = []string{"v0:\n1:+5:test1", "v1:\n10:+5:test2"}
+var defaultChanges = []string{"v0:\n1:+5:test1:\n10", "v1:\n10:+5:test2:\n10"}
+var transformedChanges = []string{"v0:\n1:+5:test1:\n10", "v1:\n10:+5:test2:\n10"}
 
 func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseImpl, FileMeta) {
 	testConfigSetup(t)
@@ -64,14 +64,14 @@ func TestDatabaseImpl_ScrunchFile(t *testing.T) {
 
 	for i := 0; i < 50; i++ {
 		if i < 10 {
-			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d", i, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d:\n10", i, i)
 		} else {
-			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d", i, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d:\n10", i, i)
 		}
 	}
 
 	for i := 0; i < 5; i++ {
-		resultPatches[i] = fmt.Sprintf("v%d:\n2:+2:%d", i+45, i+45)
+		resultPatches[i] = fmt.Sprintf("v%d:\n2:+2:%d:\n10", i+45, i+45)
 	}
 
 	expectedOutput.WriteString("te")
@@ -110,7 +110,7 @@ func TestDatabaseImpl_GetForScrunching(t *testing.T) {
 	assert.NoError(t, err, "error getting swp or changes")
 
 	assert.Len(t, changes, 1, "changes size was an unexpected length")
-	assert.Contains(t, changes, defaultChanges[0], "changes didn't contain correct change")
+	assert.Contains(t, changes, transformedChanges[0], "changes didn't contain correct change")
 
 	assert.EqualValues(t, string(swp), string(defaultBaseFile), "swp file was not cloned properly")
 
@@ -145,8 +145,8 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 	defer di.CBDeleteFile(file.FileID)
 
-	newChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
-	transformedNewChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
+	newChanges := []string{"v2:\n2:+1:2:\n10", "v2:\n2:+1:3:\n10", "v3:\n2:+1:4:\n10", "v4:\n2:+1:4:\n10", "v5:\n2:+1:5:\n10", "v6:\n2:+1:6:\n10", "v7:\n2:+1:7:\n10", "v8:\n2:+1:8:\n10", "v8:\n2:+1:9:\n10", "v8:\n2:+2:10:\n10"}
+	transformedNewChanges := []string{"v2:\n2:+1:2:\n10", "v2:\n2:+1:3:\n10", "v3:\n2:+1:4:\n10", "v4:\n2:+1:4:\n10", "v5:\n2:+1:5:\n10", "v6:\n2:+1:6:\n10", "v7:\n2:+1:7:\n10", "v8:\n2:+1:8:\n10", "v8:\n2:+1:9:\n10", "v8:\n2:+2:10:\n10"}
 	newRawFile := []byte(string(defaultBaseFile) + "\nit's a pretty cool file, not going to lie\n")
 
 	checkPullFile(t, di, file, transformedChanges, defaultBaseFile)

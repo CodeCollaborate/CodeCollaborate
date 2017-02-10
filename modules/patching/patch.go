@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // Patch represents a set of changes to a versioned document
@@ -16,14 +17,20 @@ type Patch struct {
 	// Changes is the list of changes that were applied to the document.
 	// When patching, changes MUST be applied in order.
 	Changes Diffs
+
+	// DocLength is the length of the document prior to the application of this patch
+	DocLength int
 }
 
 // NewPatch creates a new patch with the given parameters
-func NewPatch(baseVersion int64, changes Diffs) *Patch {
-	return &Patch{
+func NewPatch(baseVersion int64, changes Diffs, docLength int) *Patch {
+	patch := &Patch{
 		BaseVersion: baseVersion,
 		Changes:     changes,
+		DocLength:   docLength,
 	}
+
+	return patch.simplify()
 }
 
 // NewPatchFromString parses a patch from its given string representation
@@ -32,7 +39,7 @@ func NewPatchFromString(str string) (*Patch, error) {
 	patch := Patch{}
 
 	parts := strings.Split(str, ":\n")
-	if len(parts) < 2 {
+	if len(parts) < 3 {
 		return nil, errors.New("Invalid patch format")
 	}
 
@@ -41,10 +48,15 @@ func NewPatchFromString(str string) (*Patch, error) {
 	}
 
 	patch.BaseVersion, err = strconv.ParseInt(string(parts[0][1:]), 10, 64)
-
 	if err != nil {
 		return nil, err
 	}
+
+	docLen64, err := strconv.ParseInt(string(parts[2]), 10, 0)
+	if err != nil {
+		return nil, err
+	}
+	patch.DocLength = int(docLen64)
 
 	diffStrs := strings.Split(parts[1], ",\n")
 
@@ -56,7 +68,7 @@ func NewPatchFromString(str string) (*Patch, error) {
 		patch.Changes = append(patch.Changes, newDiff)
 	}
 
-	return &patch, nil
+	return patch.simplify(), nil
 }
 
 // ConvertToCRLF converts this patch from using LF to CRLF line separators given the base text to patch.
@@ -67,7 +79,7 @@ func (patch *Patch) ConvertToCRLF(base string) *Patch {
 		newChanges = append(newChanges, diff.ConvertToCRLF(base))
 	}
 
-	return NewPatch(patch.BaseVersion, newChanges)
+	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(base))
 }
 
 // ConvertToLF converts this patch from using CRLF to LF line separators given the base text to patch.
@@ -78,20 +90,20 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 		newChanges = append(newChanges, diff.ConvertToLF(base))
 	}
 
-	return NewPatch(patch.BaseVersion, newChanges)
+	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\r\n", "\n", -1)))
 }
 
 // Undo reverses this patch, producing a patch to undo the changes done by applying the patch.
 func (patch *Patch) Undo() *Patch {
 	newChanges := Diffs{}
 
-	// This needs to be in reverse order, since all the diffs in a package will have been applied in order.
+	// This needs to be in reverse order, since all the slice in a package will have been applied in order.
 	// The last diff will have been computed relative to the previous few.
 	for i := len(patch.Changes) - 1; i >= 0; i-- {
 		newChanges = append(newChanges, patch.Changes[i].Undo())
 	}
 
-	return NewPatch(patch.BaseVersion, newChanges)
+	return NewPatch(patch.BaseVersion, newChanges, patch.DocLength)
 }
 
 // TransformFromString does an Operational Transform against the other patches, creating a set
@@ -129,7 +141,18 @@ func (patch *Patch) Transform(others []*Patch, othersHavePrecedence bool) *Patch
 		}
 	}
 
-	return NewPatch(maxVersionSeen+1, intermediateDiffs)
+	newDocLen := patch.DocLength
+	for _, patch := range others {
+		for _, diff := range patch.Changes {
+			if diff.Insertion {
+				newDocLen += diff.Length()
+			} else {
+				newDocLen -= diff.Length()
+			}
+		}
+	}
+
+	return NewPatch(maxVersionSeen+1, intermediateDiffs, newDocLen).simplify()
 }
 
 func (patch *Patch) String() string {
@@ -145,6 +168,13 @@ func (patch *Patch) String() string {
 			buffer.WriteString(diff.String())
 		}
 	}
+	buffer.WriteString(fmt.Sprintf(":\n%d", patch.DocLength))
 
 	return buffer.String()
+}
+
+func (patch *Patch) simplify() *Patch {
+	patch.Changes = patch.Changes.Simplify()
+
+	return patch
 }

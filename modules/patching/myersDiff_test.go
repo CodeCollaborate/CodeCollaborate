@@ -118,15 +118,15 @@ func TestMyersDiff(t *testing.T) {
 			continue
 		}
 
-		patch := NewPatch(0, diffs)
+		patch := NewPatch(0, diffs, 0)
 		res, err := PatchText(test.str1, []*Patch{patch})
 		if err != nil {
-			t.Errorf("TestApplyPatch[%s]: Unexpected error: %q", test.desc, err)
+			t.Errorf("TestMyersDiff[%s]: Unexpected error: %q", test.desc, err)
 			continue
 		}
 
 		if want, got := test.str2, res; want != got {
-			t.Errorf("Expected %s, but got %s. Diffs: %v", want, got, pretty.Diff(want, got))
+			t.Errorf("TestMyersDiff[%s]: Expected %s, but got %s. Diffs: %v", test.desc, want, got, pretty.Diff(want, got))
 		}
 	}
 }

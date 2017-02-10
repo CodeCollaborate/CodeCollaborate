@@ -185,10 +185,10 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 
 	di.CBDeleteFile(file.FileID)
 
-	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1", originalFileVersion-1)
-	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2", originalFileVersion-1)
-	patch3 := fmt.Sprintf("v%d:\n3:+6:patch3", originalFileVersion)
-	patch4 := fmt.Sprintf("v%d:\n4:+6:patch4", originalFileVersion)
+	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1:\n4", originalFileVersion-1)
+	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2:\n10", originalFileVersion-1)
+	patch3 := fmt.Sprintf("v%d:\n3:+6:patch3:\n10", originalFileVersion)
+	patch4 := fmt.Sprintf("v%d:\n4:+6:patch4:\n10", originalFileVersion)
 
 	// although these are not valid patches, this is purely a test of the logic, not of the patching
 	// because of that this might fail in the future

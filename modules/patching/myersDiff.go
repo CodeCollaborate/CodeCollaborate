@@ -1,7 +1,5 @@
 package patching
 
-import "errors"
-
 type point struct {
 	x int
 	y int
@@ -13,17 +11,18 @@ type snake struct {
 	end   *point
 }
 
-func myersDiff(str1, str2 string) ([]*Diff, error) {
+func myersDiff(str1, str2 string) (Diffs, error) {
 	N := len(str1)
 	M := len(str2)
 
-	snakes := map[point]snake{}
+	snakes := map[point]*snake{}
 
 	maxXByK := map[int]int{}
 	maxXByK[1] = 0
 	maxXByK[-1] = -1
 
-	for d := 0; d <= N+M; d++ {
+	found := false
+	for d := 0; d <= N+M && !found; d++ {
 		for k := -d; k <= d; k += 2 {
 			down := k == -d || (k != d && maxXByK[k-1] < maxXByK[k+1])
 
@@ -69,36 +68,39 @@ func myersDiff(str1, str2 string) ([]*Diff, error) {
 					y: yEnd,
 				},
 			}
-			snakes[*snake.end] = snake
+
+			// Group deletions together if possible.
+			if val := snakes[*snake.end]; val == nil || val.start.x <= snake.start.x {
+				snakes[*snake.end] = &snake
+			}
 
 			if xEnd >= len(str1) && yEnd >= len(str2) {
-
-				flippedResults := []*Diff{}
-
-				p := &point{x: len(str1), y: len(str2)}
-				for p.y != -1 {
-					s := snakes[*p]
-					//fmt.Printf("(%d, %d) -> (%d, %d) -> (%d, %d)\n", s.end.x, s.end.y, s.mid.x, s.mid.y, s.start.x, s.start.y)
-
-					if s.start.y != -1 {
-						if s.mid.x == s.start.x {
-							flippedResults = append(flippedResults, NewDiff(true, s.mid.x, string(str2[s.mid.y-1])))
-						} else {
-							flippedResults = append(flippedResults, NewDiff(false, s.mid.x-1, string(str1[s.mid.x-1])))
-						}
-					}
-
-					p = s.start
-				}
-
-				results := make([]*Diff, len(flippedResults))
-				for i := 0; i < len(flippedResults); i++ {
-					results[len(flippedResults)-1-i] = flippedResults[i]
-				}
-
-				return results, nil
+				found = true
 			}
 		}
 	}
-	return nil, errors.New("Failed to find diff sequence")
+
+	flippedResults := Diffs{}
+
+	p := &point{x: len(str1), y: len(str2)}
+	for p.y != -1 {
+		s := snakes[*p]
+
+		if s.start.y != -1 {
+			if s.mid.x == s.start.x {
+				flippedResults = append(flippedResults, NewDiff(true, s.mid.x, string(str2[s.mid.y-1])))
+			} else {
+				flippedResults = append(flippedResults, NewDiff(false, s.mid.x-1, string(str1[s.mid.x-1])))
+			}
+		}
+
+		p = s.start
+	}
+
+	results := make(Diffs, len(flippedResults))
+	for i := 0; i < len(flippedResults); i++ {
+		results[len(flippedResults)-1-i] = flippedResults[i]
+	}
+
+	return results, nil
 }
