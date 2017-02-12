@@ -374,7 +374,7 @@ func TestDiff_Transform3A(t *testing.T) {
 }
 
 func TestDiff_Transform3B(t *testing.T) {
-	// Test case 1: If IndexB + LenB > IndexA, split B into two slice
+	// Test case 1: If IndexB + LenB > IndexA, split B into two diffs
 	diff1, err := NewDiffFromString("5:+4:str1")
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-8:longStr2")
