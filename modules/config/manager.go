@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/CodeCollaborate/Server/utils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/kr/pretty"
+
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 /**
@@ -67,6 +68,10 @@ func setLogLevel() {
 		log.Info("Logger level set to Warn")
 		log.SetLevel(log.WarnLevel) // Default to Warn
 	}
+}
+
+func init() {
+	log.SetFormatter(&log.TextFormatter{DisableColors: true})
 }
 
 // EnableLoggingToFile redirects logger output to a logfile in the config's LogDir.

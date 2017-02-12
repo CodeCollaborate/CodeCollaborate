@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"sync"
 
 	"strings"
 
@@ -30,16 +29,12 @@ func init() {
 // DataHandler handles the json data received from the WebSocket connection.
 type DataHandler struct {
 	MessageChan chan<- rabbitmq.AMQPMessage
-	WebsocketID uint64
 	Db          dbfs.DBFS
 }
 
 // Handle takes the MessageType and message in byte-array form,
 // processing the data, and updating DBFS/RabbitMQ as needed.
-// the waitgroup allows the websocket manager to know when all requests have completed processing
-func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup) error {
-	defer wg.Done()
-
+func (dh DataHandler) Handle(message []byte, originID uint64, ack func() error) error {
 	// Ignore any request that has a password JSON field
 	if !strings.Contains(strings.ToLower(string(message)), "\"password\":") {
 		utils.LogDebug("Received Message", utils.LogFields{
@@ -81,18 +76,17 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, req.Tag)}}
 		}
 	} else {
-		closures, err = fullRequest.process(dh.Db)
+		closures, err = fullRequest.process(dh.Db, ack)
 		if err != nil {
 			utils.LogError("Failed to process request", err, utils.LogFields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
-			// TODO: forward error message onto client? (or at least inform that error occurred)
 		}
 	}
 
 	for _, closure := range closures {
-		err := closure.call(dh)
+		err := closure.call(dh, originID)
 		if err != nil {
 			utils.LogError("Failed to complete continuation", err, utils.LogFields{
 				"Resource": req.Resource,

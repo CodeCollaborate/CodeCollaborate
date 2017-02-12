@@ -4,10 +4,11 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestUserRegisterRequest_Process(t *testing.T) {
@@ -25,12 +26,16 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 	req.Password = "correct horse battery staple"
 
 	db := dbfs.NewDBMock()
-	datahanly.Db = db
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	if db.FunctionCallCount != 1 {
@@ -52,10 +57,15 @@ func TestUserRegisterRequest_Process(t *testing.T) {
 		t.Fatalf("Process function responded with status: %d", cont)
 	}
 
-	closures, err = req.process(db)
-	if err == nil {
-		t.Fatal("Should have failed to register user that already exists")
+	acked = false
+	ack = func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err = req.process(db, ack)
+	assert.NotNil(t, err, "Should have failed to register user that already exists")
+	assert.True(t, acked, "process function did not ack message")
 }
 
 // userLoginRequest.process is unimplemented
@@ -73,8 +83,16 @@ func TestUserDeleteRequest_Process(t *testing.T) {
 	db.MySQLUserRegister(geneMeta)
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
+	}
+
+	closures, err := req.process(db, ack)
 	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
+
 	assert.Equal(t, 2, db.FunctionCallCount, "unexpected db calls for user delete")
 
 	assert.Equal(t, 1, len(closures), "unexpected number of returned closures")
@@ -98,8 +116,16 @@ func TestUserDeleteRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err = req.process(db)
+	acked = false
+	ack = func() error {
+		acked = !acked
+		return nil
+	}
+
+	closures, err = req.process(db, ack)
 	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
+
 	assert.Equal(t, 2, db.FunctionCallCount, "unexpected db calls for user delete")
 
 	assert.Equal(t, 3, len(closures), "unexpected number of returned closures")
@@ -141,10 +167,15 @@ func TestUserLookupRequest_Process(t *testing.T) {
 	}
 	db.Users["loganga"] = meta
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	if db.FunctionCallCount != 1 {
@@ -203,10 +234,15 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	if db.FunctionCallCount != 2 {
@@ -239,10 +275,15 @@ func TestUserProjectsRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err = req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked = false
+	ack = func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err = req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||

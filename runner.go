@@ -57,8 +57,13 @@ func main() {
 		},
 	)
 
-	dbfs.Dbfs = new(dbfs.DatabaseImpl)
+	dbfsImpl := new(dbfs.DatabaseImpl)
+	handlers.StartWorker(dbfsImpl)
 
+	// FIXME: separate logging and ProjectFiles locations
+	// FIXME: point fs at shared directory
+
+	// FIXME: check config to see if we even need to serve http
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
 	addr := fmt.Sprintf(":%d", cfg.ServerConfig.Port)

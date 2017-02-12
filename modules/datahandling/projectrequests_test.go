@@ -4,11 +4,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
-	"github.com/stretchr/testify/assert"
 )
 
 func setBaseFields(req request) {
@@ -16,11 +17,6 @@ func setBaseFields(req request) {
 		SenderID:    "loganga",
 		SenderToken: "supersecure",
 	})
-}
-
-var datahanly = DataHandler{
-	MessageChan: make(chan rabbitmq.AMQPMessage, 1),
-	WebsocketID: 1,
 }
 
 func TestProjectCreateRequest_Process(t *testing.T) {
@@ -35,10 +31,15 @@ func TestProjectCreateRequest_Process(t *testing.T) {
 	db := dbfs.NewDBMock()
 	db.Users["loganga"] = geneMeta
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	if db.FunctionCallCount != 1 {
@@ -93,10 +94,15 @@ func TestProjectRenameRequest_Process(t *testing.T) {
 	db.Projects["loganga"] = []dbfs.ProjectMeta{projectmeta}
 	db.ProjectIDCounter = 2
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
@@ -128,8 +134,16 @@ func TestProjectGetPermissionConstantsRequest_Process(t *testing.T) {
 	setBaseFields(&req)
 	db := dbfs.NewDBMock()
 
-	closures, err := req.process(db)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
+	}
+
+	closures, err := req.process(db, ack)
 	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
+
 	assert.Zero(t, db.FunctionCallCount, "unexpected db calls for permission constants")
 
 	assert.Equal(t, 1, len(closures), "unexpected number of returned closures")
@@ -176,10 +190,15 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	db.FunctionCallCount = 0
 	req.ProjectID = projectID
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
@@ -238,10 +257,15 @@ func TestProjectRevokePermissionsRequest_Process(t *testing.T) {
 	db.FunctionCallCount = 0
 	req.ProjectID = projectID
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
@@ -323,10 +347,15 @@ func TestProjectLookupRequest_Process(t *testing.T) {
 	req.ProjectIDs = []int64{projid1, projid2}
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
@@ -374,10 +403,15 @@ func TestProjectGetFilesRequest_Process(t *testing.T) {
 	req.ProjectID = projid1
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 5, db.FunctionCallCount, "did not call correct number of db functions")
@@ -421,10 +455,15 @@ func TestProjectSubscribe_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
@@ -450,10 +489,15 @@ func TestProjectUnsubscribe_Process(t *testing.T) {
 	req.Method = "Unsubscribe"
 	req.ProjectID = 1
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// are we notifying the right people
 	if len(closures) != 1 ||
@@ -484,10 +528,15 @@ func TestProjectDeleteRequest_process(t *testing.T) {
 	db.FunctionCallCount = 0
 	req.ProjectID = projID
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 2, db.FunctionCallCount, "did not call correct number of db functions")
@@ -538,10 +587,15 @@ func TestProjectDeleteTurnsIntoRevokeRequest(t *testing.T) {
 	req.ProjectID = projectID
 	req.SenderID = notgenemeta.Username
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
