@@ -16,6 +16,7 @@ func ConsolidatePatches(patches []*Patch) (*Patch, error) {
 		indexA := -1
 		indexB := -1
 		resultDiffs := Diffs{}
+		currIndex := 0
 
 		diffA, indexA := getNextDiff(patchA, indexA, false)
 		diffB, indexB := getNextDiff(patchB, indexB, false)
@@ -26,90 +27,91 @@ func ConsolidatePatches(patches []*Patch) (*Patch, error) {
 		getNextDiffB := func() {
 			diffB, indexB = getNextDiff(patchB, indexB, isNoOp(diffB))
 		}
-
-		currIndex := 0
-		for diffA != nil && diffB != nil {
-			if !diffA.Insertion && !isNoOp(diffA) {
-				resultDiffs = append(resultDiffs, NewDiff(diffA.Insertion, currIndex, diffA.Changes))
-				currIndex += diffA.Length()
-				getNextDiffA()
-				continue
-			}
-			if diffB.Insertion && !isNoOp(diffB) {
-				resultDiffs = append(resultDiffs, NewDiff(diffB.Insertion, currIndex, diffB.Changes))
-				//currIndex += diffB.Length()
-				getNextDiffB()
-				continue
-			}
-
-			if isNoOp(diffA) && isNoOp(diffB) {
-				lenA := noOpLength(diffA, patchA, indexA)
-				lenB := noOpLength(diffB, patchB, indexB)
-				if lenA > lenB {
-					currIndex += lenB
-					diffA.StartIndex += lenB
-					getNextDiffB()
-				} else if lenA == lenB {
-					currIndex += lenB
-					getNextDiffA()
-					getNextDiffB()
-				} else {
-					currIndex += lenA
-					diffB.StartIndex += lenA
-					getNextDiffA()
-				}
-			} else if diffA.Insertion && !isNoOp(diffA) && !diffB.Insertion {
-				if diffA.Length() > diffB.Length() {
-					diffA.Changes = diffA.Changes[diffB.Length():]
-					getNextDiffB()
-				} else if diffA.Length() == diffB.Length() {
-					getNextDiffA()
-					getNextDiffB()
-				} else {
-					diffB.Changes = diffB.Changes[diffA.Length():]
-					getNextDiffA()
-				}
-			} else if diffA.Insertion && isNoOp(diffB) {
-				lenB := noOpLength(diffB, patchB, indexB)
-				if diffA.Length() > lenB {
-					resultDiffs = append(resultDiffs, NewDiff(diffA.Insertion, currIndex, diffA.Changes[:lenB]))
-					//currIndex += lenB
-					diffA.Changes = diffA.Changes[lenB:]
-					getNextDiffB()
-				} else if diffA.Length() == lenB {
-					resultDiffs = append(resultDiffs, NewDiff(diffA.Insertion, currIndex, diffA.Changes))
-					//currIndex += diffA.Length()
-					getNextDiffA()
-					getNextDiffB()
-				} else {
-					resultDiffs = append(resultDiffs, NewDiff(diffA.Insertion, currIndex, diffA.Changes))
-					//currIndex += diffA.Length()
-					diffB.StartIndex += diffA.Length()
-					getNextDiffA()
-				}
-			} else if isNoOp(diffA) && !diffB.Insertion {
-				lenA := noOpLength(diffA, patchA, indexA)
-				if lenA > diffB.Length() {
-					resultDiffs = append(resultDiffs, NewDiff(diffB.Insertion, currIndex, diffB.Changes))
-					currIndex += diffB.Length()
-					diffA.StartIndex += diffB.Length()
-					getNextDiffB()
-				} else if lenA == diffB.Length() {
-					resultDiffs = append(resultDiffs, NewDiff(diffB.Insertion, currIndex, diffB.Changes))
-					currIndex += diffB.Length()
-					getNextDiffA()
-					getNextDiffB()
-				} else {
-					resultDiffs = append(resultDiffs, NewDiff(diffB.Insertion, currIndex, diffB.Changes[:lenA]))
-					currIndex += lenA
-					diffB.Changes = diffB.Changes[lenA:]
-					getNextDiffA()
-				}
+		commit := func(diff *Diff, numChars int) {
+			if numChars == -1 {
+				resultDiffs = append(resultDiffs, NewDiff(diff.Insertion, currIndex, diff.Changes))
 			} else {
-				return nil, errors.New("Invalid state entered when consolidating diffs")
+				resultDiffs = append(resultDiffs, NewDiff(diff.Insertion, currIndex, diff.Changes[:numChars]))
 			}
 		}
 
+		for diffA != nil && diffB != nil {
+			// Get lengths of each diff
+			lenA := 0
+			lenB := 0
+			if isNoOp(diffA) {
+				lenA = noOpLength(diffA, patchA, indexA)
+			} else {
+				lenA = diffA.Length()
+			}
+			if isNoOp(diffB) {
+				lenB = noOpLength(diffB, patchB, indexB)
+			} else {
+				lenB = diffB.Length()
+			}
+
+			if !diffA.Insertion && !isNoOp(diffA) {
+				commit(diffA, -1)
+				currIndex += lenA
+				getNextDiffA()
+			} else if diffB.Insertion && !isNoOp(diffB) {
+				commit(diffB, -1)
+				getNextDiffB()
+			} else {
+				// Commit changes and update currIndex as needed
+				switch {
+				case !isNoOp(diffA) && diffA.Insertion && !isNoOp(diffB) && !diffB.Insertion:
+				// do nothing
+				case !isNoOp(diffA) && diffA.Insertion && isNoOp(diffB):
+					switch {
+					case lenA < lenB, lenA == lenB:
+						commit(diffA, -1)
+					default:
+						commit(diffA, lenB)
+					}
+				case isNoOp(diffA) && !isNoOp(diffB) && !diffB.Insertion:
+					switch {
+					case lenA < lenB:
+						commit(diffB, lenA)
+						currIndex += lenA
+					case lenA == lenB:
+						commit(diffB, -1)
+						currIndex += lenA
+					default:
+						commit(diffB, -1)
+						currIndex += lenB
+					}
+				case isNoOp(diffA) && isNoOp(diffB):
+					switch {
+					case lenA < lenB, lenA == lenB:
+						currIndex += lenA
+					default:
+						currIndex += lenB
+					}
+				}
+
+				// Update the diff and get new ones if needed
+				switch {
+				case lenA < lenB:
+					if isNoOp(diffB) {
+						diffB.StartIndex += lenA
+					} else {
+						diffB.Changes = diffB.Changes[lenA:]
+					}
+					getNextDiffA()
+				case lenA == lenB:
+					getNextDiffA()
+					getNextDiffB()
+				default:
+					if isNoOp(diffA) {
+						diffA.StartIndex += lenB
+					} else {
+						diffA.Changes = diffA.Changes[lenB:]
+					}
+					getNextDiffB()
+				}
+			}
+		}
 		patchA = NewPatch(patchA.BaseVersion, resultDiffs, patchA.DocLength)
 	}
 	return patchA, nil
