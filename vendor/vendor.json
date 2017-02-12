@@ -66,10 +66,10 @@
 			"tree": true
 		},
 		{
-			"checksumSHA1": "Tz3FMUl0EQFg0qe0IhTlyvGybTE=",
+			"checksumSHA1": "ArTICAlBYE6ni6VZWX6L2pzxa9M=",
 			"path": "github.com/streadway/amqp",
-			"revision": "2e25825abdbd7752ff08b270d313b93519a0a232",
-			"revisionTime": "2016-03-11T21:55:03Z",
+			"revision": "d75c3a341ff43309ad0cb69ac8bdbd1d8772775f",
+			"revisionTime": "2017-02-03T13:40:38Z",
 			"tree": true
 		},
 		{

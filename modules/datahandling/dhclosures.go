@@ -10,7 +10,7 @@ import (
 )
 
 type dhClosure interface {
-	call(dh DataHandler) error
+	call(dh DataHandler, wsID uint64) error
 }
 
 type toSenderClosure struct {
@@ -18,7 +18,7 @@ type toSenderClosure struct {
 }
 
 // toSenderClosure.call is the function that will forward a server message back to the client
-func (cont toSenderClosure) call(dh DataHandler) error {
+func (cont toSenderClosure) call(dh DataHandler, wsID uint64) error {
 	msgJSON, err := json.Marshal(cont.msg)
 	if err != nil {
 		return err
@@ -26,10 +26,10 @@ func (cont toSenderClosure) call(dh DataHandler) error {
 
 	msg := rabbitmq.AMQPMessage{
 		Headers: map[string]interface{}{
-			"Origin":      rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
+			"Origin":      rabbitmq.RabbitWebsocketQueueName(wsID),
 			"MessageType": cont.msg.Type,
 		},
-		RoutingKey:  rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
+		RoutingKey:  rabbitmq.RabbitWebsocketQueueName(wsID),
 		ContentType: rabbitmq.ContentTypeMsg,
 		Persistent:  false,
 		Message:     msgJSON,
@@ -52,7 +52,7 @@ type toRabbitChannelClosure struct {
 }
 
 // toRabbitChannelClosure.call is the function that will forward a server message to a channel based on the given routing key
-func (cont toRabbitChannelClosure) call(dh DataHandler) error {
+func (cont toRabbitChannelClosure) call(dh DataHandler, wsID uint64) error {
 	msgJSON, err := json.Marshal(cont.msg)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func (cont toRabbitChannelClosure) call(dh DataHandler) error {
 
 	msg := rabbitmq.AMQPMessage{
 		Headers: map[string]interface{}{
-			"Origin":      rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
+			"Origin":      rabbitmq.RabbitWebsocketQueueName(wsID),
 			"MessageType": cont.msg.Type,
 		},
 		RoutingKey:  cont.key,
@@ -89,19 +89,19 @@ type rabbitCommandClosure struct {
 }
 
 // toRabbitChannelClosure.call is the function that will forward a server message to a channel based on the given routing key
-func (cont rabbitCommandClosure) call(dh DataHandler) error {
+func (cont rabbitCommandClosure) call(dh DataHandler, wsID uint64) error {
 	msgJSON, err := json.Marshal(cont)
 	if err != nil {
 		return err
 	}
 
 	if cont.Key == "" {
-		cont.Key = rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID)
+		cont.Key = rabbitmq.RabbitWebsocketQueueName(wsID)
 	}
 
 	msg := rabbitmq.AMQPMessage{
 		Headers: map[string]interface{}{
-			"Origin": rabbitmq.RabbitWebsocketQueueName(dh.WebsocketID),
+			"Origin": rabbitmq.RabbitWebsocketQueueName(wsID),
 		},
 		RoutingKey:  cont.Key,
 		ContentType: rabbitmq.ContentTypeCmd,

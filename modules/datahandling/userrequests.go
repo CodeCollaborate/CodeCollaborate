@@ -1,11 +1,12 @@
 package datahandling
 
 import (
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var userRequestsSetup = false
@@ -53,7 +54,8 @@ func (f *userRegisterRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f userRegisterRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(f.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -92,7 +94,9 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f userLoginRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hashed, err := db.MySQLUserGetPass(f.Username)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
@@ -143,7 +147,9 @@ func (f *userDeleteRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f userDeleteRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	deletedIDs, err := db.MySQLUserDelete(f.SenderID)
 
 	if err != nil {
@@ -176,7 +182,9 @@ func (f *userLookupRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f userLookupRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	users := make([]dbfs.UserMeta, len(f.Usernames))
 	index := 0
 	var erro error
@@ -232,7 +240,9 @@ func (f *userProjectsRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f userProjectsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f userProjectsRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	var errOut error
 	projects, errOut := db.MySQLUserProjects(f.SenderID)
 

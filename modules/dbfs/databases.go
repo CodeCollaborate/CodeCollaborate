@@ -1,8 +1,5 @@
 package dbfs
 
-// Dbfs is the globally used dbfs object for the server
-var Dbfs DBFS
-
 // DBFS is the interface which maps all of the necessary database and file system functions
 type DBFS interface {
 	// multi

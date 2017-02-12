@@ -77,7 +77,9 @@ func (p *projectCreateRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectCreateRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	ack() // ack regardless of success or failure
+
 	projectID, err := db.MySQLProjectCreate(p.SenderID, p.Name)
 	if err != nil {
 		//if err == project already exists {
@@ -110,7 +112,9 @@ func (p *projectRenameRequest) setAbstractRequest(req *abstractRequest) {
 	p.abstractRequest = *req
 }
 
-func (p projectRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectRenameRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "write", db)
 	if err != nil || !hasPermission {
 		utils.LogError("API permission error", err, utils.LogFields{
@@ -151,7 +155,9 @@ func (p *projectGetPermissionConstantsRequest) setAbstractRequest(req *abstractR
 	p.abstractRequest = *req
 }
 
-func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	res := messages.Response{
 		Status: messages.StatusSuccess,
 		Tag:    p.Tag,
@@ -173,7 +179,9 @@ type projectGrantPermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectGrantPermissionsRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "admin", db)
 	if err != nil || !hasPermission {
 		utils.LogError("API permission error", err, utils.LogFields{
@@ -236,7 +244,9 @@ type projectRevokePermissionsRequest struct {
 	abstractRequest
 }
 
-func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectRevokePermissionsRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "admin", db)
 	if err != nil {
 		utils.LogError("API permission error", err, utils.LogFields{
@@ -318,7 +328,9 @@ type projectGetOnlineClientsRequest struct {
 	abstractRequest
 }
 
-func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectGetOnlineClientsRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	// TODO: implement on redis (and actually implement redis)
 	utils.LogWarn("ProjectGetOnlineClients not implemented", nil)
 
@@ -342,7 +354,9 @@ type projectLookupResult struct {
 	Permissions map[string](dbfs.ProjectPermission)
 }
 
-func (p projectLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectLookupRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	/*
 		We could do
 			data := make([]interface{}, len(p.ProjectIDs))
@@ -452,7 +466,9 @@ type fileLookupResult struct {
 	Version      int64
 }
 
-func (p projectGetFilesRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectGetFilesRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "read", db)
 	if err != nil || !hasPermission {
 		utils.LogError("API permission error", err, utils.LogFields{
@@ -548,7 +564,9 @@ type projectSubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectSubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectSubscribeRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "read", db)
 	if err != nil || !hasPermission {
 		utils.LogError("API permission error", err, utils.LogFields{
@@ -580,7 +598,9 @@ type projectUnsubscribeRequest struct {
 	abstractRequest
 }
 
-func (p projectUnsubscribeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectUnsubscribeRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	cmdClosure := rabbitCommandClosure{
 		Command: "Unsubscribe",
 		Tag:     p.Tag,
@@ -601,7 +621,9 @@ type projectDeleteRequest struct {
 	abstractRequest
 }
 
-func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (p projectDeleteRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hasPermission, err := dbfs.PermissionAtLeast(p.SenderID, p.ProjectID, "owner", db)
 	if err != nil {
 		utils.LogError("API permission error", err, utils.LogFields{
@@ -632,7 +654,9 @@ func (p projectDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 				RevokeUsername:  p.SenderID,
 				abstractRequest: p.abstractRequest,
 			}
-			return realRequest.process(db)
+			return realRequest.process(db, func() error {
+				return nil // orig request already has a deferred ack
+			})
 		}
 
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil

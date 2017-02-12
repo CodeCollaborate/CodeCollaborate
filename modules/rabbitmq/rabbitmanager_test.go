@@ -3,15 +3,16 @@ package rabbitmq
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/streadway/amqp"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
-	"github.com/streadway/amqp"
 )
 
 var testExchange = AMQPExchCfg{
@@ -135,7 +136,7 @@ func TestSendMessage(t *testing.T) {
 	}
 
 	queueID := uint64(0)
-	routingKey := fmt.Sprintf("WS-%s-%d", hostname, queueID)
+	routingKey := RabbitWebsocketQueueName(queueID)
 	doneTesting := make(chan bool, 1)
 	defer close(doneTesting)
 
@@ -156,14 +157,26 @@ func TestSendMessage(t *testing.T) {
 	pubSubCfg := &AMQPPubSubCfg{
 		ExchangeName: testExchange.ExchangeName,
 		SubCfg: &AMQPSubCfg{
-			QueueID:     queueID,
+			QueueName:   RabbitWebsocketQueueName(queueID),
 			Keys:        []string{},
 			IsWorkQueue: false,
 			HandleMessageFunc: func(msg AMQPMessage) error {
 				pubSubCtrl.Shutdown()
-				if !reflect.DeepEqual(msg, TestMessage) {
-					t.Fatal("Sent message does not equal received message")
-				}
+
+				assert.NotNil(t, msg.Ack, "Message does not have Ack")
+				assert.NotNil(t, msg.Nack, "Message does not have Nack")
+				assert.NotNil(t, msg.ErrHandler, "Message does not have Nack")
+
+				err := msg.Ack()
+				assert.Nil(t, err)
+
+				// the messages aren't EXACT copies of each other b/c Nack, Ack, and ErrHandler are nil in TestMessage
+				// so we need to fix this
+				msg.Ack = nil
+				msg.Nack = nil
+				msg.ErrHandler = nil
+
+				assert.EqualValues(t, TestMessage, msg, "Sent message does not equal received message")
 				doneTesting <- true
 				return nil
 			},
@@ -259,7 +272,7 @@ func TestSubscription(t *testing.T) {
 	pubSubCfg := &AMQPPubSubCfg{
 		ExchangeName: testExchange.ExchangeName,
 		SubCfg: &AMQPSubCfg{
-			QueueID:     queueID,
+			QueueName:   RabbitWebsocketQueueName(queueID),
 			Keys:        []string{},
 			IsWorkQueue: false,
 			HandleMessageFunc: func(msg AMQPMessage) error {
@@ -269,8 +282,12 @@ func TestSubscription(t *testing.T) {
 					rch := RabbitCommandHandler{
 						ExchangeName: testExchange.ExchangeName,
 						WSConn:       nil,
-						WSID:         queueID,
+						QueueName:    RabbitWebsocketQueueName(queueID),
 					}
+
+					err := msg.Ack()
+					assert.Nil(t, err)
+
 					return rch.HandleCommand(msg)
 				default:
 					t.Fatalf("Unexpected message type: %d", msg.ContentType)
@@ -303,6 +320,20 @@ func TestSubscription(t *testing.T) {
 		switch msg.ContentType {
 		case ContentTypeMsg:
 			pubSubCtrl.Shutdown()
+
+			assert.NotNil(t, msg.Ack, "Message does not have Ack")
+			assert.NotNil(t, msg.Nack, "Message does not have Nack")
+			assert.NotNil(t, msg.ErrHandler, "Message does not have Nack")
+
+			err := msg.Ack()
+			assert.Nil(t, err)
+
+			// the messages aren't EXACT copies of each other b/c Nack, Ack, and ErrHandler are nil in TestMessage
+			// so we need to fix this
+			msg.Ack = nil
+			msg.Nack = nil
+			msg.ErrHandler = nil
+
 			if !reflect.DeepEqual(msg, TestMessage) {
 				t.Fatal("Sent message does not equal received message")
 			}

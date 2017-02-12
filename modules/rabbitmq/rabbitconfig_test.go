@@ -54,14 +54,14 @@ func TestQueueName(t *testing.T) {
 		queueID := i
 
 		queueCfg := AMQPSubCfg{
-			QueueID:     queueID,
+			QueueName:   RabbitWebsocketQueueName(queueID),
 			Keys:        []string{"Key1", "Key2"},
 			IsWorkQueue: false,
 		}
 
 		expected := "WS-" + hostname + "-" + strconv.FormatUint(queueID, 10)
-		if queueCfg.QueueName() != expected {
-			t.Fatalf("QueueName incorrect; expected [%s], got [%s]", expected, queueCfg.QueueName())
+		if queueCfg.QueueName != expected {
+			t.Fatalf("QueueName incorrect; expected [%s], got [%s]", expected, queueCfg.QueueName)
 		}
 	}
 }

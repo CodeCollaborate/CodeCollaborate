@@ -59,15 +59,11 @@ func NewAMQPPubSubCfg(exchangeName string, pubCfg *AMQPPubCfg, subCfg *AMQPSubCf
 
 // AMQPSubCfg represents the settings needed to create a new subscriber, including the queues and key bindings
 type AMQPSubCfg struct {
-	QueueID           uint64
+	QueueName         string
 	Keys              []string
 	IsWorkQueue       bool
+	PrefetchCount     int
 	HandleMessageFunc func(AMQPMessage) error
-}
-
-// QueueName generates the Queue
-func (cfg AMQPSubCfg) QueueName() string {
-	return RabbitWebsocketQueueName(cfg.QueueID)
 }
 
 // RabbitUserQueueName returns the name of the Queue a websocket for the given user would have
@@ -107,6 +103,8 @@ type AMQPMessage struct {
 	Persistent  bool
 	Message     []byte
 	ErrHandler  func()
+	Ack         func() error
+	Nack        func() error
 }
 
 const (
@@ -115,4 +113,7 @@ const (
 
 	// ContentTypeCmd is the command content-type for an AMQPMessage
 	ContentTypeCmd
+
+	// ContentTypeWork is the work content-type for an AMQPMessage
+	ContentTypeWork
 )

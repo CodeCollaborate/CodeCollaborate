@@ -6,8 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/dgrijalva/jwt-go"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 type tokenPayload struct {

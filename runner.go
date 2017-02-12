@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-
-	"fmt"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -56,8 +55,13 @@ func main() {
 		},
 	)
 
-	dbfs.Dbfs = new(dbfs.DatabaseImpl)
+	dbfsImpl := new(dbfs.DatabaseImpl)
+	handlers.StartWorker(dbfsImpl)
 
+	// FIXME: separate logging and ProjectFiles locations
+	// FIXME: point fs at shared directory
+
+	// FIXME: check config to see if we even need to serve http
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
 	addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port)

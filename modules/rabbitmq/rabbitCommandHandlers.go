@@ -4,15 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/gorilla/websocket"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/utils"
-	"github.com/gorilla/websocket"
 )
 
 // RabbitCommandHandler handles all rabbit commands (sub/unsub)
 type RabbitCommandHandler struct {
 	WSConn       *websocket.Conn
-	WSID         uint64
+	QueueName    string
 	ExchangeName string
 }
 
@@ -52,7 +53,7 @@ func (r RabbitCommandHandler) handleSubscribe(cmd RabbitCommandJSON) error {
 	}
 
 	msg := messages.NewEmptyResponse(messages.StatusSuccess, cmd.Tag)
-	err = BindQueue(ch, RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
+	err = BindQueue(ch, r.QueueName, data.Key, r.ExchangeName)
 	if err != nil {
 		msg = messages.NewEmptyResponse(messages.StatusFail, cmd.Tag)
 	}
@@ -84,7 +85,7 @@ func (r RabbitCommandHandler) handleUnsubscribe(cmd RabbitCommandJSON) error {
 	}
 
 	msg := messages.NewEmptyResponse(messages.StatusSuccess, cmd.Tag)
-	err = UnbindQueue(ch, RabbitWebsocketQueueName(r.WSID), data.Key, r.ExchangeName)
+	err = UnbindQueue(ch, r.QueueName, data.Key, r.ExchangeName)
 	if err != nil {
 		msg = messages.NewEmptyResponse(messages.StatusFail, cmd.Tag)
 	}

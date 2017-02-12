@@ -8,9 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/CodeCollaborate/Server/utils"
 	"github.com/kr/pretty"
 	"github.com/streadway/amqp"
+
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 /**
@@ -207,22 +208,33 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	defer ch.Close()
 
 	_, err = ch.QueueDeclare(
-		cfg.SubCfg.QueueName(),  // name (routing key)
-		cfg.SubCfg.IsWorkQueue,  // durable - persist data upon restarts?
-		!cfg.SubCfg.IsWorkQueue, // delete when unused - no more clients attached
-		!cfg.SubCfg.IsWorkQueue, // exclusive - can only be used by this channel
-		false, // no-wait - do not wait for server to confirm that the queue has been created
-		nil,   // arguments
+		cfg.SubCfg.QueueName, // name (routing key)
+		false,                // durable - persist data upon restarts?
+		true,                 // delete when unused - no more clients attached
+		false,                // exclusive - can only be used by this channel
+		false,                // no-wait - do not wait for server to confirm that the queue has been created
+		nil,                  // arguments
 	)
 	if err != nil {
 		return err
 	}
 
-	for _, key := range append(cfg.SubCfg.Keys, cfg.SubCfg.QueueName()) {
+	if cfg.SubCfg.PrefetchCount != 0 {
+		err = ch.Qos(
+			cfg.SubCfg.PrefetchCount, // prefetch count
+			0,     // prefetch size
+			false, // global
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, key := range append(cfg.SubCfg.Keys, cfg.SubCfg.QueueName) {
 		err = BindQueue(ch,
-			cfg.SubCfg.QueueName(), // queue name
-			key,              // routing key
-			cfg.ExchangeName, // exchange
+			cfg.SubCfg.QueueName, // queue name
+			key,                  // routing key
+			cfg.ExchangeName,     // exchange
 		)
 		if err != nil {
 			return err
@@ -230,13 +242,13 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	}
 
 	msgs, err := ch.Consume(
-		cfg.SubCfg.QueueName(), // queue
-		"",    // consumer
-		true,  // auto ack
-		false, // exclusive
-		false, // no local
-		false, // no wait
-		nil,   // args
+		cfg.SubCfg.QueueName, // queue
+		"",                   // consumer
+		false,                // auto-ack
+		false,                // exclusive
+		false,                // no local
+		false,                // no wait
+		nil,                  // args
 	)
 	if err != nil {
 		return err
@@ -261,7 +273,21 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 				RoutingKey:  msg.RoutingKey,
 				ContentType: contentType,
 				Message:     msg.Body,
-				Persistent:  (msg.DeliveryMode == 2),
+				Persistent:  msg.DeliveryMode == 2,
+				Ack: func() error {
+					return msg.Ack(false)
+				},
+				Nack: func() error {
+					utils.LogDebug("Nacking message for unknown reasons", utils.LogFields{
+						"RabbitMQ tag": msg.DeliveryTag,
+						"Content type": contentType,
+						"RoutingKey":   msg.RoutingKey,
+					})
+					return msg.Nack(false, true)
+				},
+				ErrHandler: func() {
+					// do nothing (for now?)
+				},
 			}
 			err = cfg.SubCfg.HandleMessageFunc(message)
 

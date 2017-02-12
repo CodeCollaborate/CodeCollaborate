@@ -36,10 +36,15 @@ func TestFileCreateRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
@@ -87,10 +92,15 @@ func TestFileRenameRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
@@ -144,10 +154,15 @@ func TestFileMoveRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
@@ -200,10 +215,15 @@ func TestFileDeleteRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 5, db.FunctionCallCount, "did not call correct number of db functions")
@@ -257,10 +277,15 @@ func TestFileChangeRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
@@ -307,10 +332,15 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	req.Changes = []string{"v9999:\n0:+1:a"}
 	db.FunctionCallCount = 0
 
-	closures, err = req.process(db)
-	if err != dbfs.ErrVersionOutOfDate {
-		t.Fatal(err)
+	acked = false
+	ack = func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err = req.process(db, ack)
+	assert.Equal(t, dbfs.ErrVersionOutOfDate, err, "expected version to be out of date")
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
@@ -349,10 +379,15 @@ func TestFilePullRequest_Process(t *testing.T) {
 
 	db.FunctionCallCount = 0
 
-	closures, err := req.process(db)
-	if err != nil {
-		t.Fatal(err)
+	acked := false
+	ack := func() error {
+		acked = !acked
+		return nil
 	}
+
+	closures, err := req.process(db, ack)
+	assert.Nil(t, err)
+	assert.True(t, acked, "process function did not ack message")
 
 	// didn't call extra db functions
 	if db.FunctionCallCount != 3 {
