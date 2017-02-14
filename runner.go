@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"fmt"
@@ -21,12 +22,7 @@ import (
 var logDir = flag.String("log_dir", "./data/logs/", "log file location")
 
 func main() {
-
 	flag.Parse()
-
-	// START DB CONNECTION
-	//managers.ConnectMGo()
-	//defer managers.GetPrimaryMGoSession().Close()
 
 	config.EnableLoggingToFile(*logDir)
 	err := config.LoadConfig()
@@ -74,6 +70,16 @@ func main() {
 		"Address": addr,
 		"TLS":     useTLS,
 	})
+
+	go func() {
+		addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port+1)
+		err := http.ListenAndServe(addr, nil)
+		if err != nil {
+			utils.LogError("Failed to start pprof", err, utils.LogFields{
+				"Address": addr,
+			})
+		}
+	}()
 
 	if useTLS {
 		err = http.ListenAndServeTLS(addr, "config/TLS/cert.pem", "config/TLS/key.pem", nil)
