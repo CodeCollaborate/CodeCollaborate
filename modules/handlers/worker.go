@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"runtime"
 	"strconv"
 
 	"github.com/CodeCollaborate/Server/modules/config"
@@ -24,9 +23,8 @@ type worker struct {
 }
 
 // StartWorker initializes the worker which talks with RabbitMQ for this server
-func StartWorker(dbfsImpl dbfs.DBFS) {
+func StartWorker(dbfsImpl dbfs.DBFS, prefetchCount int) {
 	cfg := config.GetConfig()
-	prefetchCount := runtime.NumCPU() // note that this is set to `runtime.GOMAXPROCS`
 
 	pubCfg := rabbitmq.NewPubConfig(func(msg rabbitmq.AMQPMessage) {
 		// do nothing (for now?)
