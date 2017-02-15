@@ -6,6 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -19,6 +20,9 @@ import (
  */
 
 var logDir = flag.String("log_dir", "./data/logs/", "log file location")
+
+// note that runtime.NumCPU() is set to `runtime.GOMAXPROCS` by default
+var workerPrefetch = flag.Int("worker_prefetch", runtime.NumCPU(), "number of entries that should be prefetched from RabbitMQ")
 
 func main() {
 	flag.Parse()
@@ -56,7 +60,7 @@ func main() {
 	)
 
 	dbfsImpl := new(dbfs.DatabaseImpl)
-	handlers.StartWorker(dbfsImpl)
+	handlers.StartWorker(dbfsImpl, *workerPrefetch)
 
 	// FIXME: separate logging and ProjectFiles locations
 	// FIXME: point fs at shared directory
