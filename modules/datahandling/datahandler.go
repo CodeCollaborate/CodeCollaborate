@@ -40,6 +40,7 @@ func (dh DataHandler) Handle(message []byte, originID uint64, ack func() error) 
 	req, err := createAbstractRequest(message)
 	if err != nil {
 		utils.LogError("Failed to parse json", err, nil) // Do not log request since passwords may be sent
+		ack()
 		return err
 	}
 
@@ -54,12 +55,14 @@ func (dh DataHandler) Handle(message []byte, originID uint64, ack func() error) 
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
+			ack()
 			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, req.Tag)}}
 		} else {
 			utils.LogDebug("No such resource/method", utils.LogFields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
+			ack()
 			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, req.Tag)}}
 		}
 	} else {
