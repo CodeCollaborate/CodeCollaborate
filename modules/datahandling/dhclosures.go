@@ -36,7 +36,7 @@ func (cont toSenderClosure) call(dh DataHandler, wsID uint64) error {
 	}
 
 	utils.LogDebug("Sending message to RabbitMQ client:", utils.LogFields{
-		"Message": msgJSON,
+		"Message": cont.msg,
 		"Key":     msg.RoutingKey,
 	})
 	select {
@@ -74,7 +74,7 @@ func (cont toRabbitChannelClosure) call(dh DataHandler, wsID uint64) error {
 	}
 
 	utils.LogDebug("Sending message to RabbitMQ channel:", utils.LogFields{
-		"Message": msgJSON,
+		"Message": cont.msg,
 		"Key":     msg.RoutingKey,
 	})
 	select {
