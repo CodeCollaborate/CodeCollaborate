@@ -12,18 +12,19 @@ import (
 )
 
 // server only has one worker
-var serverWorker worker
+var workerCfg *rabbitmq.AMQPPubSubCfg
 
 const workerName string = "datahandling_worker"
 const workerOutboundQueueBufferSize int = 512
 
-// Worker objects listen for work jobs coming from RabbitMQ and then run datahandling processes on them
-type worker struct {
-	cfg *rabbitmq.AMQPPubSubCfg
-}
-
 // StartWorker initializes the worker which talks with RabbitMQ for this server
-func StartWorker(dbfsImpl dbfs.DBFS, prefetchCount int) {
+func StartWorker(dbfsImpl dbfs.DBFS, prefetchCount int) *rabbitmq.AMQPPubSubCfg {
+	if workerCfg != nil {
+		// Worker already initialized, restarting
+		workerCfg.Control.Shutdown()
+		workerCfg = nil
+	}
+
 	cfg := config.GetConfig()
 
 	pubCfg := rabbitmq.NewPubConfig(func(msg rabbitmq.AMQPMessage) {
@@ -38,30 +39,31 @@ func StartWorker(dbfsImpl dbfs.DBFS, prefetchCount int) {
 		PrefetchCount: prefetchCount,
 	}
 
-	pubSubCfg := rabbitmq.NewAMQPPubSubCfg(cfg.ServerConfig.Name, pubCfg, subCfg)
+	workerCfg = rabbitmq.NewAMQPPubSubCfg(cfg.ServerConfig.Name, pubCfg, subCfg)
 
-	subCfg.HandleMessageFunc = workerMessageHandler(dbfsImpl, pubSubCfg)
+	subCfg.HandleMessageFunc = workerMessageHandler(dbfsImpl, workerCfg)
 
 	go func() {
-		err := rabbitmq.RunPublisher(pubSubCfg)
-		if err != nil {
-			utils.LogError("Worker publisher error encountered. Exiting", err, nil)
-			pubSubCfg.Control.Shutdown()
+		// auto-restart on failure
+		for !workerCfg.Control.HasExited() {
+			err := rabbitmq.RunPublisher(workerCfg)
+			if err != nil {
+				utils.LogError("Worker publisher error encountered. Exiting", err, nil)
+			}
 		}
 	}()
 	go func() {
-		err := rabbitmq.RunSubscriber(pubSubCfg)
-		if err != nil {
-			utils.LogError("Worker subscriber error encountered. Exiting", err, nil)
-			pubSubCfg.Control.Shutdown()
+		// auto-restart on failure
+		for !workerCfg.Control.HasExited() {
+			err := rabbitmq.RunSubscriber(workerCfg)
+			if err != nil {
+				utils.LogError("Worker subscriber error encountered. Exiting", err, nil)
+			}
 		}
 	}()
 
-	pubSubCfg.Control.Ready.Wait()
-
-	serverWorker = worker{
-		cfg: pubSubCfg,
-	}
+	workerCfg.Control.Ready.Wait()
+	return workerCfg
 }
 
 // WorkerEnqueue takes messages that need to be processed and sends them to RabbitMQ to be assigned to a worker
@@ -82,7 +84,7 @@ func WorkerEnqueue(message []byte, wsID uint64) error {
 	}
 
 	select {
-	case serverWorker.cfg.PubCfg.Messages <- msg:
+	case workerCfg.PubCfg.Messages <- msg:
 	default:
 		err := errors.New("Channel buffer full")
 		utils.LogError("Worker message queue full, failed to add new message", err, utils.LogFields{
@@ -95,6 +97,7 @@ func WorkerEnqueue(message []byte, wsID uint64) error {
 }
 
 func workerMessageHandler(dbfsImpl dbfs.DBFS, cfg *rabbitmq.AMQPPubSubCfg) func(rabbitmq.AMQPMessage) error {
+	// have 1 dh per worker
 	dh := datahandling.DataHandler{
 		MessageChan: cfg.PubCfg.Messages,
 		Db:          dbfsImpl,
@@ -112,6 +115,8 @@ func workerMessageHandler(dbfsImpl dbfs.DBFS, cfg *rabbitmq.AMQPPubSubCfg) func(
 				})
 				return err
 			}
+			// have to convert because RabbitMQ doesn't allow for uint64s to be passed
+			// it's ugly, I know, but we have to either do this or switch to int64s
 			wsID, err := strconv.ParseUint(wsIDRaw.(string), 16, 64)
 			if err != nil {
 				utils.LogError("Error converting worker OriginID", err, utils.LogFields{
