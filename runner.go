@@ -36,6 +36,17 @@ func main() {
 	}
 	cfg := config.GetConfig()
 
+	go func() {
+		// enable profiling to `:(port)/debug/pprof/`
+		addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port+1)
+		err := http.ListenAndServe(addr, nil)
+		if err != nil {
+			utils.LogError("Failed to start pprof", err, utils.LogFields{
+				"Address": addr,
+			})
+		}
+	}()
+
 	// Get working directory
 	dir, err := os.Getwd()
 	utils.LogFatal("Could not get working directory", err, nil)
@@ -46,6 +57,11 @@ func main() {
 
 	// Creates a NewControl block for multithreading control
 	AMQPControl := utils.NewControl(1)
+
+	// Kill the SetupRabbitExchange thread (Multithreading control)
+	defer func() {
+		AMQPControl.Exit <- true
+	}()
 
 	// RabbitMQ uses "Exchanges" as containers for Queues, and ours is initialized here.
 	rabbitmq.SetupRabbitExchange(
@@ -64,10 +80,6 @@ func main() {
 	dbfsImpl := new(dbfs.DatabaseImpl)
 	handlers.StartWorker(dbfsImpl, *workerPrefetch)
 
-	// FIXME: separate logging and ProjectFiles locations
-	// FIXME: point fs at shared directory
-
-	// FIXME: check config to see if we even need to serve http
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
 	addr := fmt.Sprintf(":%d", cfg.ServerConfig.Port)
@@ -117,9 +129,4 @@ func main() {
 	}
 
 	utils.LogError("Could not bind to port", err, nil)
-
-	// Kill the SetupRabbitExchange thread (Multithreading control)
-	defer func() {
-		AMQPControl.Exit <- true
-	}()
 }
