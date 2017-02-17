@@ -63,7 +63,7 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	defer close(pubCfg.Messages)
 
 	subCfg := &rabbitmq.AMQPSubCfg{
-		QueueName:   rabbitmq.RabbitWebsocketQueueName(wsID),
+		QueueName:   rabbitmq.LocalWebsocketName(wsID),
 		Keys:        []string{},
 		IsWorkQueue: false,
 	}

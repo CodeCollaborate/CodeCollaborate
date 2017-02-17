@@ -136,7 +136,7 @@ func TestSendMessage(t *testing.T) {
 	}
 
 	queueID := uint64(0)
-	routingKey := RabbitWebsocketQueueName(queueID)
+	routingKey := LocalWebsocketName(queueID)
 	doneTesting := make(chan bool, 1)
 	defer close(doneTesting)
 
@@ -157,7 +157,7 @@ func TestSendMessage(t *testing.T) {
 	pubSubCfg := &AMQPPubSubCfg{
 		ExchangeName: testExchange.ExchangeName,
 		SubCfg: &AMQPSubCfg{
-			QueueName:   RabbitWebsocketQueueName(queueID),
+			QueueName:   LocalWebsocketName(queueID),
 			Keys:        []string{},
 			IsWorkQueue: false,
 			HandleMessageFunc: func(msg AMQPMessage) error {
@@ -259,7 +259,7 @@ func TestSubscription(t *testing.T) {
 			"Header2": "Value2",
 			"Header3": "Value3",
 		},
-		RoutingKey:  RabbitWebsocketQueueName(queueID),
+		RoutingKey:  LocalWebsocketName(queueID),
 		ContentType: ContentTypeCmd,
 		Persistent:  false,
 		Message:     msgJSON,
@@ -272,7 +272,7 @@ func TestSubscription(t *testing.T) {
 	pubSubCfg := &AMQPPubSubCfg{
 		ExchangeName: testExchange.ExchangeName,
 		SubCfg: &AMQPSubCfg{
-			QueueName:   RabbitWebsocketQueueName(queueID),
+			QueueName:   LocalWebsocketName(queueID),
 			Keys:        []string{},
 			IsWorkQueue: false,
 			HandleMessageFunc: func(msg AMQPMessage) error {
@@ -282,7 +282,7 @@ func TestSubscription(t *testing.T) {
 					rch := RabbitCommandHandler{
 						ExchangeName: testExchange.ExchangeName,
 						WSConn:       nil,
-						QueueName:    RabbitWebsocketQueueName(queueID),
+						QueueName:    LocalWebsocketName(queueID),
 					}
 
 					err := msg.Ack()

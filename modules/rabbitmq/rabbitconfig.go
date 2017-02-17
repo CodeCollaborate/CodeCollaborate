@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"crypto/tls"
 	"fmt"
+	"os"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
@@ -11,6 +12,9 @@ import (
 /**
  * Configuration structures and variables for RabbitMQ.
  */
+
+// Gets the hostname of this machine, for use in QueueName()
+var hostname, _ = os.Hostname()
 
 // AMQPConnCfg represents the settings needed to create a new connection, and initialize the required exchanges.
 type AMQPConnCfg struct {
@@ -67,9 +71,9 @@ func RabbitUserQueueName(username string) string {
 	return fmt.Sprintf("User-%s", username)
 }
 
-// RabbitWebsocketQueueName returns the name of the Queue a websocket with the given ID would have
-func RabbitWebsocketQueueName(queueID uint64) string {
-	return fmt.Sprintf("WS-%d", queueID)
+// LocalWebsocketName returns the name of the Queue a websocket with the given ID would have
+func LocalWebsocketName(queueID uint64) string {
+	return fmt.Sprintf("WS-%s-%d", hostname, queueID)
 }
 
 // RabbitProjectQueueName returns the name of the Queue a project with the given ID would have

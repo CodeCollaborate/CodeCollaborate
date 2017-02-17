@@ -34,7 +34,7 @@ type DataHandler struct {
 
 // Handle takes the MessageType and message in byte-array form,
 // processing the data, and updating DBFS/RabbitMQ as needed.
-func (dh DataHandler) Handle(message []byte, originID uint64, ack func() error) error {
+func (dh DataHandler) Handle(message []byte, origin string, ack func() error) error {
 	// Ignore any request that has a password JSON field
 	if !strings.Contains(strings.ToLower(string(message)), "\"password\":") {
 		utils.LogDebug("Received Message", utils.LogFields{
@@ -89,7 +89,7 @@ func (dh DataHandler) Handle(message []byte, originID uint64, ack func() error) 
 	}
 
 	for _, closure := range closures {
-		err := closure.call(dh, originID)
+		err := closure.call(dh, origin)
 		if err != nil {
 			utils.LogError("Failed to complete continuation", err, utils.LogFields{
 				"Resource": req.Resource,
