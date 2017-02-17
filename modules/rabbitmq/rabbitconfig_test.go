@@ -54,7 +54,7 @@ func TestQueueName(t *testing.T) {
 		queueID := i
 
 		queueCfg := AMQPSubCfg{
-			QueueName:   RabbitWebsocketQueueName(queueID),
+			QueueName:   LocalWebsocketName(queueID),
 			Keys:        []string{"Key1", "Key2"},
 			IsWorkQueue: false,
 		}

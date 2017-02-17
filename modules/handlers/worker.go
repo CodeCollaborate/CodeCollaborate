@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling"
@@ -75,7 +74,7 @@ func WorkerEnqueue(message []byte, wsID uint64) error {
 
 	msg := rabbitmq.AMQPMessage{
 		Headers: map[string]interface{}{
-			"OriginID": strconv.FormatUint(wsID, 16),
+			"Origin": rabbitmq.LocalWebsocketName(wsID),
 		},
 		RoutingKey:  workerName,
 		ContentType: rabbitmq.ContentTypeWork,
@@ -107,7 +106,7 @@ func workerMessageHandler(dbfsImpl dbfs.DBFS, cfg *rabbitmq.AMQPPubSubCfg) func(
 		switch msg.ContentType {
 		case rabbitmq.ContentTypeWork:
 			// If notification with self as origin, early-out; ignore our own notifications.
-			wsIDRaw, ok := msg.Headers["OriginID"]
+			wsOrigin, ok := msg.Headers["Origin"]
 			if !ok {
 				err := errors.New("Unnown message origin")
 				utils.LogError("Worker encountered ", err, utils.LogFields{
@@ -115,17 +114,8 @@ func workerMessageHandler(dbfsImpl dbfs.DBFS, cfg *rabbitmq.AMQPPubSubCfg) func(
 				})
 				return err
 			}
-			// have to convert because RabbitMQ doesn't allow for uint64s to be passed
-			// it's ugly, I know, but we have to either do this or switch to int64s
-			wsID, err := strconv.ParseUint(wsIDRaw.(string), 16, 64)
-			if err != nil {
-				utils.LogError("Error converting worker OriginID", err, utils.LogFields{
-					"raw OriginID":    wsIDRaw,
-					"Message Headers": msg.Headers,
-				})
-			}
 
-			go dh.Handle(msg.Message, wsID, msg.Ack)
+			go dh.Handle(msg.Message, wsOrigin.(string), msg.Ack)
 			return nil
 		default:
 			err := errors.New("Unnable to process RabbitMQ message type")
