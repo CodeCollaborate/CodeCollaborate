@@ -1,7 +1,7 @@
 package datahandling
 
 import (
-	"crypto/ecdsa"
+	"crypto/rsa"
 	"math/rand"
 	"testing"
 	"time"
@@ -9,19 +9,25 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/CodeCollaborate/Server/modules/config"
 )
 
 func TestAuthenticateRandomUsernames(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		username := randomString(20)
 
-		token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenPayload{
+		token := jwt.NewWithClaims(jwt.SigningMethodRS512, tokenPayload{
 			Username:     username,
 			CreationTime: time.Now().Unix(),
 			Validity:     time.Now().Add(1 * time.Hour).Unix(),
 		})
 
-		signed, err := token.SignedString(privKey)
+		key, err := config.GenRSA(1024) // make it small so it's faster
+		assert.Nil(t, err, "error generating rsa")
+		assert.NoError(t, key.Validate(), "Unable to validate RSA key")
+
+		signed, err := token.SignedString(key)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -48,8 +54,8 @@ func TestAuthenticate(t *testing.T) {
 			token: signedTokenOrDie(t,
 				"TestUser1",
 				time.Now().Unix(),
-				time.Now().Add(1*time.Second).Unix(),
-				privKey,
+				time.Now().Add(1*time.Minute).Unix(),
+				getRsaKey(),
 			),
 		},
 		{
@@ -58,8 +64,8 @@ func TestAuthenticate(t *testing.T) {
 			token: signedTokenOrDie(t,
 				"TestUser1",
 				time.Now().Unix(),
-				time.Now().Add(1*time.Second).Unix(),
-				privKey,
+				time.Now().Add(1*time.Minute).Unix(),
+				getRsaKey(),
 			),
 		},
 		{
@@ -68,8 +74,8 @@ func TestAuthenticate(t *testing.T) {
 			token: signedTokenOrDie(t,
 				"TestUser1",
 				time.Now().Unix(),
-				time.Now().Add(1*time.Second).Unix(),
-				privKey,
+				time.Now().Add(1*time.Minute).Unix(),
+				getRsaKey(),
 			),
 			err: "authenticate - senderID did not match token username",
 		},
@@ -79,8 +85,8 @@ func TestAuthenticate(t *testing.T) {
 			token: signedTokenOrDie(t,
 				"user1",
 				time.Now().Unix(),
-				time.Now().Add(1*time.Second).Unix(),
-				privKey,
+				time.Now().Add(1*time.Minute).Unix(),
+				getRsaKey(),
 			),
 			err: "authenticate - senderID did not match token username",
 		},
@@ -90,8 +96,8 @@ func TestAuthenticate(t *testing.T) {
 			token: signedTokenOrDie(t,
 				"TestUser1",
 				time.Now().Unix(),
-				time.Now().Add(-1*time.Second).Unix(),
-				privKey,
+				time.Now().Add(-1*time.Minute).Unix(),
+				getRsaKey(),
 			),
 			err: "authenticate - expired token",
 		},
@@ -100,9 +106,9 @@ func TestAuthenticate(t *testing.T) {
 			senderID: "TestUser1",
 			token: signedTokenOrDie(t,
 				"TestUser1",
-				time.Now().Add(1*time.Second).Unix(),
-				time.Now().Add(1*time.Second).Unix(),
-				privKey,
+				time.Now().Add(1*time.Minute).Unix(),
+				time.Now().Add(1*time.Minute).Unix(),
+				getRsaKey(),
 			),
 			err: "authenticate - token not valid yet",
 		},
@@ -122,13 +128,13 @@ func TestAuthenticate(t *testing.T) {
 			desc:     "Wrong key",
 			senderID: "TestUser1",
 			token:    "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6IlRlc3RVc2VyMSIsIkNyZWF0aW9uVGltZSI6MTQ3NDQzOTQ2NywiVmFsaWRpdHkiOjE0NzQ0Mzk0NjZ9.6HK6VyBbXqIwJnRD2fCWIWTM6q466o56QhftJgcywawoi43kN-gEiwdx7K2EaGrDzxz9yd5jJHib_3n-_P9rxA",
-			err:      "authenticate - failed to parse token: crypto/ecdsa: verification error",
+			err:      "authenticate - failed to parse token: crypto/rsa: verification error",
 		},
 		{
 			desc:     "Checksum mismatch",
 			senderID: "TestUser1",
 			token:    "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6IlRlc3RVc2VyMSIsIkNyZWF0aW9uVGltZSI6MTQ3NDQzOTQ2NywiVmFsaWRpdHkiOjE0NzQ0Mzk0NjZ9.6HK6VyBbXqIwJnRD2fCWIWTM6q466o56QhftJgcywawoi43kN-gEiwdx7K2EaGrDzxz9yd5jJw3b_3n-_P9rxA",
-			err:      "authenticate - failed to parse token: crypto/ecdsa: verification error",
+			err:      "authenticate - failed to parse token: crypto/rsa: verification error",
 		},
 	}
 
@@ -155,8 +161,8 @@ func TestAuthenticate(t *testing.T) {
 	}
 }
 
-func signedTokenOrDie(t *testing.T, username string, creationDate, validity int64, key *ecdsa.PrivateKey) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenPayload{
+func signedTokenOrDie(t *testing.T, username string, creationDate, validity int64, key *rsa.PrivateKey) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodRS512, tokenPayload{
 		Username:     username,
 		CreationTime: creationDate,
 		Validity:     validity,

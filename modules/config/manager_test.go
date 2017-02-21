@@ -4,14 +4,17 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetConfig(t *testing.T) {
 	tmpDir := createTmpDir(t, ".", "test-config-files")
 	defer os.RemoveAll(tmpDir)
 
+	// ensure configDir is set to the default. other tests could have run before and set it elsewhere
+	SetConfigDir("./config")
 	err := LoadConfig()
 	if err == nil {
 		t.Fatal("Config dir not set yet; ./config does not exist. Should have failed.")
@@ -42,10 +45,16 @@ func TestGetConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	assert.Nil(t, data.ServerConfig.rsaKey, "Ensure rsaKey lazily loaded")
+	privateKey := data.ServerConfig.RSAKey()
+	assert.NotNil(t, data.ServerConfig.rsaKey, "Ensure rsaKey lazily loaded")
+	assert.ObjectsAreEqual(privateKey, data.ServerConfig.rsaKey)
+
 	expected := &Config{
 		ServerConfig: ServerCfg{
-			Name: "CodeCollaborate",
-			Port: 80,
+			Name:   "CodeCollaborate",
+			Port:   80,
+			rsaKey: privateKey, // cheating
 		},
 		ConnectionConfig: ConnCfgMap{
 			"MySQL": ConnCfg{
@@ -63,7 +72,5 @@ func TestGetConfig(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(data, expected) {
-		t.Fatalf("Parsed data incorrect. Expected: \n%v\n Actual: \n%v\n", data, expected)
-	}
+	assert.ObjectsAreEqualValues(expected, data)
 }
