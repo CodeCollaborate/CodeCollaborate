@@ -7,7 +7,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/kr/pretty"
 
 	"github.com/CodeCollaborate/Server/utils"
 )
@@ -36,7 +35,8 @@ func LoadConfig() error {
 
 	if err == nil {
 		utils.LogInfo("Loaded Configuration", utils.LogFields{
-			"ServerConfig": pretty.Sprint(config.ServerConfig),
+		//"ServerConfig": pretty.Sprint(config.ServerConfig),
+		// TODO: remove secret fields from config and then print again
 		})
 		setLogLevel()
 	}

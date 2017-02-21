@@ -16,5 +16,8 @@ func configSetup(t *testing.T) {
 }
 
 func testToken(t *testing.T, username string) string {
-	return signedTokenOrDie(t, username, time.Now().Unix(), time.Now().Add(1*time.Minute).Unix(), privKey)
+	rsa, _ := config.GenRSA(1024) // make it small so it's faster for tests
+	// fun story: I originally had this set to 4096 by default and accidentally
+	// made the tests take 10 minutes
+	return signedTokenOrDie(t, username, time.Now().Unix(), time.Now().Add(1*time.Minute).Unix(), rsa)
 }

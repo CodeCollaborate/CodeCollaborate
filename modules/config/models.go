@@ -1,6 +1,11 @@
 package config
 
-import "time"
+import (
+	"crypto/rsa"
+	"time"
+
+	"github.com/CodeCollaborate/Server/utils"
+)
 
 /**
  * Models for the configuration CodeCollaborate Server.
@@ -28,6 +33,11 @@ type ServerCfg struct {
 	MinBufferLength int
 	MaxBufferLength int
 
+	// RSA key
+	RSAPrivateKeyLocation string
+	RSAPrivateKeyPassword string
+	rsaKey                *rsa.PrivateKey
+
 	// Parsed validity
 	tokenValidityDuration time.Duration
 }
@@ -41,6 +51,20 @@ func (cfg ServerCfg) TokenValidityDuration() (time.Duration, error) {
 	var err error
 	cfg.tokenValidityDuration, err = time.ParseDuration(cfg.TokenValidity)
 	return cfg.tokenValidityDuration, err
+}
+
+// RSAKey returns the RSA key the server should use for signing tokens
+func (cfg ServerCfg) RSAKey() *rsa.PrivateKey {
+	if cfg.rsaKey != nil {
+		return cfg.rsaKey
+	}
+
+	var err error
+	config.ServerConfig.rsaKey, err = rsaConfigSetup(config.ServerConfig.RSAPrivateKeyLocation, config.ServerConfig.RSAPrivateKeyPassword)
+	if err != nil {
+		utils.LogFatal("Unable to load/generate RSA key", err, utils.LogFields{})
+	}
+	return cfg.rsaKey
 }
 
 // ConnCfg represents the information required to make a connection

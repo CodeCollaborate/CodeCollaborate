@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-
 	"strings"
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
@@ -12,15 +11,6 @@ import (
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
 )
-
-var privKey *ecdsa.PrivateKey
-
-func init() {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	utils.LogFatal("Failed to generate signing key", err, nil)
-
-	privKey = key
-}
 
 /**
  * Data Handling logic for the CodeCollaborate Server.
