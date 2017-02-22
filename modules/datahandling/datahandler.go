@@ -35,23 +35,15 @@ func (dh DataHandler) Handle(message []byte, origin string, ack func() error) er
 	fullRequest, err := getFullRequest(req)
 
 	var closures []dhClosure
-
 	if err != nil {
-		if err == ErrAuthenticationFailed {
-			utils.LogDebug("User not logged in", utils.LogFields{
-				"Resource": req.Resource,
-				"Method":   req.Method,
-			})
-			ack()
-			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, req.Tag)}}
-		} else {
-			utils.LogDebug("No such resource/method", utils.LogFields{
-				"Resource": req.Resource,
-				"Method":   req.Method,
-			})
-			ack()
-			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, req.Tag)}}
-		}
+		utils.LogDebug("Authentication Error", utils.LogFields{
+			"Resource": req.Resource,
+			"Method":   req.Method,
+			"SenderID": req.SenderID,
+			"Error":    err,
+		})
+		ack()
+		closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, req.Tag)}}
 	} else {
 		closures, err = fullRequest.process(dh.Db, ack)
 		if err != nil {
