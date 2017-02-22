@@ -11,7 +11,7 @@ func TestAuthConfigSetup(t *testing.T) {
 	err := LoadConfig()
 	assert.NoError(t, err, "error initializing config needed for password")
 
-	key, err := rsaConfigSetup(config.ServerConfig.RSAPrivateKeyLocation, config.ServerConfig.RSAPrivateKeyPassword)
+	key, err := rsaConfigSetup("../../config/id_rsa", config.ServerConfig.RSAPrivateKeyPassword)
 	assert.Nil(t, err, "error loading rsa key")
 	assert.NotNil(t, key, "key was nil")
 	assert.NoError(t, key.Validate(), "key could not be validated")
