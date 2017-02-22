@@ -52,6 +52,7 @@ func rsaConfigSetup(rsaPrivateKeyLocation, rsaPrivateKeyPassword string) (*rsa.P
 		return GenRSA(4096)
 	}
 
+	utils.LogInfo("Loaded RSA key from file", utils.LogFields{})
 	return privateKey, nil
 }
 

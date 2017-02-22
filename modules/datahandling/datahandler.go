@@ -1,9 +1,6 @@
 package datahandling
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"strings"
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
@@ -43,7 +40,6 @@ func (dh DataHandler) Handle(message []byte, origin string, ack func() error) er
 	fullRequest, err := getFullRequest(req)
 
 	var closures []dhClosure
-
 	if err != nil {
 		// Ignore requests where there
 		if req.Resource == "User" && (req.Method == "Register" || req.Method == "Login") {
@@ -57,6 +53,8 @@ func (dh DataHandler) Handle(message []byte, origin string, ack func() error) er
 			utils.LogDebug("User not logged in", utils.LogFields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
+				"SenderID": req.SenderID,
+				"Error":    err,
 			})
 			ack()
 			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, req.Tag)}}

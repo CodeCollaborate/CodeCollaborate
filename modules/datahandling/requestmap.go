@@ -29,10 +29,11 @@ func getFullRequest(req *abstractRequest) (request, error) {
 	}
 
 	// authenticated request
-	if config.GetConfig().ServerConfig.DisableAuth || authenticate(*req) == nil {
+	err := authenticate(*req)
+	if config.GetConfig().ServerConfig.DisableAuth || err == nil {
 		return authenticatedRequest(req)
 	}
-	return nil, ErrAuthenticationFailed
+	return nil, err
 }
 
 // authenticatedRequest returns fully parsed Request from the given authenticated AbstractRequest
