@@ -24,8 +24,7 @@ import (
 var logDir = flag.String("log_dir", "./data/logs/", "log file location")
 
 // note that runtime.NumCPU() is set to `runtime.GOMAXPROCS` by default
-// make it a bit higher by default because goroutines are bae
-var workerPrefetch = flag.Int("worker_prefetch", runtime.NumCPU()*4, "number of entries that should be prefetched from RabbitMQ")
+var workerPrefetch = flag.Int("worker_prefetch", runtime.NumCPU(), "number of entries that should be prefetched from RabbitMQ")
 
 func main() {
 	flag.Parse()
