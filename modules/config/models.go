@@ -54,13 +54,13 @@ func (cfg ServerCfg) TokenValidityDuration() (time.Duration, error) {
 }
 
 // RSAKey returns the RSA key the server should use for signing tokens
-func (cfg ServerCfg) RSAKey() *rsa.PrivateKey {
+func (cfg *ServerCfg) RSAKey() *rsa.PrivateKey {
 	if cfg.rsaKey != nil {
 		return cfg.rsaKey
 	}
 
 	var err error
-	config.ServerConfig.rsaKey, err = rsaConfigSetup(config.ServerConfig.RSAPrivateKeyLocation, config.ServerConfig.RSAPrivateKeyPassword)
+	cfg.rsaKey, err = rsaConfigSetup(config.ServerConfig.RSAPrivateKeyLocation, config.ServerConfig.RSAPrivateKeyPassword)
 	if err != nil {
 		utils.LogFatal("Unable to load/generate RSA key", err, utils.LogFields{})
 	}

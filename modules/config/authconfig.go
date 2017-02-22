@@ -12,13 +12,13 @@ import (
 
 func rsaConfigSetup(rsaPrivateKeyLocation, rsaPrivateKeyPassword string) (*rsa.PrivateKey, error) {
 	if rsaPrivateKeyLocation == "" {
-		utils.LogWarn("No RSA Key found, generating temp one", nil)
+		utils.LogWarn("No RSA Key given, generating temp one", nil)
 		return GenRSA(4096)
 	}
 
 	priv, err := ioutil.ReadFile(rsaPrivateKeyLocation)
 	if err != nil {
-		utils.LogWarn("No RSA Key found, generating temp one", nil)
+		utils.LogWarn("No RSA private key found, generating temp one", nil)
 		return GenRSA(4096)
 	}
 
@@ -26,7 +26,7 @@ func rsaConfigSetup(rsaPrivateKeyLocation, rsaPrivateKeyPassword string) (*rsa.P
 	var pemBytes []byte
 
 	if privPem.Type != "RSA PRIVATE KEY" {
-		utils.LogWarn("RSA key is of the wrong type", utils.LogFields{
+		utils.LogWarn("RSA private key is of the wrong type", utils.LogFields{
 			"Pem Type": privPem.Type,
 		})
 	}
@@ -40,7 +40,7 @@ func rsaConfigSetup(rsaPrivateKeyLocation, rsaPrivateKeyPassword string) (*rsa.P
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKCS1PrivateKey(pemBytes); err != nil {
 		if parsedKey, err = x509.ParsePKCS8PrivateKey(pemBytes); err != nil { // note this returns type `interface{}`
-			utils.LogError("Unable to parse RSA key, generating a temp one", err, utils.LogFields{})
+			utils.LogError("Unable to parse RSA private key, generating a temp one", err, utils.LogFields{})
 			return GenRSA(4096)
 		}
 	}
