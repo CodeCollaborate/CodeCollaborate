@@ -59,7 +59,8 @@ func authenticate(abs abstractRequest) error {
 		if !strings.EqualFold(claims.Username, abs.SenderID) {
 			return errors.New("authenticate - senderID did not match token username")
 		}
-		if time.Unix(claims.CreationTime, 0).After(time.Now()) {
+		// check if token is valid yet, but now with some wiggle room
+		if time.Unix(claims.CreationTime, 0).Add(-1 * time.Minute).After(time.Now()) {
 			return errors.New("authenticate - token not valid yet")
 		}
 		if !time.Unix(claims.Validity, 0).After(time.Now()) {
