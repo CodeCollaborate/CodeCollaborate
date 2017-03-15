@@ -116,12 +116,9 @@ func newClientMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn
 
 	return func(msg rabbitmq.AMQPMessage) error {
 		err := msg.Ack() // ack early b/c regardless the outcome here we don't want to re-enqueue
-		utils.LogError("Error Ack'ing RabbitMQ message", err, utils.LogFields{
+		utils.LogFatal("Error Ack'ing RabbitMQ message", err, utils.LogFields{
 			"Message": string(msg.Message),
-		})
-		// I don't know what to do with this error, it can only happen if we disconnect from rabbit,
-		// so it means we have bigger issues
-		// FIXME: is this fatal?
+		}) // only happens if we disconnect from rabbit
 
 		switch msg.ContentType {
 		case rabbitmq.ContentTypeMsg:
