@@ -3,8 +3,6 @@ package patching
 import (
 	"testing"
 
-	"fmt"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -526,6 +524,5 @@ func TestConsolidatePatchLong(t *testing.T) {
 
 		consolidatedPatchedText, err := PatchText(test.baseText, []*Patch{consolidatedPatch})
 		require.Equal(t, patchedText, consolidatedPatchedText, "TestConsolidatePatchLong[%s]: Expected %s but got %s", test.desc, patchedText, consolidatedPatchedText)
-		fmt.Printf("Passed TestConsolidatePatchLong[%s]\n", test.desc)
 	}
 }

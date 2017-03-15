@@ -125,7 +125,6 @@ func getNextDiff(patch *Patch, currIndex int, wasNoOp bool) (*Diff, int) {
 			return nil, -1
 		}
 		return patch.Changes[0].clone(), 0
-
 	}
 
 	// If previous one was a noOp, return either the end or the next actual diff

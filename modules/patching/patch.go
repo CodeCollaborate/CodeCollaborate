@@ -79,7 +79,7 @@ func (patch *Patch) ConvertToCRLF(base string) *Patch {
 		newChanges = append(newChanges, diff.ConvertToCRLF(base))
 	}
 
-	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(base))
+	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\n", "\r\n", -1)))
 }
 
 // ConvertToLF converts this patch from using CRLF to LF line separators given the base text to patch.
@@ -91,19 +91,6 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 	}
 
 	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\r\n", "\n", -1)))
-}
-
-// Undo reverses this patch, producing a patch to undo the changes done by applying the patch.
-func (patch *Patch) Undo() *Patch {
-	newChanges := Diffs{}
-
-	// This needs to be in reverse order, since all the slice in a package will have been applied in order.
-	// The last diff will have been computed relative to the previous few.
-	for i := len(patch.Changes) - 1; i >= 0; i-- {
-		newChanges = append(newChanges, patch.Changes[i].Undo())
-	}
-
-	return NewPatch(patch.BaseVersion, newChanges, patch.DocLength)
 }
 
 // TransformFromString does an Operational Transform against the other patches, creating a set
@@ -152,7 +139,7 @@ func (patch *Patch) Transform(others []*Patch, othersHavePrecedence bool) *Patch
 		}
 	}
 
-	return NewPatch(maxVersionSeen+1, intermediateDiffs, newDocLen).simplify()
+	return NewPatch(maxVersionSeen+1, intermediateDiffs, newDocLen)
 }
 
 func (patch *Patch) String() string {

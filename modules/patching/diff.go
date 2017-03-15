@@ -26,15 +26,6 @@ func (slice Diffs) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-// DeepCopy returns a deep copy of the given Diff object.
-func (slice Diffs) DeepCopy() Diffs {
-	newDiffs := make(Diffs, slice.Len())
-	for i, diff := range slice {
-		newDiffs[i] = diff
-	}
-	return newDiffs
-}
-
 // Simplify merges deletion slice within this patch.
 // This does not merge insertions, because insertions within the same patch are not actually adjacent
 // due to the character that is in between.
@@ -50,14 +41,16 @@ func (slice Diffs) Simplify() Diffs {
 		if slice[i] == nil {
 			break
 		}
-		curr := slice[i].clone()
-		if !curr.Insertion && !result[j].Insertion && result[j].StartIndex+result[j].Length() == curr.StartIndex {
-			result[j].Changes = result[j].Changes + curr.Changes
-		} else if curr.Insertion && result[j].Insertion && result[j].StartIndex == curr.StartIndex {
-			result[j].Changes = result[j].Changes + curr.Changes
+		curr := slice[i]
+		prev := result[j]
+
+		if !curr.Insertion && !prev.Insertion && prev.StartIndex+prev.Length() == curr.StartIndex {
+			prev.Changes = prev.Changes + curr.Changes
+		} else if curr.Insertion && prev.Insertion && prev.StartIndex == curr.StartIndex {
+			prev.Changes = prev.Changes + curr.Changes
 		} else {
 			j++
-			result = append(result, curr)
+			result = append(result, curr.clone())
 		}
 	}
 
@@ -181,11 +174,6 @@ func (diff *Diff) ConvertToLF(base string) *Diff {
 	}
 
 	return NewDiff(diff.Insertion, newStartIndex, newChanges)
-}
-
-// Undo reverses this diff, producing a diff to undo the changes done by applying the diff.
-func (diff *Diff) Undo() *Diff {
-	return NewDiff(!diff.Insertion, diff.StartIndex, diff.Changes)
 }
 
 // OffsetDiff shifts the start index of this diff by the provided offset

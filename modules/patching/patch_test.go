@@ -75,37 +75,37 @@ func TestPatch_ConvertToCRLF(t *testing.T) {
 	require.Nil(t, err)
 	newPatch := patch.ConvertToCRLF("\r\ntest")
 	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n0:+6:test%0D%0A:\n6", newPatch.String())
+	require.Equal(t, "v0:\n0:+6:test%0D%0A:\n7", newPatch.String())
 
 	patch, err = NewPatchFromString("v0:\n1:+5:test%0A:\n12")
 	require.Nil(t, err)
 	newPatch = patch.ConvertToCRLF("\r\ntest")
 	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n2:+6:test%0D%0A:\n6", newPatch.String())
+	require.Equal(t, "v0:\n2:+6:test%0D%0A:\n7", newPatch.String())
 
 	patch, err = NewPatchFromString("v0:\n2:+5:test%0A:\n12")
 	require.Nil(t, err)
 	newPatch = patch.ConvertToCRLF("\r\ntest")
 	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n3:+6:test%0D%0A:\n6", newPatch.String())
+	require.Equal(t, "v0:\n3:+6:test%0D%0A:\n7", newPatch.String())
 
 	patch, err = NewPatchFromString("v0:\n7:+5:test%0A:\n12")
 	require.Nil(t, err)
 	newPatch = patch.ConvertToCRLF("\r\ntes\r\nt")
 	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n9:+6:test%0D%0A:\n8", newPatch.String())
+	require.Equal(t, "v0:\n9:+6:test%0D%0A:\n10", newPatch.String())
 
 	patch, err = NewPatchFromString("v0:\n2:+5:test%0A,\n7:+5:test%0A:\n12")
 	require.Nil(t, err)
 	newPatch = patch.ConvertToCRLF("\r\ntes\r\nt")
 	require.Equal(t, 2, len(newPatch.Changes))
-	require.Equal(t, "v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A:\n8", newPatch.String())
+	require.Equal(t, "v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A:\n10", newPatch.String())
 
 	patch, err = NewPatchFromString("v0:\n2:+5:test%0A,\n7:+5:test%0A,\n0:+5:test%0A:\n12")
 	require.Nil(t, err)
 	newPatch = patch.ConvertToCRLF("\r\ntes\r\nt")
 	require.Equal(t, 3, len(newPatch.Changes))
-	require.Equal(t, "v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A,\n0:+6:test%0D%0A:\n8", newPatch.String())
+	require.Equal(t, "v0:\n3:+6:test%0D%0A,\n9:+6:test%0D%0A,\n0:+6:test%0D%0A:\n10", newPatch.String())
 }
 
 func TestPatch_ConvertToLF(t *testing.T) {
@@ -144,44 +144,6 @@ func TestPatch_ConvertToLF(t *testing.T) {
 	newPatch = patch.ConvertToLF("\r\ntes\r\nt")
 	require.Equal(t, 3, len(newPatch.Changes))
 	require.Equal(t, "v0:\n2:+5:test%0A,\n7:+5:test%0A,\n0:+5:test%0A:\n6", newPatch.String())
-}
-
-func TestPatch_Undo(t *testing.T) {
-	patch, err := NewPatchFromString("v0:\n0:+5:test%0A:\n10")
-	require.Nil(t, err)
-	newPatch := patch.Undo()
-	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n0:-5:test%0A:\n10", newPatch.String())
-
-	patch, err = NewPatchFromString("v0:\n1:-5:test%0A:\n10")
-	require.Nil(t, err)
-	newPatch = patch.Undo()
-	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n1:+5:test%0A:\n10", newPatch.String())
-
-	patch, err = NewPatchFromString("v0:\n2:+5:test%0A:\n10")
-	require.Nil(t, err)
-	newPatch = patch.Undo()
-	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n2:-5:test%0A:\n10", newPatch.String())
-
-	patch, err = NewPatchFromString("v0:\n7:-5:test%0A:\n10")
-	require.Nil(t, err)
-	newPatch = patch.Undo()
-	require.Equal(t, 1, len(newPatch.Changes))
-	require.Equal(t, "v0:\n7:+5:test%0A:\n10", newPatch.String())
-
-	patch, err = NewPatchFromString("v0:\n2:-5:test%0A,\n7:+5:test%0A:\n10")
-	require.Nil(t, err)
-	newPatch = patch.Undo()
-	require.Equal(t, 2, len(newPatch.Changes))
-	require.Equal(t, "v0:\n7:-5:test%0A,\n2:+5:test%0A:\n10", newPatch.String())
-
-	patch, err = NewPatchFromString("v0:\n2:+5:test%0A,\n7:-5:test%0A,\n0:-5:test%0A:\n10")
-	require.Nil(t, err)
-	newPatch = patch.Undo()
-	require.Equal(t, 3, len(newPatch.Changes))
-	require.Equal(t, "v0:\n0:+5:test%0A,\n7:+5:test%0A,\n2:-5:test%0A:\n10", newPatch.String())
 }
 
 func TestPatch_Transform(t *testing.T) {
@@ -317,8 +279,6 @@ func TestPatch_Simplify(t *testing.T) {
 	for _, test := range tests {
 		patch, err := NewPatchFromString(test.patchStr)
 		require.Nil(t, err)
-
-		patch.simplify()
 
 		if want, got := test.expected, patch.String(); want != got {
 			t.Errorf("TestPatchSimplify[%s]: Expected %s, but got %s. Diffs: %v", test.desc, want, got, pretty.Diff(want, got))

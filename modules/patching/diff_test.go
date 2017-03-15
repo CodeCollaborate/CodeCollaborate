@@ -135,22 +135,6 @@ func TestDiff_ConvertBack(t *testing.T) {
 	require.Equal(t, diff.String(), CRLFDiff.String())
 }
 
-func TestDiff_Undo(t *testing.T) {
-	diff, err := NewDiffFromString("0:+4:str1")
-	require.Nil(t, err)
-	newDiff := diff.Undo()
-	require.Equal(t, "0:-4:str1", newDiff.String())
-	originalDiff := newDiff.Undo()
-	require.Equal(t, diff.String(), originalDiff.String())
-
-	diff, err = NewDiffFromString("1:-4:str2")
-	require.Nil(t, err)
-	newDiff = diff.Undo()
-	require.Equal(t, "1:+4:str2", newDiff.String())
-	originalDiff = newDiff.Undo()
-	require.Equal(t, diff.String(), originalDiff.String())
-}
-
 func TestDiff_Transform1A(t *testing.T) {
 	diff1, err := NewDiffFromString("2:+4:str1")
 	require.Nil(t, err)
