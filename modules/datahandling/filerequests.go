@@ -322,6 +322,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure,
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
 
+	// TODO: verify that acking before is the right decision
 	ack() // ack just before appending so if it fails in the middle it doesn't re-enqueue it
 
 	// TODO (normal/optional): verify changes are valid changes

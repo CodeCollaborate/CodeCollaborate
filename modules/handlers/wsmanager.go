@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"sync/atomic"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/kr/pretty"
@@ -105,7 +106,13 @@ msgLoop:
 
 			err = WorkerEnqueue(message, wsID)
 			if err != nil {
-				// FIXME: retry?
+				utils.LogError("Failed to enqueue to worker, retrying", err, nil)
+
+				time.Sleep(1 * time.Second)
+				err = WorkerEnqueue(message, wsID)
+				if err != nil {
+					utils.LogFatal("Failed to enqueue to worker", err, nil)
+				}
 			}
 		}
 	}
