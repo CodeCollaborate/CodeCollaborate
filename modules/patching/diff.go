@@ -306,7 +306,7 @@ func transformType6(current, other *Diff) Diffs {
 		length1 := other.StartIndex - current.StartIndex
 
 		diff1 := current.subChangesEndingAt(length1)
-		diff2 := current.subChangesStartingFrom(length1).OffsetDiff(other.Length())
+		diff2 := current.subChangesStartingFrom(length1).OffsetDiff(length1 + other.Length())
 
 		return Diffs{diff1, diff2}
 	}

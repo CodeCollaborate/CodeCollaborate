@@ -366,7 +366,7 @@ func TestDiff_Transform3B(t *testing.T) {
 	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 2, len(result))
 	require.Equal(t, "4:-1:l", result[0].String())
-	require.Equal(t, "8:-7:ongStr2", result[1].String())
+	require.Equal(t, "9:-7:ongStr2", result[1].String())
 
 	// Test else case: no change
 	diff1, err = NewDiffFromString("8:+4:str1")
