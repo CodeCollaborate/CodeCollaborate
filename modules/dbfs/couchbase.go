@@ -10,6 +10,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/couchbase/gocb"
+	"github.com/davecgh/go-spew/spew"
 )
 
 type couchbaseConn struct {
@@ -180,6 +181,9 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 	if len(prevChanges) > 0 {
 		startPatch, err := patching.NewPatchFromString(prevChanges[0])
 		if err != nil {
+			utils.LogError("Failed to parse first patch", err, utils.LogFields{
+				"PatchStr": prevChanges[0],
+			})
 			return nil, -1, nil, 0, ErrInternalServerError
 		}
 
@@ -205,7 +209,6 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 			"Diff":        int(version - change.BaseVersion),
 			"Len":         len(prevChanges),
 			"ChangeStr":   changeStr,
-			"PrevChanges": prevChanges,
 			"minVersion":  minVersion,
 		})
 
@@ -236,8 +239,11 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 			startIndex = int64(len(prevChanges)) - (version - change.BaseVersion)
 			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
 				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
-
 				if err != nil {
+					utils.LogError("Failed to parse patch", err, utils.LogFields{
+						"PatchStr":   strings.Replace(prevChanges[startIndex], "\n", "\\n", -1),
+						"StartIndex": startIndex,
+					})
 					return nil, -1, nil, 0, ErrInternalServerError
 				}
 
@@ -279,6 +285,10 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 
 		transformedPatch, err := change.TransformFromString(toApply, false) // rewrite change with transformed patch
 		if err != nil {
+			utils.LogError("Failed to transform patchFromString", err, utils.LogFields{
+				"Patch":   strings.Replace(change.String(), "\n", "\\n", -1),
+				"toApply": strings.Replace(spew.Sprint(toApply), "\n", "\\n", -1),
+			})
 			return nil, -1, nil, 0, ErrInternalServerError // Could not parse one of the old patches - should never happen.
 		}
 
@@ -287,6 +297,9 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 		for i := 0; i < len(toApply); i++ {
 			donePatch, err := patching.NewPatchFromString(toApply[i])
 			if err != nil {
+				utils.LogError("Failed to parse donePatch", err, utils.LogFields{
+					"donePatch": strings.Replace(toApply[i], "\n", "\\n", -1),
+				})
 				return nil, -1, nil, 0, ErrInternalServerError
 			}
 

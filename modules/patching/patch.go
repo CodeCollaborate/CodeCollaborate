@@ -61,6 +61,10 @@ func NewPatchFromString(str string) (*Patch, error) {
 	diffStrs := strings.Split(parts[1], ",\n")
 
 	for _, diffStr := range diffStrs {
+		if len(diffStr) == 0 {
+			continue
+		}
+
 		newDiff, err := NewDiffFromString(diffStr)
 		if err != nil {
 			return nil, err
