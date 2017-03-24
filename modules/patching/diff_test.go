@@ -397,7 +397,7 @@ func TestDiff_Transform3C(t *testing.T) {
 }
 
 func TestDiff_Transform3D(t *testing.T) {
-	// Test case 1: If IndexB + LenB > IndexA, shorten B by overlap (from end)
+	// Test case 1a: If IndexB + LenB > IndexA, shorten B by overlap (from end)
 	diff1, err := NewDiffFromString("6:-4:str1")
 	require.Nil(t, err)
 	diff2, err := NewDiffFromString("4:-4:str2")
@@ -405,6 +405,15 @@ func TestDiff_Transform3D(t *testing.T) {
 	result := diff2.transform(Diffs{diff1}, true)
 	require.Equal(t, 1, len(result))
 	require.Equal(t, "4:-2:st", result[0].String())
+
+	// Test case 1b: If IndexB + LenB > IndexA, shorten B by overlap (from end)
+	diff1, err = NewDiffFromString("6:-4:str1")
+	require.Nil(t, err)
+	diff2, err = NewDiffFromString("4:-8:ststr1r3")
+	require.Nil(t, err)
+	result = diff2.transform(Diffs{diff1}, true)
+	require.Equal(t, 1, len(result))
+	require.Equal(t, "4:-4:str3", result[0].String())
 
 	// Test else case: No change if no overlap
 	diff1, err = NewDiffFromString("8:-4:str1")

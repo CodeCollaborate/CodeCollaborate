@@ -315,9 +315,14 @@ func transformType6(current, other *Diff) Diffs {
 
 func transformType7(current, other *Diff) Diffs {
 	if (current.StartIndex + current.Length()) > other.StartIndex {
+		if (current.StartIndex + current.Length()) <= (other.StartIndex + other.Length()) {
+			nonOverlap := other.StartIndex - current.StartIndex
+
+			return Diffs{current.subChangesEndingAt(current.Length() - nonOverlap)}
+		}
 		nonOverlap := other.StartIndex - current.StartIndex
 
-		return Diffs{current.subChangesEndingAt(current.Length() - nonOverlap)}
+		return Diffs{NewDiff(current.Insertion, current.StartIndex, current.Changes[:nonOverlap]+current.Changes[nonOverlap+other.Length():])}
 	}
 	return Diffs{current}
 }
