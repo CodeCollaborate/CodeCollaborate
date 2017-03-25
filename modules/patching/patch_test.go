@@ -3,9 +3,21 @@ package patching
 import (
 	"testing"
 
+	"fmt"
+
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/require"
 )
+
+func TestPatch_Manual(t *testing.T) {
+	patchA, err := NewPatchFromString("v1:\n109:-1:l:\n112")
+	require.Nil(t, err)
+	//patchB, err := NewPatchFromString("v1:\n38:-72:%0A%09pewoiqurpoiquwerpoiquwerpoiquwerpoi%0A%09asldfj%3Blaksdjf%3Blakjsd%3Bflkjasdf%3Bjl,\n38:+1:o:\n112")
+	patchB, err := NewPatchFromString("v1:\n38:-72:%0A%09pewoiqurpoiquwerpoiquwerpoiquwerpoi%0A%09asldfj%3Blaksdjf%3Blakjsd%3Bflkjasdf%3Bjl:\n112")
+	require.Nil(t, err)
+
+	fmt.Println(patchB.Transform([]*Patch{patchA}, false))
+}
 
 func TestPatch_NewPatch(t *testing.T) {
 	patchString := "v1:\n3:-8:deletion,\n2:+6:insert:\n11"

@@ -318,7 +318,7 @@ func transformType7(current, other *Diff) Diffs {
 		if (current.StartIndex + current.Length()) <= (other.StartIndex + other.Length()) {
 			nonOverlap := other.StartIndex - current.StartIndex
 
-			return Diffs{current.subChangesEndingAt(current.Length() - nonOverlap)}
+			return Diffs{current.subChangesEndingAt(nonOverlap)}
 		}
 		nonOverlap := other.StartIndex - current.StartIndex
 
