@@ -3,21 +3,9 @@ package patching
 import (
 	"testing"
 
-	"fmt"
-
 	"github.com/kr/pretty"
 	"github.com/stretchr/testify/require"
 )
-
-func TestPatch_Manual(t *testing.T) {
-	patchA, err := NewPatchFromString("v1:\n109:-1:l:\n112")
-	require.Nil(t, err)
-	//patchB, err := NewPatchFromString("v1:\n38:-72:%0A%09pewoiqurpoiquwerpoiquwerpoiquwerpoi%0A%09asldfj%3Blaksdjf%3Blakjsd%3Bflkjasdf%3Bjl,\n38:+1:o:\n112")
-	patchB, err := NewPatchFromString("v1:\n38:-72:%0A%09pewoiqurpoiquwerpoiquwerpoiquwerpoi%0A%09asldfj%3Blaksdjf%3Blakjsd%3Bflkjasdf%3Bjl:\n112")
-	require.Nil(t, err)
-
-	fmt.Println(patchB.Transform([]*Patch{patchA}, false))
-}
 
 func TestPatch_NewPatch(t *testing.T) {
 	patchString := "v1:\n3:-8:deletion,\n2:+6:insert:\n11"
@@ -156,28 +144,6 @@ func TestPatch_ConvertToLF(t *testing.T) {
 	newPatch = patch.ConvertToLF("\r\ntes\r\nt")
 	require.Equal(t, 3, len(newPatch.Changes))
 	require.Equal(t, "v0:\n2:+5:test%0A,\n7:+5:test%0A,\n0:+5:test%0A:\n6", newPatch.String())
-}
-
-func TestPatch_Transform(t *testing.T) {
-	// Test set 1
-	patch1, err := NewPatchFromString("v1:\n0:-1:a:\n10")
-	require.Nil(t, err)
-	patch2, err := NewPatchFromString("v0:\n3:-8:deletion,\n3:+6:insert:\n10")
-	require.Nil(t, err)
-	newPatch := patch2.Transform([]*Patch{patch1}, true)
-	require.Equal(t, 2, len(newPatch.Changes))
-	require.Equal(t, "v2:\n2:-8:deletion,\n2:+6:insert:\n9", newPatch.String())
-
-	// Test set 2
-	patch1, err = NewPatchFromString("v1:\n0:-1:a:\n10")
-	require.Nil(t, err)
-	patch2, err = NewPatchFromString("v2:\n0:-1:b:\n10")
-	require.Nil(t, err)
-	patch3, err := NewPatchFromString("v0:\n3:-8:deletion,\n3:+6:insert:\n10")
-	require.Nil(t, err)
-	newPatch = patch3.Transform([]*Patch{patch1, patch2}, true)
-	require.Equal(t, 2, len(newPatch.Changes))
-	require.Equal(t, "v3:\n1:-8:deletion,\n1:+6:insert:\n8", newPatch.String())
 }
 
 func TestPatch_Simplify(t *testing.T) {

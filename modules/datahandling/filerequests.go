@@ -285,7 +285,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 // File.Change
 type fileChangeRequest struct {
 	FileID  int64
-	Changes []string
+	Changes string
 	abstractRequest
 }
 
@@ -328,7 +328,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		Tag:    f.Tag,
 		Data: struct {
 			FileVersion    int64
-			Changes        []string
+			Changes        string
 			MissingPatches []string
 		}{
 			FileVersion:    version,
@@ -342,7 +342,7 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		ResourceID: f.FileID,
 		Data: struct {
 			FileVersion int64
-			Changes     []string
+			Changes     string
 		}{
 			FileVersion: version,
 			Changes:     changes,

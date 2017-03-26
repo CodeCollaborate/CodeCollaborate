@@ -45,7 +45,7 @@ func TestFilePatcher_ApplyPatch(t *testing.T) {
 			desc:    "Single Patch, Single deletion, Incorrect base text",
 			patches: getPatchesOrDie(t, "v0:\n2:-1:s:\n10"),
 			text:    "aaaa",
-			error:   "PatchText: Deleted text \"a\" does not match changes in diff: \"s\"",
+			error:   "PatchText: Deleted text [a] does not match changes in diff: [s]",
 		},
 		{
 			desc:     "Single Patch, Double insertion",

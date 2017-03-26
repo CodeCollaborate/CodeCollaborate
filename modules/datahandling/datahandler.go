@@ -54,6 +54,9 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 	var closures []dhClosure
 
 	if err != nil {
+		utils.LogError("getFullRequest failed", err, utils.LogFields{
+			"Request": req,
+		})
 		if err == ErrAuthenticationFailed {
 			utils.LogDebug("User not logged in", utils.LogFields{
 				"Resource": req.Resource,

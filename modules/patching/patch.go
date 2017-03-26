@@ -22,6 +22,19 @@ type Patch struct {
 	DocLength int
 }
 
+// GetPatches creates an array of patches, given the array of strings
+func GetPatches(patchStrs []string) ([]*Patch, error) {
+	patches := make([]*Patch, len(patchStrs))
+	for index, patchStr := range patchStrs {
+		patch, err := NewPatchFromString(patchStr)
+		if err != nil {
+			return nil, err
+		}
+		patches[index] = patch
+	}
+	return patches, nil
+}
+
 // NewPatch creates a new patch with the given parameters
 func NewPatch(baseVersion int64, changes Diffs, docLength int) *Patch {
 	patch := &Patch{
@@ -95,55 +108,6 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 	}
 
 	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\r\n", "\n", -1)))
-}
-
-// TransformFromString does an Operational Transform against the other patches, creating a set
-// of changes relative to previously applied changes.
-func (patch *Patch) TransformFromString(others []string, othersHavePrecedence bool) (*Patch, error) {
-	patches := make([]*Patch, len(others))
-
-	for i, v := range others {
-		patch, err := NewPatchFromString(v)
-		if err != nil {
-			return nil, err
-		}
-		patches[i] = patch
-	}
-
-	return patch.Transform(patches, othersHavePrecedence), nil
-}
-
-// Transform does an Operational Transform against the other patches, creating a set
-// of changes relative to previously applied changes.
-func (patch *Patch) Transform(others []*Patch, othersHavePrecedence bool) *Patch {
-	intermediateDiffs := patch.Changes
-	maxVersionSeen := patch.BaseVersion - 1
-
-	for _, otherPatch := range others {
-		newIntermediateDiffs := Diffs{}
-
-		for _, diff := range intermediateDiffs {
-			newIntermediateDiffs = append(newIntermediateDiffs, diff.transform(otherPatch.Changes, othersHavePrecedence)...)
-		}
-
-		intermediateDiffs = newIntermediateDiffs
-		if maxVersionSeen < otherPatch.BaseVersion {
-			maxVersionSeen = otherPatch.BaseVersion
-		}
-	}
-
-	newDocLen := patch.DocLength
-	for _, patch := range others {
-		for _, diff := range patch.Changes {
-			if diff.Insertion {
-				newDocLen += diff.Length()
-			} else {
-				newDocLen -= diff.Length()
-			}
-		}
-	}
-
-	return NewPatch(maxVersionSeen+1, intermediateDiffs, newDocLen)
 }
 
 func (patch *Patch) String() string {
