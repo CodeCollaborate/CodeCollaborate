@@ -133,6 +133,38 @@ func runTests(t *testing.T, tests []transformationTest) {
 	}
 }
 
+func TestEmptyDiffs(t *testing.T) {
+	tests := []transformationTest{
+		{
+			"DiffA empty",
+			getPatchOrDie(t, "v1:\n:\n8"),
+			getPatchOrDie(t, "v1:\n6:+4:str2:\n8"),
+			"baseText",
+			getPatchOrDie(t, "v2:\n:\n12"),
+			getPatchOrDie(t, "v2:\n6:+4:str2:\n8"),
+			true,
+		}, {
+
+			"DiffB empty",
+			getPatchOrDie(t, "v1:\n0:+4:str1:\n8"),
+			getPatchOrDie(t, "v1:\n:\n8"),
+			"baseText",
+			getPatchOrDie(t, "v2:\n0:+4:str1:\n8"),
+			getPatchOrDie(t, "v2:\n:\n12"),
+			true,
+		}, {
+			"Both empty",
+			getPatchOrDie(t, "v1:\n:\n8"),
+			getPatchOrDie(t, "v1:\n:\n8"),
+			"baseText",
+			getPatchOrDie(t, "v2:\n:\n8"),
+			getPatchOrDie(t, "v2:\n:\n8"),
+			true,
+		},
+	}
+	runTests(t, tests)
+}
+
 func TestTransform1A(t *testing.T) {
 	tests := []transformationTest{
 		{

@@ -51,10 +51,14 @@ func TransformPatches(patchX *Patch, patchY *Patch) (*TransformResult, error) {
 			}
 		} else {
 			// last no-op
-			prev := patchX.Changes[patchX.Changes.Len()-1]
-			noOpXLen = patchX.DocLength - prev.StartIndex
-			if !prev.Insertion {
-				noOpXLen -= prev.Length()
+			if patchX.Changes.Len() != 0 {
+				prev := patchX.Changes[patchX.Changes.Len()-1]
+				noOpXLen = patchX.DocLength - prev.StartIndex
+				if !prev.Insertion {
+					noOpXLen -= prev.Length()
+				}
+			} else {
+				noOpXLen = patchX.DocLength
 			}
 			diffX = nil
 		}
@@ -77,10 +81,14 @@ func TransformPatches(patchX *Patch, patchY *Patch) (*TransformResult, error) {
 			}
 		} else {
 			// last no-op
-			prev := patchY.Changes[patchY.Changes.Len()-1]
-			noOpYLen = patchY.DocLength - prev.StartIndex
-			if !prev.Insertion {
-				noOpYLen -= prev.Length()
+			if patchY.Changes.Len() != 0 {
+				prev := patchY.Changes[patchY.Changes.Len()-1]
+				noOpYLen = patchY.DocLength - prev.StartIndex
+				if !prev.Insertion {
+					noOpYLen -= prev.Length()
+				}
+			} else {
+				noOpYLen = patchY.DocLength
 			}
 			diffY = nil
 		}
