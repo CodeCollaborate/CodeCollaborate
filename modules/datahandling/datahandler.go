@@ -64,7 +64,7 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 			utils.LogError("getFullRequest failed for Register/Login", err, nil)
 		} else {
 			utils.LogError("getFullRequest failed", err, utils.LogFields{
-				"Request": req,
+				"Request": string(message),
 			})
 		}
 		if err == ErrAuthenticationFailed {
