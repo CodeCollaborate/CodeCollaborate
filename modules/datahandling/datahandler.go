@@ -6,6 +6,8 @@ import (
 	"crypto/rand"
 	"sync"
 
+	"strings"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -38,9 +40,12 @@ type DataHandler struct {
 func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
-	utils.LogDebug("Received Message", utils.LogFields{
-		"Message": string(message),
-	})
+	// Ignore any request that has a password JSON field
+	if !strings.Contains(strings.ToLower(string(message)), "\"password\":") {
+		utils.LogDebug("Received Message", utils.LogFields{
+			"Message": string(message),
+		})
+	}
 
 	req, err := createAbstractRequest(message)
 	if err != nil {
@@ -54,9 +59,14 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 	var closures []dhClosure
 
 	if err != nil {
-		utils.LogError("getFullRequest failed", err, utils.LogFields{
-			"Request": req,
-		})
+		// Ignore requests where there
+		if req.Resource == "User" && (req.Method == "Register" || req.Method == "Login") {
+			utils.LogError("getFullRequest failed for Register/Login", err, nil)
+		} else {
+			utils.LogError("getFullRequest failed", err, utils.LogFields{
+				"Request": req,
+			})
+		}
 		if err == ErrAuthenticationFailed {
 			utils.LogDebug("User not logged in", utils.LogFields{
 				"Resource": req.Resource,
