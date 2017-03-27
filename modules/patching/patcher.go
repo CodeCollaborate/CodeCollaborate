@@ -49,14 +49,13 @@ func PatchText(text string, patches []*Patch) (string, error) {
 
 			noOpLength = diff.StartIndex
 			if prevDiff != nil {
-				// Min of (diff.StartIndex - prevDiff.StartIndex) and (diff.StartIndex - prevEndIndex)
-				noOpLength = diff.StartIndex - prevDiff.StartIndex
-				if diff.StartIndex-prevEndIndex < noOpLength {
-					noOpLength = diff.StartIndex - prevEndIndex
-				}
-				// Max of 0, noOpLength
-				if noOpLength < 0 {
-					noOpLength = 0
+				if prevDiff.Insertion || prevDiff.StartIndex == diff.StartIndex {
+					noOpLength = diff.StartIndex - prevDiff.StartIndex
+				} else {
+					if prevDiff.StartIndex+prevDiff.Length() > diff.StartIndex {
+						return "", errors.New("Attempted to modify diff within range of previous deletion")
+					}
+					noOpLength = diff.StartIndex - (prevDiff.StartIndex + prevDiff.Length())
 				}
 			}
 

@@ -67,9 +67,9 @@ func TestFilePatcher_ApplyPatch(t *testing.T) {
 		},
 		{
 			desc:     "Single Patch, Delete+Insert",
-			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm:\n10"),
+			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n4:+2:lm:\n10"),
 			text:     "test",
-			expected: "tlmt",
+			expected: "ttlm",
 		},
 		{
 			desc:     "Double Patch, Single Insertions, 1 first",
@@ -97,7 +97,7 @@ func TestFilePatcher_ApplyPatch(t *testing.T) {
 		},
 		{
 			desc:     "Double Patch, Delete-Inserts",
-			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm:\n10", "v1:\n0:-2:tl,\n3:+2:kk:\n10"),
+			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n3:+2:lm:\n10", "v1:\n0:-2:tl,\n3:+2:kk:\n10"),
 			text:     "test",
 			expected: "mkkt",
 		},
@@ -109,7 +109,7 @@ func TestFilePatcher_ApplyPatch(t *testing.T) {
 		},
 		{
 			desc:     "Double Patch, Delete-Insert, Insert-Delete",
-			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n2:+2:lm:\n10", "v1:\n0:-2:tl,\n3:+2:kk:\n10"),
+			patches:  getPatchesOrDie(t, "v0:\n1:-2:es,\n3:+2:lm:\n10", "v1:\n0:-2:tl,\n3:+2:kk:\n10"),
 			text:     "test",
 			expected: "mkkt",
 		},
