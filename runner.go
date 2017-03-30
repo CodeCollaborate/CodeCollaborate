@@ -1,18 +1,19 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-
-	"fmt"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/handlers"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
 	"github.com/CodeCollaborate/Server/utils"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 /**
@@ -60,15 +61,16 @@ func main() {
 
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
-	addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port)
+	addr := fmt.Sprintf(":%d", cfg.ServerConfig.Port)
 
-	_, certErr := os.Stat("config/TLS/cert.pem")
-	_, keyErr := os.Stat("config/TLS/key.pem")
+	//_, certErr := os.Stat("config/TLS/cert.pem")
+	//_, keyErr := os.Stat("config/TLS/key.pem")
 
-	useTLS := certErr == nil && keyErr == nil
+	//useTLS := certErr == nil && keyErr == nil
 	utils.LogInfo("Starting server", utils.LogFields{
 		"Address": addr,
-		"TLS":     useTLS,
+		"Host":    cfg.ServerConfig.Host,
+		"TLS":     cfg.ServerConfig.UseTLS,
 	})
 
 	go func() {
@@ -81,10 +83,27 @@ func main() {
 		}
 	}()
 
-	if useTLS {
-		err = http.ListenAndServeTLS(addr, "config/TLS/cert.pem", "config/TLS/key.pem", nil)
+	if cfg.ServerConfig.UseTLS {
+		// Run server on 443 as well, to allow Let's Encrypt to validate
+		//go func() {
+		//	http.ListenAndServe(":443", nil)
+		//}()
+		dirCache := autocert.DirCache("certs")
+		certManager := autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(cfg.ServerConfig.Host), //your domain here
+			Cache:      dirCache,                                      //folder for storing certificates
+		}
+
+		server := &http.Server{
+			Addr: addr,
+			TLSConfig: &tls.Config{
+				GetCertificate: certManager.GetCertificate,
+			},
+		}
+
+		server.ListenAndServeTLS("", "") //key and cert are comming from Let's Encrypt
 	} else {
-		utils.LogWarn("No Cert/Key pair found; starting without TLS", nil)
 		err = http.ListenAndServe(addr, nil)
 	}
 
