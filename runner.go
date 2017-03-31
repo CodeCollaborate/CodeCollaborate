@@ -84,10 +84,6 @@ func main() {
 	}()
 
 	if cfg.ServerConfig.UseTLS {
-		// Run server on 443 as well, to allow Let's Encrypt to validate
-		//go func() {
-		//	http.ListenAndServe(":443", nil)
-		//}()
 		dirCache := autocert.DirCache("certs")
 		certManager := autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
