@@ -52,6 +52,8 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 	defer wsConn.Close()
 	cfg := config.GetConfig()
 
+	// TODO: Send data blob
+
 	// Generate unique ID for this websocket
 	wsID := atomic.AddUint64(&atomicIDCounter, 1)
 
