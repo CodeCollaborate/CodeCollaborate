@@ -26,6 +26,37 @@ func (slice Diffs) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
+// Simplify merges deletion slice within this patch.
+// This does not merge insertions, because insertions within the same patch are not actually adjacent
+// due to the character that is in between.
+func (slice Diffs) Simplify() Diffs {
+	if len(slice) == 0 {
+		return slice
+	}
+
+	result := Diffs{}
+	result = append(result, slice[0].clone())
+
+	for i, j := 1, 0; i < len(slice); i++ {
+		if slice[i] == nil {
+			break
+		}
+		curr := slice[i]
+		prev := result[j]
+
+		if !curr.Insertion && !prev.Insertion && prev.StartIndex+prev.Length() == curr.StartIndex {
+			prev.Changes = prev.Changes + curr.Changes
+		} else if curr.Insertion && prev.Insertion && prev.StartIndex == curr.StartIndex {
+			prev.Changes = prev.Changes + curr.Changes
+		} else {
+			j++
+			result = append(result, curr.clone())
+		}
+	}
+
+	return result
+}
+
 // Diff represents a single change in the document.
 type Diff struct {
 	Insertion  bool
@@ -145,11 +176,6 @@ func (diff *Diff) ConvertToLF(base string) *Diff {
 	return NewDiff(diff.Insertion, newStartIndex, newChanges)
 }
 
-// Undo reverses this diff, producing a diff to undo the changes done by applying the diff.
-func (diff *Diff) Undo() *Diff {
-	return NewDiff(!diff.Insertion, diff.StartIndex, diff.Changes)
-}
-
 // OffsetDiff shifts the start index of this diff by the provided offset
 func (diff *Diff) OffsetDiff(offset int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex+offset, diff.Changes)
@@ -167,131 +193,6 @@ func (diff *Diff) subChangesEndingAt(end int) *Diff {
 	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes[:end])
 }
 
-func (diff *Diff) transform(others Diffs, othersHavePrecedence bool) Diffs {
-	intermediateDiffs := Diffs{}
-	intermediateDiffs = append(intermediateDiffs, diff)
-
-	for _, other := range others {
-		newIntermediateDiffs := Diffs{}
-		for _, current := range intermediateDiffs {
-			switch {
-			// CASE 1: IndexA < IndexB
-			case other.StartIndex < current.StartIndex:
-				switch {
-				// CASES 1a, 1b: Ins - Ins, Ins - Rmv
-				case other.Insertion && current.Insertion, other.Insertion && !current.Insertion:
-					newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
-				// CASE 1c: Rmv - Ins
-				case !other.Insertion && current.Insertion:
-					newIntermediateDiffs = doTransform(transformType3, newIntermediateDiffs, current, other)
-				// CASE 1d: Rmv - Rmv
-				case !other.Insertion && !current.Insertion:
-					newIntermediateDiffs = doTransform(transformType4, newIntermediateDiffs, current, other)
-				// Fail; should never have gotten to here.
-				default:
-					panic(fmt.Sprintf("Got to invalid state while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
-				}
-			// CASE 2: IndexA = IndexB
-			case other.StartIndex == current.StartIndex:
-				switch {
-				// CASE 2a: Ins - Ins
-				case other.Insertion && current.Insertion:
-					if othersHavePrecedence {
-						newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
-					} else {
-						newIntermediateDiffs = doTransform(transformType1, newIntermediateDiffs, current, other)
-					}
-				// CASE 2b: Ins - Rmv
-				case other.Insertion && !current.Insertion:
-					newIntermediateDiffs = doTransform(transformType2, newIntermediateDiffs, current, other)
-				// CASE 2c: Rmv - Ins
-				case !other.Insertion && current.Insertion:
-					newIntermediateDiffs = doTransform(transformType1, newIntermediateDiffs, current, other)
-				// CASE 2d: Rmv - Ins
-				case !other.Insertion && !current.Insertion:
-					newIntermediateDiffs = doTransform(transformType5, newIntermediateDiffs, current, other)
-				// Fail; should never have gotten to here.
-				default:
-					panic(fmt.Sprintf("Got to invalid state while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
-				}
-			// CASE 3: IndexA > IndexB
-			case other.StartIndex > current.StartIndex:
-				switch {
-				// CASES 3a, 3c: Ins - Ins, Rmv - Ins
-				case other.Insertion && current.Insertion, !other.Insertion && current.Insertion:
-					newIntermediateDiffs = doTransform(transformType1, newIntermediateDiffs, current, other)
-				// CASE 3b: Ins - Rmv
-				case other.Insertion && !current.Insertion:
-					newIntermediateDiffs = doTransform(transformType6, newIntermediateDiffs, current, other)
-				// CASE 3d: Rmv - Rmv
-				case !other.Insertion && !current.Insertion:
-					newIntermediateDiffs = doTransform(transformType7, newIntermediateDiffs, current, other)
-				// Fail; should never have gotten to here.
-				default:
-					panic(fmt.Sprintf("Got to invalid state while transforming [%s] on predessor [%+v], from list [%+v]", current.String(), other, others))
-				}
-			}
-		}
-		intermediateDiffs = newIntermediateDiffs
-	}
-	return intermediateDiffs
-}
-
-func doTransform(transformFunc func(current, other *Diff) Diffs, currResults Diffs, current, other *Diff) Diffs {
-	return append(currResults, transformFunc(current, other)...)
-}
-
-func transformType1(current, other *Diff) Diffs {
-	return Diffs{current}
-}
-
-func transformType2(current, other *Diff) Diffs {
-	return Diffs{current.OffsetDiff(other.Length())}
-}
-
-func transformType3(current, other *Diff) Diffs {
-	if (other.StartIndex + other.Length()) > current.StartIndex {
-		return Diffs{current.OffsetDiff(-(current.StartIndex - other.StartIndex))}
-	}
-	return Diffs{current.OffsetDiff(-other.Length())}
-}
-
-func transformType4(current, other *Diff) Diffs {
-	if (other.StartIndex + other.Length()) <= current.StartIndex {
-		return Diffs{current.OffsetDiff(-other.Length())}
-	} else if (other.StartIndex + other.Length()) >= (current.StartIndex + current.Length()) {
-		return Diffs{} // Ignore change
-	}
-	overlap := other.StartIndex + other.Length() - current.StartIndex
-	newDiff := current.OffsetDiff(-other.Length() + overlap)
-	newDiff = newDiff.subChangesStartingFrom(overlap)
-	return Diffs{newDiff}
-}
-
-func transformType5(current, other *Diff) Diffs {
-	if current.Length() > other.Length() {
-		return Diffs{current.subChangesStartingFrom(other.Length())}
-	} // Else do nothing; already done by previous patch.
-	return Diffs{}
-}
-
-func transformType6(current, other *Diff) Diffs {
-	if (current.StartIndex + current.Length()) > other.StartIndex {
-		length1 := other.StartIndex - current.StartIndex
-
-		diff1 := current.subChangesEndingAt(length1)
-		diff2 := current.subChangesStartingFrom(length1).OffsetDiff(other.Length())
-
-		return Diffs{diff1, diff2}
-	}
-	return Diffs{current}
-}
-
-func transformType7(current, other *Diff) Diffs {
-	if (current.StartIndex + current.Length()) > other.StartIndex {
-		nonOverlap := other.StartIndex - current.StartIndex
-
-		return Diffs{current.subChangesEndingAt(current.Length() - nonOverlap)}
-	}
-	return Diffs{current}
+func (diff *Diff) clone() *Diff {
+	return NewDiff(diff.Insertion, diff.StartIndex, diff.Changes)
 }

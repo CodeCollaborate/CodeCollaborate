@@ -185,10 +185,10 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 
 	di.CBDeleteFile(file.FileID)
 
-	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1", originalFileVersion-1)
-	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2", originalFileVersion-1)
-	patch3 := fmt.Sprintf("v%d:\n3:+6:patch3", originalFileVersion)
-	patch4 := fmt.Sprintf("v%d:\n4:+6:patch4", originalFileVersion)
+	patch1 := fmt.Sprintf("v%d:\n1:+6:patch1:\n4", originalFileVersion-1)
+	patch2 := fmt.Sprintf("v%d:\n2:+6:patch2:\n10", originalFileVersion-1)
+	patch3 := fmt.Sprintf("v%d:\n3:+6:patch3:\n4", originalFileVersion)
+	patch4 := fmt.Sprintf("v%d:\n4:+6:patch4:\n4", originalFileVersion)
 
 	// although these are not valid patches, this is purely a test of the logic, not of the patching
 	// because of that this might fail in the future
@@ -199,7 +199,7 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	changes, _, pulledVersion, _, err := di.PullChanges(file)
 	assert.Equal(t, originalFileVersion, pulledVersion, "failed set up verification")
 
-	transformed, version, missing, lenChanges, err := di.CBAppendFileChange(file, []string{patch3})
+	transformed, version, missing, lenChanges, err := di.CBAppendFileChange(file, patch3)
 	assert.NoError(t, err, "unexpected error appending changes")
 	assert.Empty(t, missing, "Unexpected missing patches")
 
@@ -215,14 +215,13 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	assert.Equal(t, patch1, changes[0], "first change was not correct")
 	assert.Equal(t, patch2, changes[1], "second change was not correct")
 
-	assert.Len(t, transformed, 1, "returned unexpected number of transformed new changes")
-	assert.EqualValues(t, transformed[0], changes[2], "newly inserted change was not correct")
+	assert.EqualValues(t, transformed, changes[2], "newly inserted change was not correct")
 
 	// Expect AppendFileChange to transform patch4, since it was based on the version created by patch2
 	changes, _, pulledVersion, _, err = di.PullChanges(file)
 	assert.Equal(t, pulledVersion, version, "version pulled from the database does not match the one given when appending the change")
 
-	transformed, version, missing, lenChanges, err = di.CBAppendFileChange(file, []string{patch4})
+	transformed, version, missing, lenChanges, err = di.CBAppendFileChange(file, patch4)
 	assert.NoError(t, err, "unexpected error appending changes")
 
 	assert.Len(t, missing, 1, "Unexpected number of missing patches")
@@ -241,8 +240,7 @@ func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {
 	assert.Equal(t, patch2, changes[1], "second change was not correct")
 	assert.Equal(t, patch3, changes[2], "third change was not correct")
 
-	assert.Len(t, transformed, 1, "returned unexpected number of transformed new changes")
-	assert.EqualValues(t, transformed[0], changes[3], "newly inserted change was not correct")
+	assert.EqualValues(t, transformed, changes[3], "newly inserted change was not correct")
 
 	ver, err := di.CBGetFileVersion(file.FileID)
 	assert.EqualValues(t, 4, ver, "wrong file version")

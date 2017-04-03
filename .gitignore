@@ -45,3 +45,4 @@ data
 *.swp
 /.vscode/
 /bin/
+*.bkpignore

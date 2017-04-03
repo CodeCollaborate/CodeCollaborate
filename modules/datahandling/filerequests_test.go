@@ -251,8 +251,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	req.Resource = "File"
 	req.Method = "Change"
 	req.FileID = fileid
-	req.Changes = []string{"v0:\n0:+1:a"}
-
+	req.Changes = "v0:\n0:+1:a:\n10"
 	baseFileVersion := int64(1)
 
 	db.FunctionCallCount = 0
@@ -288,12 +287,12 @@ func TestFileChangeRequest_Process(t *testing.T) {
 		t.Fatal("wrong FileID recieved in notification")
 	}
 
-	changes := reflect.ValueOf(closure.msg.ServerMessage.(messages.Notification).Data).FieldByName("Changes").Interface().([]string)
-	if changes[0] != req.Changes[0] {
+	changes := reflect.ValueOf(closure.msg.ServerMessage.(messages.Notification).Data).FieldByName("Changes").Interface().(string)
+	if changes != req.Changes {
 		t.Fatal("wrong changes recieved in notification")
 	}
 
-	if db.FileChanges[fileid][0] != changes[0] {
+	if db.FileChanges[fileid][0] != changes {
 		t.Fatal("changes not inserted")
 	}
 
@@ -304,7 +303,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 
 	// try the request again to prove that it rejects higher file versions
 
-	req.Changes = []string{"v9999:\n0:+1:a"}
+	req.Changes = "v9999:\n0:+1:a:\n10"
 	db.FunctionCallCount = 0
 
 	closures, err = req.process(db)
@@ -340,7 +339,7 @@ func TestFilePullRequest_Process(t *testing.T) {
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectID)
 	db.FileWrite("./", "new file", projectID, []byte{})
 
-	changes := []string{"v0:\n0:+1:a"}
+	changes := "v0:\n0:+1:a:\n10"
 	db.CBAppendFileChange(dbfs.FileMeta{FileID: fileid}, changes)
 
 	req.Resource = "File"
@@ -373,7 +372,7 @@ func TestFilePullRequest_Process(t *testing.T) {
 
 	// is the data actually correct
 	fileChanges := reflect.ValueOf(resp.Data).FieldByName("Changes").Interface().([]string)
-	if changes[0] != fileChanges[0] {
+	if changes != fileChanges[0] {
 		t.Fatalf("wrong file changes, expected: %v, got: %v", changes, fileChanges)
 	}
 }

@@ -80,6 +80,13 @@
 			"tree": true
 		},
 		{
+			"checksumSHA1": "rG2lDtRjWtji8JUE6LXiiKzziQs=",
+			"path": "golang.org/x/crypto/acme",
+			"revision": "3cb07270c9455e8ad27956a70891c962d121a228",
+			"revisionTime": "2017-03-30T16:02:45Z",
+			"tree": true
+		},
+		{
 			"checksumSHA1": "vE43s37+4CJ2CDU6TlOUOYE0K9c=",
 			"path": "golang.org/x/crypto/bcrypt",
 			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
@@ -91,6 +98,13 @@
 			"path": "golang.org/x/crypto/blowfish",
 			"revision": "6ab629be5e31660579425a738ba8870beb5b7404",
 			"revisionTime": "2016-09-19T18:57:51Z",
+			"tree": true
+		},
+		{
+			"checksumSHA1": "Y+HGqEkYM15ir+J93MEaHdyFy0c=",
+			"path": "golang.org/x/net/context",
+			"revision": "ffcf1bedda3b04ebb15a168a59800a73d6dc0f4d",
+			"revisionTime": "2017-03-29T01:43:45Z",
 			"tree": true
 		}
 	],

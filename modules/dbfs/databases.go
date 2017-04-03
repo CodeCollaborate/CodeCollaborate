@@ -43,7 +43,7 @@ type DBFS interface {
 
 	// CBAppendFileChange mutates the file document with the new change and sets the new version number
 	// Returns the new version number, the missing patches, the total count of patches tracked, and an error, if any.
-	CBAppendFileChange(file FileMeta, patches []string) ([]string, int64, []string, int, error)
+	CBAppendFileChange(file FileMeta, patches string) (string, int64, []string, int, error)
 
 	// MySQL
 

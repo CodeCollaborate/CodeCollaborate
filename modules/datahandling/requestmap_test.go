@@ -332,7 +332,7 @@ func TestFileChangeRequest(t *testing.T) {
 	req.Data = json.RawMessage("{" +
 		"\"FileID\": 12345," +
 		"\"FileVersion\": 25," +
-		"\"Changes\": [\"ok\", \"k\"]" +
+		"\"Changes\": \"ok\"" +
 		"}")
 
 	newRequest, err := getFullRequest(&req)

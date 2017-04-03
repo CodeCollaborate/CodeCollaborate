@@ -10,6 +10,7 @@ import (
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/CodeCollaborate/Server/utils"
 	"github.com/couchbase/gocb"
+	"github.com/davecgh/go-spew/spew"
 )
 
 type couchbaseConn struct {
@@ -155,18 +156,26 @@ func (di *DatabaseImpl) CBGetFileVersion(fileID int64) (int64, error) {
 
 // CBAppendFileChange mutates the file document with the new change and sets the new version number
 // Returns the new version number, the missing patches, the total count of patches tracked, and an error, if any.
-func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) ([]string, int64, []string, int, error) {
+func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patchStr string) (string, int64, []string, int, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
-		return nil, -1, nil, 0, err
+		return "", -1, nil, 0, err
 	}
 
 	// optimistic locking operation
 	// check the version is accurate and get the object's cas,
 	// then use it in the MutateIn call to verify the document hasn't updated underneath us
-	prevChanges, cas, version, useTemp, err := di.PullChanges(fileMeta)
+	prevChangeStrs, cas, version, useTemp, err := di.PullChanges(fileMeta)
 	if err != nil {
-		return nil, -1, nil, 0, err
+		return "", -1, nil, 0, err
+	}
+
+	prevChanges, err := patching.GetPatches(prevChangeStrs)
+	if err != nil {
+		utils.LogError("Failed to parse previous changes into patch objects", err, utils.LogFields{
+			"PrevChanges": prevChangeStrs,
+		})
+		return "", -1, nil, 0, err
 	}
 
 	if cas == uint64(0) {
@@ -177,175 +186,149 @@ func (di *DatabaseImpl) CBAppendFileChange(fileMeta FileMeta, patches []string) 
 	}
 
 	minVersion := version
-	if len(prevChanges) > 0 {
-		startPatch, err := patching.NewPatchFromString(prevChanges[0])
+	if len(prevChangeStrs) > 0 {
+		startPatch, err := patching.NewPatchFromString(prevChangeStrs[0])
 		if err != nil {
-			return nil, -1, nil, 0, ErrInternalServerError
+			utils.LogError("Failed to parse first patch", err, utils.LogFields{
+				"PatchStr": prevChangeStrs[0],
+			})
+			return "", -1, nil, 0, ErrInternalServerError
 		}
 
 		// Allow transform-patches to start on the same base version as the head (after linearization, we have all the necessary patches)
 		minVersion = startPatch.BaseVersion
 	}
 	minStartIndex := int64(math.MaxInt64)
-	transformedPatches := []string{}
-	prevChangesCopy := make([]string, len(prevChanges))
-	copy(prevChangesCopy, prevChanges)
+	prevChangesCopy := make([]string, len(prevChangeStrs))
+	copy(prevChangesCopy, prevChangeStrs)
 
 	// Build patch, transform changes against newer changes.
-	for _, changeStr := range patches {
-		change, err := patching.NewPatchFromString(changeStr)
-		if err != nil {
-			return nil, -1, nil, 0, errors.New("Failed to parse patch")
-		}
-
-		// For every patch, calculate the patches that it does not have.
-		utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
-			"Version":     version,
-			"BaseVersion": change.BaseVersion,
-			"Diff":        int(version - change.BaseVersion),
-			"Len":         len(prevChanges),
-			"ChangeStr":   changeStr,
-			"PrevChanges": prevChanges,
-			"minVersion":  minVersion,
-		})
-
-		//startIndex := len(prevChanges) - int(version-change.BaseVersion)
-		//if startIndex < 0 {
-		//	utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
-		//	return nil, -1, nil, ErrVersionOutOfDate
-		//}
-
-		startIndex := int64(len(prevChanges) - 1)
-
-		if change.BaseVersion > version {
-			// check to make sure the patch is being applied to the most recent revision
-			utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, 0, ErrVersionOutOfDate
-		} else if change.BaseVersion == version {
-			// If we are building on the server's base version, don't need to transform.
-			startIndex = int64(len(prevChanges))
-		} else if change.BaseVersion < minVersion {
-			// if it's less than the minVersion, we've scrunched.
-			utils.LogError("BaseVersion less than minVersion", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, 0, ErrVersionOutOfDate
-		} else if change.BaseVersion == minVersion {
-			// If it's equal to the minVersion, we use the entire array
-			startIndex = int64(0)
-		} else {
-			// Otherwise, find the right starting point
-			startIndex = int64(len(prevChanges)) - (version - change.BaseVersion)
-			for startIndex >= 0 && startIndex < int64(len(prevChanges)) {
-				otherPatch, err := patching.NewPatchFromString(prevChanges[startIndex])
-
-				if err != nil {
-					return nil, -1, nil, 0, ErrInternalServerError
-				}
-
-				if change.BaseVersion > otherPatch.BaseVersion {
-					break
-				} else {
-					startIndex--
-				}
-			}
-			startIndex++ // go back to the actual base version
-		}
-
-		// If it's negative at this point, it means we started off with an index that was less than -1.
-		// In other words, we've probably scrunched the changes we're looking for.
-		if startIndex < 0 {
-			utils.LogError("StartIndex was negative", ErrVersionOutOfDate, nil)
-			return nil, -1, nil, 0, ErrVersionOutOfDate
-		}
-
-		if startIndex < minStartIndex {
-			minStartIndex = startIndex
-		}
-
-		utils.LogDebug("FINISHED CHECKING", utils.LogFields{
-			"Change":     changeStr,
-			"StartIndex": startIndex,
-			"Len":        len(prevChanges),
-		})
-
-		// Apply patches from the change's baseVersion onwards
-		toApply := prevChanges[startIndex:]
-
-		utils.LogDebug("TRANSFORMING", utils.LogFields{
-			"PatchesToApply": toApply,
-			"Change":         changeStr,
-			"StartIndex":     startIndex,
-			"Len":            len(prevChanges),
-		})
-
-		transformedPatch, err := change.TransformFromString(toApply, false) // rewrite change with transformed patch
-		if err != nil {
-			return nil, -1, nil, 0, ErrInternalServerError // Could not parse one of the old patches - should never happen.
-		}
-
-		// Transform against new patch; new patch has precedence.
-		// This allows multiple patches constructing a single block of text to stay together. (17/01/13)
-		for i := 0; i < len(toApply); i++ {
-			donePatch, err := patching.NewPatchFromString(toApply[i])
-			if err != nil {
-				return nil, -1, nil, 0, ErrInternalServerError
-			}
-
-			// Maintain donePatch's base version, so we don't mess anything up.
-			donePatchBaseVersion := donePatch.BaseVersion
-			donePatch = donePatch.Transform([]*patching.Patch{donePatch}, true)
-			donePatch.BaseVersion = donePatchBaseVersion
-
-			toApply[i] = donePatch.String()
-		}
-
-		// Update the BaseVersion to be be the previous change
-		//transformedPatch.BaseVersion++
-		transformedPatches = append(transformedPatches, transformedPatch.String())
+	change, err := patching.NewPatchFromString(patchStr)
+	if err != nil {
+		return "", -1, nil, 0, errors.New("Failed to parse patch")
 	}
 
-	/*
-		// THIS BLOCK OF CODE HAS BEEN DISABLED BECAUSE PATCH CONSOLIDATION DOES NOT WORK AS EXPECTED
-		// For this to correctly work, a new OT-like algorithm will need to be implemented.
+	// For every patch, calculate the patches that it does not have.
+	utils.LogDebug("CHANGES VERSIONS", utils.LogFields{
+		"Version":     version,
+		"BaseVersion": change.BaseVersion,
+		"Diff":        int(version - change.BaseVersion),
+		"Len":         len(prevChangeStrs),
+		"ChangeStr":   patchStr,
+		"minVersion":  minVersion,
+	})
 
-		var consolidatedPatch *patching.Patch
-		for _, transformed := range transformedPatches {
-			if consolidatedPatch == nil {
-				consolidatedPatch = transformed
+	//startIndex := len(prevChangeStrs) - int(version-change.BaseVersion)
+	//if startIndex < 0 {
+	//	utils.LogError("StartIndex is negative", ErrVersionOutOfDate, nil)
+	//	return nil, -1, nil, ErrVersionOutOfDate
+	//}
+
+	startIndex := int64(len(prevChangeStrs) - 1)
+
+	if change.BaseVersion > version {
+		// check to make sure the patch is being applied to the most recent revision
+		utils.LogError("BaseVersion too high", ErrVersionOutOfDate, nil)
+		return "", -1, nil, 0, ErrVersionOutOfDate
+	} else if change.BaseVersion == version {
+		// If we are building on the server's base version, don't need to transform.
+		startIndex = int64(len(prevChangeStrs))
+	} else if change.BaseVersion < minVersion {
+		// if it's less than the minVersion, we've scrunched.
+		utils.LogError("BaseVersion less than minVersion", ErrVersionOutOfDate, nil)
+		return "", -1, nil, 0, ErrVersionOutOfDate
+	} else if change.BaseVersion == minVersion {
+		// If it's equal to the minVersion, we use the entire array
+		startIndex = int64(0)
+	} else {
+		// Otherwise, find the right starting point
+		startIndex = int64(len(prevChangeStrs)) - (version - change.BaseVersion)
+		for startIndex >= 0 && startIndex < int64(len(prevChangeStrs)) {
+			otherPatch, err := patching.NewPatchFromString(prevChangeStrs[startIndex])
+			if err != nil {
+				utils.LogError("Failed to parse patch", err, utils.LogFields{
+					"PatchStr":   strings.Replace(prevChangeStrs[startIndex], "\n", "\\n", -1),
+					"StartIndex": startIndex,
+				})
+				return "", -1, nil, 0, ErrInternalServerError
+			}
+
+			if change.BaseVersion > otherPatch.BaseVersion {
+				break
 			} else {
-				hoistedPatch := transformed.Transform([]*patching.Patch{consolidatedPatch.Undo()})
-				newChanges := append(consolidatedPatch.Changes, hoistedPatch.Changes...)
-				sort.Sort(newChanges)
-				consolidatedPatch.Changes = newChanges
+				startIndex--
 			}
 		}
+		startIndex++ // go back to the actual base version
+	}
 
-		// use the cas to make sure the document hasn't changed
-		builder := cb.bucket.MutateIn(key, cas, 0)
+	// If it's negative at this point, it means we started off with an index that was less than -1.
+	// In other words, we've probably scrunched the changes we're looking for.
+	if startIndex < 0 {
+		utils.LogError("StartIndex was negative", ErrVersionOutOfDate, nil)
+		return "", -1, nil, 0, ErrVersionOutOfDate
+	}
 
-		if !useTemp {
-			builder.ArrayAppend("changes", consolidatedPatch.String(), false)
-		} else {
-			builder.ArrayAppend("tempchanges", consolidatedPatch.String(), false)
+	if startIndex < minStartIndex {
+		minStartIndex = startIndex
+	}
+
+	utils.LogDebug("FINISHED CHECKING", utils.LogFields{
+		"Change":     patchStr,
+		"StartIndex": startIndex,
+		"Len":        len(prevChangeStrs),
+	})
+
+	// Apply patches from the change's baseVersion onwards
+	toApply := prevChangeStrs[startIndex:]
+
+	utils.LogDebug("TRANSFORMING", utils.LogFields{
+		"PatchesToApply": toApply,
+		"Change":         patchStr,
+		"StartIndex":     startIndex,
+		"Len":            len(prevChangeStrs),
+	})
+
+	transformedPatch := change
+	if startIndex != int64(len(prevChangeStrs)) {
+		consolidatedPatch, err := patching.ConsolidatePatches(prevChanges[startIndex:])
+		if err != nil {
+			utils.LogError("Failed to consolidate patches", err, utils.LogFields{
+				"Patch":       strings.Replace(change.String(), "\n", "\\n", -1),
+				"prevChanges": strings.Replace(spew.Sprint(prevChanges), "\n", "\\n", -1),
+			})
 		}
-	*/
+
+		transformResults, err := patching.TransformPatches(change, consolidatedPatch)
+		if err != nil {
+			utils.LogError("Failed to transform patch", err, utils.LogFields{
+				"Patch":             strings.Replace(change.String(), "\n", "\\n", -1),
+				"consolidatedPatch": strings.Replace(consolidatedPatch.String(), "\n", "\\n", -1),
+			})
+			return "", -1, nil, 0, err
+		}
+
+		transformedPatch = transformResults.PatchXPrime
+		transformedPatch.BaseVersion = version
+	}
 
 	// use the cas to make sure the document hasn't changed
 	builder := cb.bucket.MutateIn(strconv.FormatInt(fileMeta.FileID, 10), gocb.Cas(cas), 0)
 
 	if !useTemp {
-		builder.ArrayAppendMulti("changes", transformedPatches, false)
+		builder.ArrayAppendMulti("changes", []string{transformedPatch.String()}, false)
 	} else {
-		builder.ArrayAppendMulti("tempchanges", transformedPatches, false)
+		builder.ArrayAppendMulti("tempchanges", []string{transformedPatch.String()}, false)
 	}
 
 	builder = builder.Counter("version", 1, false)
 
 	_, err = builder.Execute()
 	if err != nil {
-		return nil, -1, nil, 0, err
+		return "", -1, nil, 0, err
 	}
 
 	// TODO: Evaluate whether prevChangesCopy is the correct item to send back
 	// use prevChangesCopy, so we don't send back the transformed patch set
-	return transformedPatches, version + 1, prevChangesCopy[minStartIndex:], len(prevChanges) + len(transformedPatches), err
+	return transformedPatch.String(), version + 1, prevChangesCopy[minStartIndex:], len(prevChangeStrs) + 1, err
 }

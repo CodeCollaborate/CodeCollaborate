@@ -18,9 +18,11 @@ type Config struct {
 // ServerCfg contains various config items that pertain to the server
 type ServerCfg struct {
 	Name            string
+	Host            string
 	Port            uint16
 	ProjectPath     string
 	DisableAuth     bool
+	UseTLS          bool
 	LogLevel        string
 	TokenValidity   string
 	MinBufferLength int

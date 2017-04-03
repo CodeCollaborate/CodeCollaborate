@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-
-	"github.com/CodeCollaborate/Server/utils"
+	"strings"
+	"unicode/utf8"
 )
 
 // PatchTextFromString applies the provided patches onto the given text. The patches are applied strictly in the order given.
@@ -23,46 +23,71 @@ func PatchTextFromString(text string, patchesStr []string) (string, error) {
 	return PatchText(text, patches)
 }
 
+// ErrorIllegalLocation is the error thrown if a diff attempts to insert in an invalid location, such as between an \r and \n
+var ErrorIllegalLocation = errors.New("Attempted to apply diff at an illegal lcoation")
+
 // PatchText applies the provided patches onto the given text. The patches are applied strictly in the order given.
 // This method completes in O(n*m) time, where n is the base text length, and m is the number of patches.
 func PatchText(text string, patches []*Patch) (string, error) {
+	useCRLF := strings.Contains(text, "\r\n")
+
 	for _, patch := range patches {
+		noOpLength := 0
+		prevEndIndex := 0
+		var prevDiff *Diff
 		var buffer bytes.Buffer
-		startIndex := 0
+
+		if useCRLF {
+			patch.ConvertToCRLF(text)
+		}
+
 		for _, diff := range patch.Changes {
-			if startIndex < 0 || startIndex >= len(text) || diff.StartIndex < 0 {
-				utils.LogError("PatchText: Encountered invalid diff", errors.New("Slice out of bounds"), utils.LogFields{
-					"Diff":  diff,
-					"Patch": patch,
-					"Text":  text,
-				})
-				return "", fmt.Errorf("Invalid patch range: [%d, %d] for text length %d", startIndex, diff.StartIndex, len(text))
+			if diff.StartIndex > 0 && diff.StartIndex < utf8.RuneCountInString(text) &&
+				text[diff.StartIndex-1] == '\r' && text[diff.StartIndex] == '\n' {
+				return "", ErrorIllegalLocation
 			}
-			// Copy anything before the changes
-			if startIndex < diff.StartIndex {
-				buffer.WriteString(text[startIndex:diff.StartIndex])
+
+			noOpLength = diff.StartIndex
+			if prevDiff != nil {
+				if prevDiff.Insertion || prevDiff.StartIndex == diff.StartIndex {
+					noOpLength = diff.StartIndex - prevDiff.StartIndex
+				} else {
+					if prevDiff.StartIndex+prevDiff.Length() > diff.StartIndex {
+						return "", errors.New("Attempted to modify diff within range of previous deletion")
+					}
+					noOpLength = diff.StartIndex - (prevDiff.StartIndex + prevDiff.Length())
+				}
 			}
+
+			// Copy any text that is untouched
+			if noOpLength > 0 {
+				buffer.WriteString(text[prevEndIndex : prevEndIndex+noOpLength])
+			}
+
 			if diff.Insertion {
-				// insert item
+				// Commit insertion
 				buffer.WriteString(diff.Changes)
 
-				// If the diff's startIndex is greater, move it up.
-				// Otherwise, a previous delete may have deleted over the start index.
-				if startIndex < diff.StartIndex {
-					startIndex = diff.StartIndex
-				}
+				// End index is incremented only by the no-op length;
+				// insertions do not change the index in the original text
+				prevEndIndex += noOpLength
 			} else {
-				// validate that we're deleting the right characters
-				if want, got := diff.Changes, text[diff.StartIndex:diff.StartIndex+diff.Length()]; want != got {
-					return "", fmt.Errorf("PatchText: Deleted text %q does not match changes in diff: %q", got, want)
-				}
+				// Move to start of deletion
+				prevEndIndex += noOpLength
 
-				// shift the start index of the next round
-				startIndex = diff.StartIndex + diff.Length()
+				if text[prevEndIndex:prevEndIndex+diff.Length()] != diff.Changes {
+					return "", fmt.Errorf("PatchText: Deleted text [%s] does not match changes in diff: [%s]", text[prevEndIndex:prevEndIndex+diff.Length()], diff.Changes)
+				}
+				// Skip past the text that is deleted
+				prevEndIndex += diff.Length()
 			}
+			prevDiff = diff
 		}
+
 		// Copy the remainder
-		buffer.WriteString(text[startIndex:])
+		if prevEndIndex < len(text) {
+			buffer.WriteString(text[prevEndIndex:])
+		}
 		text = buffer.String()
 	}
 

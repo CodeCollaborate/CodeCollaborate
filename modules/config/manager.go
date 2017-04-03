@@ -77,6 +77,7 @@ func EnableLoggingToFile(logDir string) {
 		logFile := filepath.Join(logDir, fmt.Sprintf("%d.%02d.%02d.%02d.%02d.log", time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().Hour(), time.Now().Minute()))
 
 		log.Infof("Logging to %s", logFile)
+		log.SetFormatter(&log.JSONFormatter{})
 		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE, 0755)
 		if err != nil {
 			log.Error("Failed to setup logging to file")

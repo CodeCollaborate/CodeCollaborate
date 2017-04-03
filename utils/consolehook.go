@@ -13,6 +13,8 @@ func MakeConsoleHook() *ConsoleHook {
 	consoleLog.Out = os.Stdout
 	// text formatter w/ color if it's supported
 	consoleLog.Formatter = &logrus.TextFormatter{}
+	// Set debug level of this console logger
+	consoleLog.Level = logrus.DebugLevel
 	return &ConsoleHook{logger: consoleLog}
 }
 
@@ -26,7 +28,7 @@ func (hook *ConsoleHook) Fire(entry *logrus.Entry) error {
 	if entry.Logger.Level >= entry.Level {
 		switch entry.Level {
 		case logrus.DebugLevel:
-			hook.logger.WithFields(entry.Data).Debug(entry.Data)
+			hook.logger.WithFields(entry.Data).Debug(entry.Message)
 		case logrus.InfoLevel:
 			hook.logger.WithFields(entry.Data).Info(entry.Message)
 		case logrus.WarnLevel:
@@ -36,7 +38,7 @@ func (hook *ConsoleHook) Fire(entry *logrus.Entry) error {
 		case logrus.FatalLevel:
 			hook.logger.WithFields(entry.Data).Fatal(entry.Message)
 		case logrus.PanicLevel:
-			hook.logger.WithFields(entry.Data).Panic(entry.Level)
+			hook.logger.WithFields(entry.Data).Panic(entry.Message)
 		}
 	}
 	return nil

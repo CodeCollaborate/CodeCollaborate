@@ -9,12 +9,14 @@ import (
 	"time"
 
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var defaultBaseFile = "this is a very important file"
-var defaultChanges = []string{"v0:\n1:+5:test1", "v1:\n10:+5:test2"}
-var transformedChanges = []string{"v0:\n1:+5:test1", "v1:\n10:+5:test2"}
+var defaultChanges = []string{"v0:\n1:+5:test1:\n10", "v1:\n10:+5:test2:\n10"}
+var transformedChanges = []string{"v0:\n1:+5:test1:\n10", "v1:\n10:+5:test2:\n10"}
 
 func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseImpl, FileMeta) {
 	testConfigSetup(t)
@@ -36,7 +38,7 @@ func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseIm
 	assert.NoError(t, err, "error writing file to disk")
 
 	for _, change := range baseChanges {
-		_, _, _, _, err = di.CBAppendFileChange(file, []string{change})
+		_, _, _, _, err = di.CBAppendFileChange(file, change)
 		assert.NoError(t, err, "error appending change to file")
 	}
 
@@ -64,14 +66,14 @@ func TestDatabaseImpl_ScrunchFile(t *testing.T) {
 
 	for i := 0; i < 50; i++ {
 		if i < 10 {
-			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d", i, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+1:%d:\n10", i, i)
 		} else {
-			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d", i, i)
+			patches[i] = fmt.Sprintf("v%d:\n2:+2:%d:\n10", i, i)
 		}
 	}
 
 	for i := 0; i < 5; i++ {
-		resultPatches[i] = fmt.Sprintf("v%d:\n2:+2:%d", i+45, i+45)
+		resultPatches[i] = fmt.Sprintf("v%d:\n2:+2:%d:\n10", i+45, i+45)
 	}
 
 	expectedOutput.WriteString("te")
@@ -110,7 +112,7 @@ func TestDatabaseImpl_GetForScrunching(t *testing.T) {
 	assert.NoError(t, err, "error getting swp or changes")
 
 	assert.Len(t, changes, 1, "changes size was an unexpected length")
-	assert.Contains(t, changes, defaultChanges[0], "changes didn't contain correct change")
+	assert.Contains(t, changes, transformedChanges[0], "changes didn't contain correct change")
 
 	assert.EqualValues(t, string(swp), string(defaultBaseFile), "swp file was not cloned properly")
 
@@ -145,24 +147,28 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	defer os.RemoveAll(config.GetConfig().ServerConfig.ProjectPath)
 	defer di.CBDeleteFile(file.FileID)
 
-	newChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
-	transformedNewChanges := []string{"v2:\n2:+1:2", "v2:\n2:+1:3", "v3:\n2:+1:4", "v4:\n2:+1:4", "v5:\n2:+1:5", "v6:\n2:+1:6", "v7:\n2:+1:7", "v8:\n2:+1:8", "v8:\n2:+1:9", "v8:\n2:+2:10"}
+	newChanges := []string{"v2:\n2:+1:2:\n10", "v2:\n2:+1:3:\n10", "v3:\n2:+1:4:\n10", "v4:\n2:+1:4:\n10", "v5:\n2:+1:5:\n10", "v6:\n2:+1:6:\n10", "v7:\n2:+1:7:\n10", "v8:\n2:+1:8:\n10", "v8:\n2:+1:9:\n10", "v8:\n2:+2:10:\n10"}
+	transformedNewChanges := []string{"v2:\n2:+2:32:\n10", "v3:\n2:+1:4:\n10", "v4:\n2:+1:4:\n10", "v5:\n2:+1:5:\n10", "v6:\n2:+1:6:\n10", "v7:\n2:+1:7:\n10", "v8:\n2:+4:1098:\n10"}
 	newRawFile := []byte(string(defaultBaseFile) + "\nit's a pretty cool file, not going to lie\n")
 
 	checkPullFile(t, di, file, transformedChanges, defaultBaseFile)
 
 	// add more changes so it's more visible
-	appendChangeToFile(t, di, newChanges[:2])
+	patches, err := patching.GetPatches(newChanges[:2])
+	require.Nil(t, err)
+	patch, err := patching.ConsolidatePatches(patches)
+	require.Nil(t, err)
+	appendChangeToFile(t, di, patch.String())
 
-	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[0]), defaultBaseFile)
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), defaultBaseFile)
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:1]...), defaultBaseFile)
 
 	// arbitrarily saying we're going to scrunch off 2 patches
-	num := 2
+	num := len(defaultChanges)
+	rem := 1
 
 	// make sure they're right
 	//changes1, raw1, err := di.getForScrunching(file, 1)
-	changes1, raw1, err := di.getForScrunching(file, num)
+	changes1, raw1, err := di.getForScrunching(file, rem)
 	assert.NoError(t, err, "error getting changes for scrunching")
 	assert.EqualValues(t, string(defaultBaseFile), string(raw1), "swap was not made correctly")
 	assert.Len(t, changes1, num, "pulled wrong number of changes")
@@ -174,7 +180,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// check pull file (expecting old + new changes w/ old base)
 	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:1]...), string(defaultBaseFile))
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:1]...), string(defaultBaseFile))
 
 	// START DELETE
 	cb, err := di.openCouchBase()
@@ -190,9 +196,9 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	nativeErr(t, err)
 
 	// add change
-	appendChangeToFile(t, di, newChanges[2:3])
+	appendChangeToFile(t, di, newChanges[2])
 	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:2]...), string(defaultBaseFile))
 
 	// get changes in normal changes
 	frag, err := cb.bucket.LookupIn(key).Get("changes").Execute()
@@ -203,9 +209,9 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	nativeErr(t, err)
 
 	// add change
-	appendChangeToFile(t, di, newChanges[3:4])
+	appendChangeToFile(t, di, newChanges[3])
 	//checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
-	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:4]...), string(defaultBaseFile))
+	checkPullFile(t, di, file, append(transformedChanges, transformedNewChanges[:3]...), string(defaultBaseFile))
 
 	// turn off writing to TempChanges & reset normal changes
 	builder = cb.bucket.MutateIn(key, 0, 0)
@@ -218,9 +224,9 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// add change
 	// check switched to swap
-	appendChangeToFile(t, di, newChanges[4:5])
+	appendChangeToFile(t, di, newChanges[4])
 	//checkPullFile(t, di, file, transformedNewChanges[:4], string(newRawFile))
-	checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
+	checkPullFile(t, di, file, transformedNewChanges[:4], string(newRawFile))
 
 	// get changes in TempChanges
 	frag, err = cb.bucket.LookupIn(key).Get("tempchanges").Execute()
@@ -232,17 +238,17 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 
 	// add change
 	// check switched to swap
-	appendChangeToFile(t, di, newChanges[5:6])
+	appendChangeToFile(t, di, newChanges[5])
 	//checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
-	checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
+	checkPullFile(t, di, file, transformedNewChanges[:5], string(newRawFile))
 
 	err = di.swapSwp(file.RelativePath, file.Filename, file.ProjectID)
 	assert.NoError(t, err, "Error swapping swap file, NOTE: the server WOULD normally be able to recover from here")
 
 	// add change
-	appendChangeToFile(t, di, newChanges[6:7])
+	appendChangeToFile(t, di, newChanges[6])
 	//checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
-	checkPullFile(t, di, file, transformedNewChanges[:7], string(newRawFile))
+	checkPullFile(t, di, file, transformedNewChanges[:6], string(newRawFile))
 
 	// prepend changes and reset temporarily stored changes
 	builder = cb.bucket.MutateIn(key, 0, 0)
@@ -257,7 +263,11 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	assert.NoError(t, err, "Error deleting swap file, NOTE: the server WOULD normally be able to recover from here")
 
 	// add change
-	appendChangeToFile(t, di, newChanges[7:])
+	patches, err = patching.GetPatches(newChanges[7:])
+	require.Nil(t, err)
+	patch, err = patching.ConsolidatePatches(patches)
+	require.Nil(t, err)
+	appendChangeToFile(t, di, patch.String())
 	checkPullFile(t, di, file, transformedNewChanges, string(newRawFile))
 }
 
@@ -265,8 +275,8 @@ func nativeErr(t *testing.T, err error) {
 	assert.NoError(t, err, "error in naitive di.DeleteForScrunching code")
 }
 
-func appendChangeToFile(t *testing.T, di *DatabaseImpl, changes []string) {
-	_, _, _, _, err := di.CBAppendFileChange(file, changes)
+func appendChangeToFile(t *testing.T, di *DatabaseImpl, change string) {
+	_, _, _, _, err := di.CBAppendFileChange(file, change)
 	assert.NoError(t, err, "Error while appending more changes")
 }
 

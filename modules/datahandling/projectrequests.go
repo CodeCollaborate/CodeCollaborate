@@ -185,6 +185,13 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
+	// Prevent users from changing their own permissions
+	if p.SenderID == p.GrantUsername {
+		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
+	}
+
+	// TODO: Add if User exists check
+
 	requestPerm, err := config.PermissionByLevel(p.PermissionLevel)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
