@@ -80,6 +80,10 @@ func main() {
 			utils.LogError("Failed to start pprof", err, utils.LogFields{
 				"Address": addr,
 			})
+		} else {
+			utils.LogError("pprof debugging server started at 0.0.0.0:8000", err, utils.LogFields{
+				"Address": addr,
+			})
 		}
 	}()
 
