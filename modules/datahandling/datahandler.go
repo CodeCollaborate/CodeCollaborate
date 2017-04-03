@@ -1,11 +1,6 @@
 package datahandling
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"sync"
-
 	"strings"
 
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
@@ -14,15 +9,6 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 )
 
-var privKey *ecdsa.PrivateKey
-
-func init() {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	utils.LogFatal("Failed to generate signing key", err, nil)
-
-	privKey = key
-}
-
 /**
  * Data Handling logic for the CodeCollaborate Server.
  */
@@ -30,16 +16,12 @@ func init() {
 // DataHandler handles the json data received from the WebSocket connection.
 type DataHandler struct {
 	MessageChan chan<- rabbitmq.AMQPMessage
-	WebsocketID uint64
 	Db          dbfs.DBFS
 }
 
 // Handle takes the MessageType and message in byte-array form,
 // processing the data, and updating DBFS/RabbitMQ as needed.
-// the waitgroup allows the websocket manager to know when all requests have completed processing
-func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup) error {
-	defer wg.Done()
-
+func (dh DataHandler) Handle(message []byte, origin string, ack func() error) error {
 	// Ignore any request that has a password JSON field
 	if !strings.Contains(strings.ToLower(string(message)), "\"password\":") {
 		utils.LogDebug("Received Message", utils.LogFields{
@@ -50,6 +32,7 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 	req, err := createAbstractRequest(message)
 	if err != nil {
 		utils.LogError("Failed to parse json", err, nil) // Do not log request since passwords may be sent
+		ack()
 		return err
 	}
 
@@ -57,7 +40,6 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 	fullRequest, err := getFullRequest(req)
 
 	var closures []dhClosure
-
 	if err != nil {
 		// Ignore requests where there
 		if req.Resource == "User" && (req.Method == "Register" || req.Method == "Login") {
@@ -71,28 +53,31 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 			utils.LogDebug("User not logged in", utils.LogFields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
+				"SenderID": req.SenderID,
+				"Error":    err,
 			})
+			ack()
 			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, req.Tag)}}
 		} else {
 			utils.LogDebug("No such resource/method", utils.LogFields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
+			ack()
 			closures = []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnimplemented, req.Tag)}}
 		}
 	} else {
-		closures, err = fullRequest.process(dh.Db)
+		closures, err = fullRequest.process(dh.Db, ack)
 		if err != nil {
 			utils.LogError("Failed to process request", err, utils.LogFields{
 				"Resource": req.Resource,
 				"Method":   req.Method,
 			})
-			// TODO: forward error message onto client? (or at least inform that error occurred)
 		}
 	}
 
 	for _, closure := range closures {
-		err := closure.call(dh)
+		err := closure.call(dh, origin)
 		if err != nil {
 			utils.LogError("Failed to complete continuation", err, utils.LogFields{
 				"Resource": req.Resource,

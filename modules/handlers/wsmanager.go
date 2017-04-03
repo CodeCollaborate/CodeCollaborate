@@ -3,16 +3,15 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"sync"
 	"sync/atomic"
+	"time"
 
-	"github.com/CodeCollaborate/Server/modules/config"
-	"github.com/CodeCollaborate/Server/modules/datahandling"
-	"github.com/CodeCollaborate/Server/modules/dbfs"
-	"github.com/CodeCollaborate/Server/modules/rabbitmq"
-	"github.com/CodeCollaborate/Server/utils"
 	"github.com/gorilla/websocket"
 	"github.com/kr/pretty"
+
+	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/rabbitmq"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 /**
@@ -62,15 +61,17 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 		msg.ErrHandler()
 	}, outboundMessageQueueBufferSize)
 
+	defer close(pubCfg.Messages)
+
 	subCfg := &rabbitmq.AMQPSubCfg{
-		QueueID:     wsID,
+		QueueName:   rabbitmq.LocalWebsocketName(wsID),
 		Keys:        []string{},
 		IsWorkQueue: false,
 	}
 
 	pubSubCfg := rabbitmq.NewAMQPPubSubCfg(cfg.ServerConfig.Name, pubCfg, subCfg)
 
-	subCfg.HandleMessageFunc = newAMQPMessageHandler(wsID, pubSubCfg, wsConn)
+	subCfg.HandleMessageFunc = newClientMessageHandler(pubSubCfg, wsConn)
 
 	go func() {
 		err := rabbitmq.RunPublisher(pubSubCfg)
@@ -89,43 +90,45 @@ func NewWSConn(responseWriter http.ResponseWriter, request *http.Request) {
 
 	pubSubCfg.Control.Ready.Wait()
 
-	// we don't actually need more than 1 datahandler per websocket
-	dh := datahandling.DataHandler{
-		MessageChan: pubCfg.Messages,
-		WebsocketID: wsID,
-		Db:          dbfs.Dbfs,
-	}
-
-	// Waitgroup to make sure channel is closed at appropriate time.
-	dhCompleted := &sync.WaitGroup{}
-
-loop:
+msgLoop:
 	for {
 		select {
 		case <-pubSubCfg.Control.Exit:
-			break loop
+			break msgLoop
 		default:
-			messageType, message, err := wsConn.ReadMessage()
+			_, message, err := wsConn.ReadMessage()
 			if err != nil {
+				if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseMessage, websocket.CloseNoStatusReceived) {
+					break msgLoop
+				}
 				utils.LogError("Failed to read message, terminating connection", err, nil)
 				pubSubCfg.Control.Shutdown()
-				break loop
+				break msgLoop
 			}
 
-			dhCompleted.Add(1)
-			go dh.Handle(messageType, message, dhCompleted)
+			err = WorkerEnqueue(message, wsID)
+			if err != nil {
+				utils.LogError("Failed to enqueue to worker, retrying", err, nil)
+
+				time.Sleep(1 * time.Second)
+				err = WorkerEnqueue(message, wsID)
+				if err != nil {
+					utils.LogFatal("Failed to enqueue to worker", err, nil)
+				}
+			}
 		}
 	}
-
-	// Wait for all datahandlers to complete before closing channel
-	dhCompleted.Wait()
-	close(pubCfg.Messages)
 }
 
-func newAMQPMessageHandler(websocketID uint64, cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
-	queueName := rabbitmq.RabbitWebsocketQueueName(websocketID)
+func newClientMessageHandler(cfg *rabbitmq.AMQPPubSubCfg, wsConn *websocket.Conn) func(rabbitmq.AMQPMessage) error {
+	queueName := cfg.SubCfg.QueueName
 
 	return func(msg rabbitmq.AMQPMessage) error {
+		err := msg.Ack() // ack early b/c regardless the outcome here we don't want to re-enqueue
+		utils.LogFatal("Error Ack'ing RabbitMQ message", err, utils.LogFields{
+			"Message": string(msg.Message),
+		}) // only happens if we disconnect from rabbit
+
 		switch msg.ContentType {
 		case rabbitmq.ContentTypeMsg:
 			// If notification with self as origin, early-out; ignore our own notifications.
@@ -143,11 +146,11 @@ func newAMQPMessageHandler(websocketID uint64, cfg *rabbitmq.AMQPPubSubCfg, wsCo
 			rch := rabbitmq.RabbitCommandHandler{
 				ExchangeName: cfg.ExchangeName,
 				WSConn:       wsConn,
-				WSID:         cfg.SubCfg.QueueID,
+				QueueName:    cfg.SubCfg.QueueName,
 			}
 			return rch.HandleCommand(msg)
 		default:
-			err := errors.New("No such ContentType")
+			err := errors.New("Unnable to process RabbitMQ message type")
 			utils.LogError("Invalid ContentType", err, utils.LogFields{
 				"AMQPMessage": pretty.Sprint(msg),
 			})

@@ -65,7 +65,9 @@ func (f *fileCreateRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f fileCreateRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	hasPermission, err := dbfs.PermissionAtLeast(f.SenderID, f.ProjectID, "write", db)
 	if err != nil || !hasPermission {
 		utils.LogError("API permission error", err, utils.LogFields{
@@ -131,7 +133,9 @@ func (f *fileRenameRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f fileRenameRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
@@ -184,7 +188,9 @@ func (f *fileMoveRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f fileMoveRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
@@ -236,7 +242,9 @@ func (f *fileDeleteRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f fileDeleteRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
@@ -293,11 +301,12 @@ func (f *fileChangeRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f fileChangeRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
 	// This has to be before the CouchBase append, to make sure that the the two databases are kept in sync.
 	// Specifically, this prevents CouchBase from incrementing a version number without the notifications being sent out.
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
+		ack()
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
@@ -309,8 +318,12 @@ func (f fileChangeRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			"SenderID":  f.SenderID,
 			"ProjectID": fileMeta.ProjectID,
 		})
+		ack()
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, f.Tag)}}, nil
 	}
+
+	// TODO: verify that acking before is the right decision
+	ack() // ack just before appending so if it fails in the middle it doesn't re-enqueue it
 
 	// TODO (normal/optional): verify changes are valid changes
 	changes, version, missing, numchanges, err := db.CBAppendFileChange(fileMeta, f.Changes)
@@ -369,7 +382,9 @@ func (f *filePullRequest) setAbstractRequest(req *abstractRequest) {
 	f.abstractRequest = *req
 }
 
-func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+func (f filePullRequest) process(db dbfs.DBFS, ack func() error) ([]dhClosure, error) {
+	defer ack() // ack regardless of success or failure
+
 	fileMeta, err := db.MySQLFileGetInfo(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err

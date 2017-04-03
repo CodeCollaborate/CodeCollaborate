@@ -14,7 +14,7 @@ import (
 // Request should be implemented by all request models.
 // Provides standard interface for calling the processing
 type request interface {
-	process(db dbfs.DBFS) (continuations []dhClosure, err error)
+	process(db dbfs.DBFS, ack func() error) (continuations []dhClosure, err error)
 	setAbstractRequest(absReq *abstractRequest)
 }
 

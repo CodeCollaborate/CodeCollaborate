@@ -7,6 +7,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime"
 
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -22,6 +23,9 @@ import (
 
 var logDir = flag.String("log_dir", "./data/logs/", "log file location")
 
+// note that runtime.NumCPU() is set to `runtime.GOMAXPROCS` by default
+var workerPrefetch = flag.Int("worker_prefetch", runtime.NumCPU(), "number of entries that should be prefetched from RabbitMQ")
+
 func main() {
 	flag.Parse()
 
@@ -31,6 +35,17 @@ func main() {
 		utils.LogFatal("Failed to load configuration", err, nil)
 	}
 	cfg := config.GetConfig()
+
+	go func() {
+		// enable profiling to `:(port)/debug/pprof/`
+		addr := fmt.Sprintf("0.0.0.0:%d", cfg.ServerConfig.Port+1)
+		err := http.ListenAndServe(addr, nil)
+		if err != nil {
+			utils.LogError("Failed to start pprof", err, utils.LogFields{
+				"Address": addr,
+			})
+		}
+	}()
 
 	// Get working directory
 	dir, err := os.Getwd()
@@ -42,6 +57,11 @@ func main() {
 
 	// Creates a NewControl block for multithreading control
 	AMQPControl := utils.NewControl(1)
+
+	// Kill the SetupRabbitExchange thread (Multithreading control)
+	defer func() {
+		AMQPControl.Exit <- true
+	}()
 
 	// RabbitMQ uses "Exchanges" as containers for Queues, and ours is initialized here.
 	rabbitmq.SetupRabbitExchange(
@@ -57,7 +77,8 @@ func main() {
 		},
 	)
 
-	dbfs.Dbfs = new(dbfs.DatabaseImpl)
+	dbfsImpl := new(dbfs.DatabaseImpl)
+	handlers.StartWorker(dbfsImpl, *workerPrefetch)
 
 	http.HandleFunc("/ws/", handlers.NewWSConn)
 
@@ -108,9 +129,4 @@ func main() {
 	}
 
 	utils.LogError("Could not bind to port", err, nil)
-
-	// Kill the SetupRabbitExchange thread (Multithreading control)
-	defer func() {
-		AMQPControl.Exit <- true
-	}()
 }
