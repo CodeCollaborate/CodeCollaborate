@@ -2,7 +2,6 @@ package dbfs
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"time"
 
@@ -85,24 +84,19 @@ func (di *DatabaseImpl) getForScrunching(fileMeta FileMeta, remainder int) ([]st
 	if err != nil {
 		return []string{}, []byte{}, err
 	}
-	fileKey := strconv.FormatInt(fileMeta.FileID, 10)
 
-	frag, err := cb.bucket.LookupIn(fileKey).Get("changes").Execute()
+	fileData, err := cb.couchbaseDocumentStore.GetFileData(fileMeta.FileID)
 	if err != nil {
 		return []string{}, []byte{}, ErrResourceNotFound
 	}
 
-	changes := []string{}
-	err = frag.Content("changes", &changes)
-	if err != nil {
-		return []string{}, []byte{}, ErrResourceNotFound
-	}
+	changes := fileData.Changes
 
 	if len(changes)-(remainder+1) < 0 {
 		return []string{}, []byte{}, ErrNoDbChange
 	}
 
-	err = di.scrunchingAddLock(fileKey)
+	err = di.scrunchingAddLock(strconv.FormatInt(fileMeta.FileID, 10))
 	if err != nil {
 		// If it finds a document, we're already scrunching and it will fail (because insert, not upsert).
 		// Unfortunately, couchbase doesn't have any better way to tell if a key exists,
@@ -133,24 +127,20 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 
 	// turn on writing to TempChanges
 	builder := cb.bucket.MutateIn(fileKey, 0, 0)
-	builder = builder.Upsert("tempchanges", []string{}, false)
-	builder = builder.Upsert("usetemp", true, false)
+	builder = builder.Upsert("TempChanges", []string{}, false)
+	builder = builder.Upsert("UseTemp", true, false)
 	_, err = builder.Execute()
 	if err != nil {
 		return err
 	}
 
 	// get changes in normal changes
-	frag, err := cb.bucket.LookupIn(fileKey).Get("changes").Execute()
+	fileData, err := cb.couchbaseDocumentStore.GetFileData(fileMeta.FileID)
 	if err != nil {
 		return err
 	}
 
-	changes := []string{}
-	err = frag.Content("changes", &changes)
-	if err != nil {
-		return ErrResourceNotFound
-	}
+	changes := fileData.Changes
 
 	if len(changes) <= num {
 		// somehow something scrunched this file at the same time
@@ -163,26 +153,22 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 
 	// turn off writing to TempChanges & reset normal changes
 	builder = cb.bucket.MutateIn(fileKey, 0, 0)
-	builder = builder.Upsert("remaining_changes", changes[num:], false)
-	builder = builder.Upsert("changes", []string{}, false)
-	builder = builder.Upsert("usetemp", false, false)
-	builder = builder.Upsert("pullswp", true, false)
+	builder = builder.Upsert("RemainingChanges", changes[num:], false)
+	builder = builder.Upsert("Changes", []string{}, false)
+	builder = builder.Upsert("UseTemp", false, false)
+	builder = builder.Upsert("PullSwp", true, false)
 	_, err = builder.Execute()
 	if err != nil {
 		return err
 	}
 
-	// get changes in TempChanges
-	frag, err = cb.bucket.LookupIn(fileKey).Get("tempchanges").Execute()
+	// get changes in temp changes
+	fileData, err = cb.couchbaseDocumentStore.GetFileData(fileMeta.FileID)
 	if err != nil {
 		return err
 	}
 
-	tempChanges := []string{}
-	err = frag.Content("tempchanges", &tempChanges)
-	if err != nil {
-		return ErrResourceNotFound
-	}
+	tempChanges := fileData.TempChanges
 
 	err = di.swapSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
@@ -193,10 +179,10 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 		})
 		// undo everything
 		builder = cb.bucket.MutateIn(fileKey, 0, 0)
-		builder = builder.ArrayPrependMulti("changes", append(changes, tempChanges...), false)
-		builder = builder.Upsert("remaining_changes", []string{}, false)
-		builder = builder.Upsert("tempchanges", []string{}, false)
-		builder = builder.Upsert("pullswp", false, false)
+		builder = builder.ArrayPrependMulti("Changes", append(changes, tempChanges...), false)
+		builder = builder.Upsert("RemainingChanges", []string{}, false)
+		builder = builder.Upsert("TempChanges", []string{}, false)
+		builder = builder.Upsert("PullSwp", false, false)
 		builder.Execute()
 		di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
 		return err
@@ -204,10 +190,10 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 
 	// prepend changes and reset temporarily stored changes
 	builder = cb.bucket.MutateIn(fileKey, 0, 0)
-	builder = builder.ArrayPrependMulti("changes", append(changes[num:], tempChanges...), false)
-	builder = builder.Upsert("remaining_changes", []string{}, false)
-	builder = builder.Upsert("tempchanges", []string{}, false)
-	builder = builder.Upsert("pullswp", false, false)
+	builder = builder.ArrayPrependMulti("Changes", append(changes[num:], tempChanges...), false)
+	builder = builder.Upsert("RemainingChanges", []string{}, false)
+	builder = builder.Upsert("TempChanges", []string{}, false)
+	builder = builder.Upsert("PullSwp", false, false)
 	_, err = builder.Execute()
 
 	err = di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
@@ -260,26 +246,18 @@ func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
 		return new([]byte), []string{}, err
 	}
 
-	file := cbFile{}
-	_, err = cb.bucket.Get(strconv.FormatInt(meta.FileID, 10), &file)
+	fileData, err := cb.couchbaseDocumentStore.GetFileData(meta.FileID)
 	if err != nil {
 		return new([]byte), []string{}, err
 	}
-	var changes []string
 
-	if file.PullSwp {
-		changes = append(file.RemainingChanges, file.TempChanges...)
-		changes = append(changes, file.Changes...)
-
+	changes := fileData.AggregatedChanges()
+	if fileData.PullSwp{
 		bytes, err := di.swapRead(meta.RelativePath, meta.Filename, meta.ProjectID)
 		if err != nil {
 			return new([]byte), []string{}, err
 		}
 		return bytes, changes, nil
-	} else if file.UseTemp {
-		changes = append(file.Changes, file.TempChanges...)
-	} else {
-		changes = file.Changes
 	}
 
 	bytes, err := di.FileRead(meta.RelativePath, meta.Filename, meta.ProjectID)
@@ -287,33 +265,4 @@ func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
 		return new([]byte), []string{}, err
 	}
 	return bytes, changes, err
-}
-
-// PullChanges pulls the changes from the databases and returns them along with the temporary lock value,
-// the file version, and the useTemp flag
-func (di *DatabaseImpl) PullChanges(meta FileMeta) ([]string, uint64, int64, bool, error) {
-	cb, err := di.openCouchBase()
-	if err != nil {
-		return []string{}, 0, math.MaxInt64, false, err
-	}
-
-	file := cbFile{}
-	cas, err := cb.bucket.Get(strconv.FormatInt(meta.FileID, 10), &file)
-	if err != nil {
-		return []string{}, 0, math.MaxInt64, false, err
-	}
-	var changes []string
-
-	if file.PullSwp {
-		changes = append(file.RemainingChanges, file.TempChanges...)
-		changes = append(changes, file.Changes...)
-
-		return changes, uint64(cas), file.Version, file.UseTemp, nil
-	} else if file.UseTemp {
-		changes = append(file.Changes, file.TempChanges...)
-	} else {
-		changes = file.Changes
-	}
-
-	return changes, uint64(cas), file.Version, file.UseTemp, err
 }

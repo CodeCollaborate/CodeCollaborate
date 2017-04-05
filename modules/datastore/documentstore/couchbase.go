@@ -19,6 +19,13 @@ import (
 type CouchbaseDocumentStore struct {
 	cfg    *config.ConnCfg
 	bucket *gocb.Bucket
+	locksBucket *gocb.Bucket
+}
+
+// GetBuckets is a temporary way to retrieve the two buckets, for the purpose of a bridge between the old DBFS
+// TODO(wongb): Delete me.
+func (store *CouchbaseDocumentStore) GetBuckets() (*gocb.Bucket, *gocb.Bucket){
+	return store.bucket, store.locksBucket
 }
 
 // NewCouchbaseDocumentStore creates a new instance of the CouchbaseDocumentStore, setting the configuration
@@ -30,7 +37,7 @@ func NewCouchbaseDocumentStore(cfg *config.ConnCfg) *CouchbaseDocumentStore {
 
 // Connect starts this CouchbaseDocumentStore's connection to the server
 func (store *CouchbaseDocumentStore) Connect() {
-	if store.bucket != nil {
+	if store.bucket != nil && store.locksBucket != nil {
 		return
 	}
 
@@ -69,13 +76,11 @@ func (store *CouchbaseDocumentStore) Connect() {
 		store.cfg.Schema = "documents"
 	}
 
-	var schemaBucket *gocb.Bucket
 	for i := 0; i < store.cfg.NumRetries; i++ {
-		schemaBucket, err = documentsCluster.OpenBucket(store.cfg.Schema, store.cfg.Password)
+		store.bucket, err = documentsCluster.OpenBucket(store.cfg.Schema, store.cfg.Password)
 
 		// If there was an error, try again after a few seconds
 		if err == nil {
-			store.bucket = schemaBucket
 			break
 		} else {
 			utils.LogError("Couchbase: failed to open bucket", err, utils.LogFields{
@@ -95,11 +100,47 @@ func (store *CouchbaseDocumentStore) Connect() {
 			"Attempts": store.cfg.NumRetries,
 		})
 	}
+
+	for i := 0; i < store.cfg.NumRetries; i++ {
+		store.locksBucket, err = documentsCluster.OpenBucket(store.cfg.Schema + "_scrunching_locks", store.cfg.Password)
+
+		// If there was an error, try again after a few seconds
+		if err == nil {
+			break
+		} else {
+			utils.LogError("Couchbase: failed to open locks bucket", err, utils.LogFields{
+				"Host":    store.cfg.Host,
+				"Port":    store.cfg.Port,
+				"Schema":  store.cfg.Schema,
+				"Attempt": i + 1,
+			})
+			time.Sleep(time.Duration(store.cfg.Timeout) * time.Second)
+		}
+	}
+	if err != nil {
+		// Also reset the bucket
+		store.bucket.Close()
+		store.bucket = nil
+		utils.LogFatal("Couchbase: failed to open locks bucket", err, utils.LogFields{
+			"Host":     store.cfg.Host,
+			"Port":     store.cfg.Port,
+			"Schema":   store.cfg.Schema,
+			"Attempts": store.cfg.NumRetries,
+		})
+	}
 }
 
 // Shutdown terminates this CouchbaseDocumentStore's connection to the server
 func (store *CouchbaseDocumentStore) Shutdown() {
-	store.bucket.Close()
+	if store.bucket != nil && store.locksBucket != nil {
+		store.bucket.Close()
+		store.bucket = nil
+
+		store.locksBucket.Close()
+		store.bucket = nil
+	} else {
+		utils.LogError("Close called on uninitialized CouchbaseDocumentStore", datastore.ErrInternalServerErr, nil)
+	}
 }
 
 // AddFileData stores the given FileData using the internal FileID
@@ -215,10 +256,11 @@ func (store *CouchbaseDocumentStore) AppendPatch(fileID int64, patch *patching.P
 		return nil, nil, err
 	}
 
-	prevPatches, err := patching.GetPatches(fileData.Changes)
+	// TODO(wongb): Pull file as well, attempt to apply the transformed patch, to make sure that it is valid; this prevents bad patches from going into the DB
+	prevPatches, err := patching.GetPatches(fileData.AggregatedChanges())
 	if err != nil {
 		utils.LogError("Failed to parse previous patches into patch objects", err, utils.LogFields{
-			"PrevPatches": fileData.Changes,
+			"PrevPatches": fileData.AggregatedChanges(),
 		})
 		return nil, nil, datastore.ErrInternalServerErr
 	}
@@ -269,9 +311,10 @@ func (store *CouchbaseDocumentStore) AppendPatch(fileID int64, patch *patching.P
 		}
 		toApply = prevPatches[startIndex:]
 	}
+	toApplyStr := fileData.AggregatedChanges()[len(fileData.AggregatedChanges())-len(toApply):]
 
 	utils.LogDebug("Transforming incoming patch against missing patches", utils.LogFields{
-		"PatchesToApply": toApply,
+		"PatchesToApply": strings.Replace(fmt.Sprint(toApplyStr), "\n", "\\n", -1),
 		"Change":         strings.Replace(patch.String(), "\n", "\\n", -1),
 	})
 
@@ -302,8 +345,17 @@ func (store *CouchbaseDocumentStore) AppendPatch(fileID int64, patch *patching.P
 
 	// use the cas to make sure the document hasn't changed
 	builder := store.bucket.MutateIn(strconv.FormatInt(fileData.FileID, 10), gocb.Cas(cas), 0)
-	builder.ArrayAppendMulti("Changes", []string{transformedPatch.String()}, false)
-	builder.Upsert("LastModifiedTime", time.Now().UnixNano()/int64(time.Millisecond), false)
+
+	updateTime := time.Now().UnixNano()
+	if fileData.UseTemp {
+		builder.ArrayAppendMulti("TempChanges", []string{transformedPatch.String()}, false)
+		fileData.TempChanges = append(fileData.TempChanges, transformedPatch.String())
+	} else {
+		builder.ArrayAppendMulti("Changes", []string{transformedPatch.String()}, false)
+		fileData.Changes = append(fileData.Changes, transformedPatch.String())
+	}
+
+	builder.Upsert("LastModifiedDate", updateTime, false)
 	builder = builder.Counter("Version", 1, false)
 
 	_, err = builder.Execute()
@@ -320,8 +372,8 @@ func (store *CouchbaseDocumentStore) AppendPatch(fileID int64, patch *patching.P
 		}
 	}
 
-	toApplyStr := fileData.Changes[len(fileData.Changes)-len(toApply):]
-	fileData.Changes = append(fileData.Changes, transformedPatch.String())
+	fileData.Version++
+	fileData.LastModifiedDate = updateTime
 
 	return fileData, toApplyStr, err
 }

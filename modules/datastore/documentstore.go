@@ -15,8 +15,28 @@ type FileData struct {
 	FileID              int64
 	Version             int64
 	Changes             []string
+	TempChanges         []string
+	RemainingChanges    []string
+	UseTemp             bool
+	PullSwp             bool
 	ScrunchedPatchCount int
 	LastModifiedDate    int64
+}
+
+// GetChanges aggregates the Changes, Temp and RemainingChanges
+func (fileData *FileData) AggregatedChanges() []string {
+	changes := []string{}
+
+	if fileData.PullSwp {
+		changes = append(fileData.RemainingChanges, fileData.TempChanges...)
+		changes = append(changes, fileData.Changes...)
+	} else if fileData.UseTemp {
+		changes = append(fileData.Changes, fileData.TempChanges...)
+	} else {
+		changes = fileData.Changes
+	}
+
+	return changes
 }
 
 // DocumentStore defines the interface for all document storage class datastores (Google Cloud Datastore, Amazon DynamoDB, etc)
