@@ -51,7 +51,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 			ready := make(chan bool)
 			go func() {
 				// Loop; if connection drops, we should try to restore connection before creating new channels.
-				retries := uint16(0)
+				retries := 0
 
 			redialLoop:
 				for {
@@ -149,7 +149,7 @@ func SetupRabbitExchange(cfg *AMQPConnCfg) error {
 	return nil
 }
 
-func getNewDialer(timeout uint16) func(network, addr string) (net.Conn, error) {
+func getNewDialer(timeout int) func(network, addr string) (net.Conn, error) {
 	if timeout == 0 {
 		timeout = defaultConnectionTimeout
 	}

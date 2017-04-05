@@ -143,13 +143,20 @@ func TestParseConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	tmpDatastoreConfigFileName := filepath.Join(tmpDir, "datastore.cfg")
+	datastoreContent := "{\"RelationalStoreName\":\"MySQL\",\"RelationalStoreCfg\":{\"Host\":\"mysqlHost\",\"Port\":3306,\"Username\":\"user1\",\"Password\":\"pw1\",\"Timeout\":5,\"NumRetries\":3,\"Schema\":\"cc\"},\"DocumentStoreName\":\"Couchbase\",\"DocumentStoreCfg\":{\"Host\":\"couchbase://couchbaseHost\",\"Port\":8092,\"Username\":\"user2\",\"Password\":\"pw2\",\"Timeout\":5,\"NumRetries\":3,\"Schema\":\"cc\"}}"
+	err = ioutil.WriteFile(tmpDatastoreConfigFileName, []byte(datastoreContent), 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	data, err = parseConfig(tmpDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	expected := &Config{
-		ServerConfig: ServerCfg{
+		ServerConfig: &ServerCfg{
 			Name: "CodeCollaborate",
 			Port: 80,
 		},
@@ -165,6 +172,28 @@ func TestParseConfig(t *testing.T) {
 				Port:     8092,
 				Username: "user2",
 				Password: "pw2",
+			},
+		},
+		DataStoreConfig: &DataStoreCfg{
+			RelationalStoreName: "MySQL",
+			RelationalStoreCfg: &ConnCfg{
+				Host:       "mysqlHost",
+				Port:       3306,
+				Username:   "user1",
+				Password:   "pw1",
+				Timeout:    5,
+				NumRetries: 3,
+				Schema:     "cc",
+			},
+			DocumentStoreName: "Couchbase",
+			DocumentStoreCfg: &ConnCfg{
+				Host:       "couchbase://couchbaseHost",
+				Port:       8092,
+				Username:   "user2",
+				Password:   "pw2",
+				Timeout:    5,
+				NumRetries: 3,
+				Schema:     "cc",
 			},
 		},
 	}

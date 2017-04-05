@@ -14,6 +14,10 @@ func ConsolidatePatches(patches []*Patch) (*Patch, error) {
 	patchA := patches[0]
 	// Consolidate first two patches, if there are any
 	for _, patchB := range patches[1:] {
+		if patchA.ResultVersion != patchB.BaseVersion {
+			return nil, errors.New("ConsolidatePatches: patchB not based on patchA")
+		}
+
 		indexA := -1
 		indexB := -1
 		resultDiffs := Diffs{}
@@ -137,7 +141,7 @@ func ConsolidatePatches(patches []*Patch) (*Patch, error) {
 				}
 			}
 		}
-		patchA = NewPatch(patchA.BaseVersion, resultDiffs, patchA.DocLength)
+		patchA = NewPatch(patchA.BaseVersion, patchB.ResultVersion, resultDiffs, patchA.DocLength)
 	}
 	return patchA, nil
 }

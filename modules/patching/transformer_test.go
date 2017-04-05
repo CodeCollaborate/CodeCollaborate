@@ -7,22 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getPatchOrDie(t *testing.T, patchStr string) *Patch {
-	patch, err := NewPatchFromString(patchStr)
-	require.Nil(t, err)
-
-	return patch
-}
-
 /**
  * Created by wongb on 3/25/17.
  */
 func TestPrecedence(t *testing.T) {
 
 	baseText := "abdeletion"
-	patchA, err := NewPatchFromString("v0:\n2:-8:deletion,\n2:+6:insert:\n10")
+	patchA, err := NewPatchFromString("v0:2:\n2:-8:deletion,\n2:+6:insert:\n10")
 	require.Nil(t, err)
-	patchB, err := NewPatchFromString("v0:\n10:+1:a:\n10")
+	patchB, err := NewPatchFromString("v0:2:\n10:+1:a:\n10")
 	require.Nil(t, err)
 
 	// Test with A having precedence
@@ -59,9 +52,9 @@ func TestOverlappingDeletes(t *testing.T) {
 		"\t\t2 = 1\n" +
 		"\t\tThis is definitely coherent.  DEFINITELY\n" +
 		"\t}"
-	patchA, err := NewPatchFromString("v557:\n0:-309:%0A%09Hello%2C+my+name+is+Ben.+This+is+a+test+of+whether+this+works+properly.%0A%09%0A%09Wow+eclipse+is+dumb.+It+changed+my+%22Properly%22+word+to+a+entire+public+main+method%0A%09testing%0A%09System.out.println%28%22Hellow+this+is+a+test%22%29%3B%0A%09%0A%09if+%28true+%3D%3D+false%29+%7B%0A%09%09do+all+the+things%0A%09%092+%3D+1%0A%09%09This+is+definitely+coherent.++DEFINITELY%0A%09%7D,\n0:+1:m:\n309")
+	patchA, err := NewPatchFromString("v557:558:\n0:-309:%0A%09Hello%2C+my+name+is+Ben.+This+is+a+test+of+whether+this+works+properly.%0A%09%0A%09Wow+eclipse+is+dumb.+It+changed+my+%22Properly%22+word+to+a+entire+public+main+method%0A%09testing%0A%09System.out.println%28%22Hellow+this+is+a+test%22%29%3B%0A%09%0A%09if+%28true+%3D%3D+false%29+%7B%0A%09%09do+all+the+things%0A%09%092+%3D+1%0A%09%09This+is+definitely+coherent.++DEFINITELY%0A%09%7D,\n0:+1:m:\n309")
 	require.Nil(t, err)
-	patchB, err := NewPatchFromString("v557:\n308:-1:%7D:\n309")
+	patchB, err := NewPatchFromString("v557:558:\n308:-1:%7D:\n309")
 	require.Nil(t, err)
 
 	// Test with A having precedence
@@ -137,28 +130,28 @@ func TestEmptyDiffs(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"DiffA empty",
-			getPatchOrDie(t, "v1:\n:\n8"),
-			getPatchOrDie(t, "v1:\n6:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n:\n8"),
+			GetPatchOrDie(t, "v1:2:\n6:+4:str2:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n:\n12"),
-			getPatchOrDie(t, "v2:\n6:+4:str2:\n8"),
+			GetPatchOrDie(t, "v2:4:\n:\n12"),
+			GetPatchOrDie(t, "v3:4:\n6:+4:str2:\n8"),
 			true,
 		}, {
 
 			"DiffB empty",
-			getPatchOrDie(t, "v1:\n0:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n:\n8"),
+			GetPatchOrDie(t, "v1:3:\n0:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n0:+4:str1:\n8"),
-			getPatchOrDie(t, "v2:\n:\n12"),
+			GetPatchOrDie(t, "v2:4:\n0:+4:str1:\n8"),
+			GetPatchOrDie(t, "v3:4:\n:\n12"),
 			true,
 		}, {
 			"Both empty",
-			getPatchOrDie(t, "v1:\n:\n8"),
-			getPatchOrDie(t, "v1:\n:\n8"),
+			GetPatchOrDie(t, "v1:3:\n:\n8"),
+			GetPatchOrDie(t, "v1:2:\n:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n:\n8"),
-			getPatchOrDie(t, "v2:\n:\n8"),
+			GetPatchOrDie(t, "v2:4:\n:\n8"),
+			GetPatchOrDie(t, "v3:4:\n:\n8"),
 			true,
 		},
 	}
@@ -169,19 +162,19 @@ func TestTransform1A(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Non-Overlapping strings",
-			getPatchOrDie(t, "v1:\n0:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n6:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n0:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n6:+4:str2:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n0:+4:str1:\n12"),
-			getPatchOrDie(t, "v2:\n10:+4:str2:\n12"),
+			GetPatchOrDie(t, "v2:4:\n0:+4:str1:\n12"),
+			GetPatchOrDie(t, "v3:4:\n10:+4:str2:\n12"),
 			true,
 		}, {
 			"Overlapping strings",
-			getPatchOrDie(t, "v1:\n2:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n4:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:3:\n4:+4:str2:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n2:+4:str1:\n12"),
-			getPatchOrDie(t, "v2:\n8:+4:str2:\n12"),
+			GetPatchOrDie(t, "v3:4:\n2:+4:str1:\n12"),
+			GetPatchOrDie(t, "v2:4:\n8:+4:str2:\n12"),
 			true,
 		},
 	}
@@ -192,20 +185,20 @@ func TestTransform1B(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Non-Overlapping strings",
-			getPatchOrDie(t, "v1:\n0:+2:s1:\n8"),
-			getPatchOrDie(t, "v1:\n4:-4:Text:\n8"),
+			GetPatchOrDie(t, "v1:3:\n0:+2:s1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:-4:Text:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n0:+2:s1:\n4"),
-			getPatchOrDie(t, "v2:\n6:-4:Text:\n10"),
+			GetPatchOrDie(t, "v2:4:\n0:+2:s1:\n4"),
+			GetPatchOrDie(t, "v3:4:\n6:-4:Text:\n10"),
 			true,
 		},
 		{
 			"Overlapping strings",
-			getPatchOrDie(t, "v1:\n2:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n4:-4:Text:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:3:\n4:-4:Text:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n2:+4:str1:\n4"),
-			getPatchOrDie(t, "v2:\n8:-4:Text:\n12"),
+			GetPatchOrDie(t, "v3:4:\n2:+4:str1:\n4"),
+			GetPatchOrDie(t, "v2:4:\n8:-4:Text:\n12"),
 			true,
 		},
 	}
@@ -217,20 +210,20 @@ func TestTransform1C(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Non-Overlapping strings",
-			getPatchOrDie(t, "v1:\n0:-2:ba:\n8"),
-			getPatchOrDie(t, "v1:\n4:+4:abcd:\n8"),
+			GetPatchOrDie(t, "v1:3:\n0:-2:ba:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:+4:abcd:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n0:-2:ba:\n12"),
-			getPatchOrDie(t, "v2:\n2:+4:abcd:\n6"),
+			GetPatchOrDie(t, "v2:4:\n0:-2:ba:\n12"),
+			GetPatchOrDie(t, "v3:4:\n2:+4:abcd:\n6"),
 			true,
 		},
 		{
 			"Overlapping strings",
-			getPatchOrDie(t, "v1:\n2:-4:seTe:\n8"),
-			getPatchOrDie(t, "v1:\n4:+4:abcd:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:-4:seTe:\n8"),
+			GetPatchOrDie(t, "v1:3:\n4:+4:abcd:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n2:-2:se,\n8:-2:Te:\n12"),
-			getPatchOrDie(t, "v2:\n2:+4:abcd:\n4"),
+			GetPatchOrDie(t, "v3:4:\n2:-2:se,\n8:-2:Te:\n12"),
+			GetPatchOrDie(t, "v2:4:\n2:+4:abcd:\n4"),
 			true,
 		},
 	}
@@ -242,38 +235,38 @@ func TestTransform1D(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Non-Overlapping strings",
-			getPatchOrDie(t, "v1:\n2:-4:str1:\n16"),
-			getPatchOrDie(t, "v1:\n8:-4:str2:\n16"),
+			GetPatchOrDie(t, "v1:3:\n2:-4:str1:\n16"),
+			GetPatchOrDie(t, "v1:2:\n8:-4:str2:\n16"),
 			"bastr1sestr2Text",
-			getPatchOrDie(t, "v2:\n2:-4:str1:\n12"),
-			getPatchOrDie(t, "v2:\n4:-4:str2:\n12"),
+			GetPatchOrDie(t, "v2:4:\n2:-4:str1:\n12"),
+			GetPatchOrDie(t, "v3:4:\n4:-4:str2:\n12"),
 			true,
 		},
 		{
 			"Non-Overlapping strings, adjacent",
-			getPatchOrDie(t, "v1:\n2:-4:str1:\n16"),
-			getPatchOrDie(t, "v1:\n6:-4:str2:\n16"),
+			GetPatchOrDie(t, "v1:2:\n2:-4:str1:\n16"),
+			GetPatchOrDie(t, "v1:3:\n6:-4:str2:\n16"),
 			"bastr1str2seText",
-			getPatchOrDie(t, "v2:\n2:-4:str1:\n12"),
-			getPatchOrDie(t, "v2:\n2:-4:str2:\n12"),
+			GetPatchOrDie(t, "v3:4:\n2:-4:str1:\n12"),
+			GetPatchOrDie(t, "v2:4:\n2:-4:str2:\n12"),
 			true,
 		},
 		{
 			"Overlapping strings",
-			getPatchOrDie(t, "v1:\n2:-4:seTe:\n8"),
-			getPatchOrDie(t, "v1:\n4:-4:Text:\n8"),
+			GetPatchOrDie(t, "v1:3:\n2:-4:seTe:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:-4:Text:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n2:-2:se:\n4"),
-			getPatchOrDie(t, "v2:\n2:-2:xt:\n4"),
+			GetPatchOrDie(t, "v2:4:\n2:-2:se:\n4"),
+			GetPatchOrDie(t, "v3:4:\n2:-2:xt:\n4"),
 			true,
 		},
 		{
 			"Overlapping strings, B subset of A",
-			getPatchOrDie(t, "v1:\n2:-6:seText:\n8"),
-			getPatchOrDie(t, "v1:\n4:-2:Te:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:-6:seText:\n8"),
+			GetPatchOrDie(t, "v1:3:\n4:-2:Te:\n8"),
 			"baseText",
-			getPatchOrDie(t, "v2:\n2:-4:sext:\n6"),
-			getPatchOrDie(t, "v2:\n:\n2"),
+			GetPatchOrDie(t, "v3:4:\n2:-4:sext:\n6"),
+			GetPatchOrDie(t, "v2:4:\n:\n2"),
 			true,
 		},
 	}
@@ -284,29 +277,29 @@ func TestTransform2A(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Same length strings",
-			getPatchOrDie(t, "v1:\n4:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n4:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n4:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:+4:str2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n4:+4:str1:\n12"),
-			getPatchOrDie(t, "v2:\n8:+4:str2:\n12"),
+			GetPatchOrDie(t, "v2:4:\n4:+4:str1:\n12"),
+			GetPatchOrDie(t, "v3:4:\n8:+4:str2:\n12"),
 			false,
 		},
 		{
 			"A longer",
-			getPatchOrDie(t, "v1:\n4:+8:longstr1:\n8"),
-			getPatchOrDie(t, "v1:\n4:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:+8:longstr1:\n8"),
+			GetPatchOrDie(t, "v1:3:\n4:+4:str2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n4:+8:longstr1:\n12"),
-			getPatchOrDie(t, "v2:\n12:+4:str2:\n16"),
+			GetPatchOrDie(t, "v3:4:\n4:+8:longstr1:\n12"),
+			GetPatchOrDie(t, "v2:4:\n12:+4:str2:\n16"),
 			false,
 		},
 		{
 			"B longer",
-			getPatchOrDie(t, "v1:\n4:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n4:+8:longstr2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n4:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:+8:longstr2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n4:+4:str1:\n16"),
-			getPatchOrDie(t, "v2:\n8:+8:longstr2:\n12"),
+			GetPatchOrDie(t, "v2:4:\n4:+4:str1:\n16"),
+			GetPatchOrDie(t, "v3:4:\n8:+8:longstr2:\n12"),
 			false,
 		},
 	}
@@ -317,29 +310,29 @@ func TestTransform2B(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Same length strings",
-			getPatchOrDie(t, "v1:\n2:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n2:-4:stTe:\n8"),
+			GetPatchOrDie(t, "v1:3:\n2:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:-4:stTe:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n2:+4:str1:\n4"),
-			getPatchOrDie(t, "v2:\n6:-4:stTe:\n12"),
+			GetPatchOrDie(t, "v2:4:\n2:+4:str1:\n4"),
+			GetPatchOrDie(t, "v3:4:\n6:-4:stTe:\n12"),
 			true,
 		},
 		{
 			"A longer",
-			getPatchOrDie(t, "v1:\n2:+8:longstr1:\n8"),
-			getPatchOrDie(t, "v1:\n2:-4:stTe:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:+8:longstr1:\n8"),
+			GetPatchOrDie(t, "v1:3:\n2:-4:stTe:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n2:+8:longstr1:\n4"),
-			getPatchOrDie(t, "v2:\n10:-4:stTe:\n16"),
+			GetPatchOrDie(t, "v3:4:\n2:+8:longstr1:\n4"),
+			GetPatchOrDie(t, "v2:4:\n10:-4:stTe:\n16"),
 			true,
 		},
 		{
 			"B longer",
-			getPatchOrDie(t, "v1:\n4:+4:str1:\n14"),
-			getPatchOrDie(t, "v1:\n4:-6:longer:\n14"),
+			GetPatchOrDie(t, "v1:3:\n4:+4:str1:\n14"),
+			GetPatchOrDie(t, "v1:2:\n4:-6:longer:\n14"),
 			"testlongerText",
-			getPatchOrDie(t, "v2:\n4:+4:str1:\n8"),
-			getPatchOrDie(t, "v2:\n8:-6:longer:\n18"),
+			GetPatchOrDie(t, "v2:4:\n4:+4:str1:\n8"),
+			GetPatchOrDie(t, "v3:4:\n8:-6:longer:\n18"),
 			true,
 		},
 	}
@@ -350,29 +343,29 @@ func TestTransform2C(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Same length strings",
-			getPatchOrDie(t, "v1:\n2:-4:stTe:\n8"),
-			getPatchOrDie(t, "v1:\n2:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n2:-4:stTe:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:+4:str2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n6:-4:stTe:\n12"),
-			getPatchOrDie(t, "v2:\n2:+4:str2:\n4"),
+			GetPatchOrDie(t, "v2:4:\n6:-4:stTe:\n12"),
+			GetPatchOrDie(t, "v3:4:\n2:+4:str2:\n4"),
 			true,
 		},
 		{
 			"A longer",
-			getPatchOrDie(t, "v1:\n4:-6:longer:\n14"),
-			getPatchOrDie(t, "v1:\n4:+4:str2:\n14"),
+			GetPatchOrDie(t, "v1:2:\n4:-6:longer:\n14"),
+			GetPatchOrDie(t, "v1:3:\n4:+4:str2:\n14"),
 			"testlongerText",
-			getPatchOrDie(t, "v2:\n8:-6:longer:\n18"),
-			getPatchOrDie(t, "v2:\n4:+4:str2:\n8"),
+			GetPatchOrDie(t, "v3:4:\n8:-6:longer:\n18"),
+			GetPatchOrDie(t, "v2:4:\n4:+4:str2:\n8"),
 			true,
 		},
 		{
 			"B longer",
-			getPatchOrDie(t, "v1:\n2:-4:stTe:\n8"),
-			getPatchOrDie(t, "v1:\n2:+8:longstr2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n2:-4:stTe:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:+8:longstr2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n10:-4:stTe:\n16"),
-			getPatchOrDie(t, "v2:\n2:+8:longstr2:\n4"),
+			GetPatchOrDie(t, "v2:4:\n10:-4:stTe:\n16"),
+			GetPatchOrDie(t, "v3:4:\n2:+8:longstr2:\n4"),
 			true,
 		},
 	}
@@ -383,29 +376,29 @@ func TestTransform2D(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Same length strings",
-			getPatchOrDie(t, "v1:\n2:-4:stTe:\n8"),
-			getPatchOrDie(t, "v1:\n2:-4:stTe:\n8"),
+			GetPatchOrDie(t, "v1:3:\n2:-4:stTe:\n8"),
+			GetPatchOrDie(t, "v1:2:\n2:-4:stTe:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n:\n4"),
-			getPatchOrDie(t, "v2:\n:\n4"),
+			GetPatchOrDie(t, "v2:4:\n:\n4"),
+			GetPatchOrDie(t, "v3:4:\n:\n4"),
 			true,
 		},
 		{
 			"A longer",
-			getPatchOrDie(t, "v1:\n4:-6:longer:\n14"),
-			getPatchOrDie(t, "v1:\n4:-4:long:\n14"),
+			GetPatchOrDie(t, "v1:2:\n4:-6:longer:\n14"),
+			GetPatchOrDie(t, "v1:3:\n4:-4:long:\n14"),
 			"testlongerText",
-			getPatchOrDie(t, "v2:\n4:-2:er:\n10"),
-			getPatchOrDie(t, "v2:\n:\n8"),
+			GetPatchOrDie(t, "v3:4:\n4:-2:er:\n10"),
+			GetPatchOrDie(t, "v2:4:\n:\n8"),
 			true,
 		},
 		{
 			"B longer",
-			getPatchOrDie(t, "v1:\n2:-4:stlo:\n14"),
-			getPatchOrDie(t, "v1:\n2:-6:stlong:\n14"),
+			GetPatchOrDie(t, "v1:3:\n2:-4:stlo:\n14"),
+			GetPatchOrDie(t, "v1:2:\n2:-6:stlong:\n14"),
 			"testlongerText",
-			getPatchOrDie(t, "v2:\n:\n8"),
-			getPatchOrDie(t, "v2:\n2:-2:ng:\n10"),
+			GetPatchOrDie(t, "v2:4:\n:\n8"),
+			GetPatchOrDie(t, "v3:4:\n2:-2:ng:\n10"),
 			true,
 		},
 	}
@@ -416,20 +409,20 @@ func TestTransform3A(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Overlapping strings",
-			getPatchOrDie(t, "v1:\n5:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n4:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n5:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:+4:str2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n9:+4:str1:\n12"),
-			getPatchOrDie(t, "v2:\n4:+4:str2:\n12"),
+			GetPatchOrDie(t, "v2:4:\n9:+4:str1:\n12"),
+			GetPatchOrDie(t, "v3:4:\n4:+4:str2:\n12"),
 			true,
 		},
 		{
 			"Non-overlapping strings",
-			getPatchOrDie(t, "v1:\n4:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n0:+15:longTestString2:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:3:\n0:+15:longTestString2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n19:+4:str1:\n23"),
-			getPatchOrDie(t, "v2:\n0:+15:longTestString2:\n12"),
+			GetPatchOrDie(t, "v3:4:\n19:+4:str1:\n23"),
+			GetPatchOrDie(t, "v2:4:\n0:+15:longTestString2:\n12"),
 			true,
 		},
 	}
@@ -440,20 +433,20 @@ func TestTransform3B(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Overlapping strings",
-			getPatchOrDie(t, "v1:\n5:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n4:-4:Text:\n8"),
+			GetPatchOrDie(t, "v1:3:\n5:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:-4:Text:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n4:+4:str1:\n4"),
-			getPatchOrDie(t, "v2:\n4:-1:T,\n9:-3:ext:\n12"),
+			GetPatchOrDie(t, "v2:4:\n4:+4:str1:\n4"),
+			GetPatchOrDie(t, "v3:4:\n4:-1:T,\n9:-3:ext:\n12"),
 			true,
 		},
 		{
 			"Non-overlapping strings",
-			getPatchOrDie(t, "v1:\n5:+4:str1:\n8"),
-			getPatchOrDie(t, "v1:\n2:-2:st:\n8"),
+			GetPatchOrDie(t, "v1:2:\n5:+4:str1:\n8"),
+			GetPatchOrDie(t, "v1:3:\n2:-2:st:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n3:+4:str1:\n6"),
-			getPatchOrDie(t, "v2:\n2:-2:st:\n12"),
+			GetPatchOrDie(t, "v3:4:\n3:+4:str1:\n6"),
+			GetPatchOrDie(t, "v2:4:\n2:-2:st:\n12"),
 			true,
 		},
 	}
@@ -464,20 +457,20 @@ func TestTransform3C(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Overlapping strings",
-			getPatchOrDie(t, "v1:\n5:-3:ext:\n8"),
-			getPatchOrDie(t, "v1:\n4:+4:str2:\n8"),
+			GetPatchOrDie(t, "v1:3:\n5:-3:ext:\n8"),
+			GetPatchOrDie(t, "v1:2:\n4:+4:str2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n9:-3:ext:\n12"),
-			getPatchOrDie(t, "v2:\n4:+4:str2:\n5"),
+			GetPatchOrDie(t, "v2:4:\n9:-3:ext:\n12"),
+			GetPatchOrDie(t, "v3:4:\n4:+4:str2:\n5"),
 			true,
 		},
 		{
 			"Non-overlapping strings",
-			getPatchOrDie(t, "v1:\n5:-3:ext:\n8"),
-			getPatchOrDie(t, "v1:\n1:+2:s2:\n8"),
+			GetPatchOrDie(t, "v1:2:\n5:-3:ext:\n8"),
+			GetPatchOrDie(t, "v1:3:\n1:+2:s2:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n7:-3:ext:\n10"),
-			getPatchOrDie(t, "v2:\n1:+2:s2:\n5"),
+			GetPatchOrDie(t, "v3:4:\n7:-3:ext:\n10"),
+			GetPatchOrDie(t, "v2:4:\n1:+2:s2:\n5"),
 			true,
 		},
 	}
@@ -488,38 +481,38 @@ func TestTransform3D(t *testing.T) {
 	tests := []transformationTest{
 		{
 			"Overlapping strings, A extends past B",
-			getPatchOrDie(t, "v1:\n4:-8:LongerTe:\n14"),
-			getPatchOrDie(t, "v1:\n2:-4:stLo:\n14"),
+			GetPatchOrDie(t, "v1:3:\n4:-8:LongerTe:\n14"),
+			GetPatchOrDie(t, "v1:2:\n2:-4:stLo:\n14"),
 			"testLongerText",
-			getPatchOrDie(t, "v2:\n2:-6:ngerTe:\n10"),
-			getPatchOrDie(t, "v2:\n2:-2:st:\n6"),
+			GetPatchOrDie(t, "v2:4:\n2:-6:ngerTe:\n10"),
+			GetPatchOrDie(t, "v3:4:\n2:-2:st:\n6"),
 			true,
 		},
 		{
 			"Overlapping strings, A ends at same index as B",
-			getPatchOrDie(t, "v1:\n4:-4:Long:\n14"),
-			getPatchOrDie(t, "v1:\n2:-6:stLong:\n14"),
+			GetPatchOrDie(t, "v1:2:\n4:-4:Long:\n14"),
+			GetPatchOrDie(t, "v1:3:\n2:-6:stLong:\n14"),
 			"testLongerText",
-			getPatchOrDie(t, "v2:\n:\n8"),
-			getPatchOrDie(t, "v2:\n2:-2:st:\n10"),
+			GetPatchOrDie(t, "v3:4:\n:\n8"),
+			GetPatchOrDie(t, "v2:4:\n2:-2:st:\n10"),
 			true,
 		},
 		{
 			"Overlapping strings, A ends before B",
-			getPatchOrDie(t, "v1:\n4:-3:Lon:\n14"),
-			getPatchOrDie(t, "v1:\n2:-6:stLong:\n14"),
+			GetPatchOrDie(t, "v1:3:\n4:-3:Lon:\n14"),
+			GetPatchOrDie(t, "v1:2:\n2:-6:stLong:\n14"),
 			"testLongerText",
-			getPatchOrDie(t, "v2:\n:\n8"),
-			getPatchOrDie(t, "v2:\n2:-3:stg:\n11"),
+			GetPatchOrDie(t, "v2:4:\n:\n8"),
+			GetPatchOrDie(t, "v3:4:\n2:-3:stg:\n11"),
 			true,
 		},
 		{
 			"Non-overlapping strings",
-			getPatchOrDie(t, "v1:\n5:-3:ext:\n8"),
-			getPatchOrDie(t, "v1:\n1:-2:es:\n8"),
+			GetPatchOrDie(t, "v1:2:\n5:-3:ext:\n8"),
+			GetPatchOrDie(t, "v1:3:\n1:-2:es:\n8"),
 			"testText",
-			getPatchOrDie(t, "v2:\n3:-3:ext:\n6"),
-			getPatchOrDie(t, "v2:\n1:-2:es:\n5"),
+			GetPatchOrDie(t, "v3:4:\n3:-3:ext:\n6"),
+			GetPatchOrDie(t, "v2:4:\n1:-2:es:\n5"),
 			true,
 		},
 	}

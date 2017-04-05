@@ -251,7 +251,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 	req.Resource = "File"
 	req.Method = "Change"
 	req.FileID = fileid
-	req.Changes = "v0:\n0:+1:a:\n10"
+	req.Changes = "v0:1:\n0:+1:a:\n10"
 	baseFileVersion := int64(1)
 
 	db.FunctionCallCount = 0
@@ -303,7 +303,7 @@ func TestFileChangeRequest_Process(t *testing.T) {
 
 	// try the request again to prove that it rejects higher file versions
 
-	req.Changes = "v9999:\n0:+1:a:\n10"
+	req.Changes = "v9999:10000:\n0:+1:a:\n10"
 	db.FunctionCallCount = 0
 
 	closures, err = req.process(db)
@@ -339,7 +339,7 @@ func TestFilePullRequest_Process(t *testing.T) {
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectID)
 	db.FileWrite("./", "new file", projectID, []byte{})
 
-	changes := "v0:\n0:+1:a:\n10"
+	changes := "v0:1:\n0:+1:a:\n10"
 	db.CBAppendFileChange(dbfs.FileMeta{FileID: fileid}, changes)
 
 	req.Resource = "File"

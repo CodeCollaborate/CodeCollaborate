@@ -14,6 +14,9 @@ type Patch struct {
 	// BaseVersion is the version that this patch was created on.
 	BaseVersion int64
 
+	// BaseVersion is the version that this patch was created on.
+	ResultVersion int64
+
 	// Changes is the list of changes that were applied to the document.
 	// When patching, changes MUST be applied in order.
 	Changes Diffs
@@ -36,11 +39,12 @@ func GetPatches(patchStrs []string) ([]*Patch, error) {
 }
 
 // NewPatch creates a new patch with the given parameters
-func NewPatch(baseVersion int64, changes Diffs, docLength int) *Patch {
+func NewPatch(baseVersion int64, resultVersion int64, changes Diffs, docLength int) *Patch {
 	patch := &Patch{
-		BaseVersion: baseVersion,
-		Changes:     changes,
-		DocLength:   docLength,
+		BaseVersion:   baseVersion,
+		ResultVersion: resultVersion,
+		Changes:       changes,
+		DocLength:     docLength,
 	}
 
 	return patch.simplify()
@@ -57,10 +61,20 @@ func NewPatchFromString(str string) (*Patch, error) {
 	}
 
 	if len(parts[0]) <= 1 {
-		return nil, errors.New("Invalid base version")
+		return nil, errors.New("Invalid version format")
 	}
 
-	patch.BaseVersion, err = strconv.ParseInt(string(parts[0][1:]), 10, 64)
+	// Split strings for baseVersion and resultVersion
+	versions := strings.Split(parts[0][1:], ":")
+
+	// Parse baseVersion
+	patch.BaseVersion, err = strconv.ParseInt(string(versions[0]), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse resultVersion
+	patch.ResultVersion, err = strconv.ParseInt(string(versions[1]), 10, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +110,7 @@ func (patch *Patch) ConvertToCRLF(base string) *Patch {
 		newChanges = append(newChanges, diff.ConvertToCRLF(base))
 	}
 
-	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\n", "\r\n", -1)))
+	return NewPatch(patch.BaseVersion, patch.ResultVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\n", "\r\n", -1)))
 }
 
 // ConvertToLF converts this patch from using CRLF to LF line separators given the base text to patch.
@@ -107,14 +121,14 @@ func (patch *Patch) ConvertToLF(base string) *Patch {
 		newChanges = append(newChanges, diff.ConvertToLF(base))
 	}
 
-	return NewPatch(patch.BaseVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\r\n", "\n", -1)))
+	return NewPatch(patch.BaseVersion, patch.ResultVersion, newChanges, utf8.RuneCountInString(strings.Replace(base, "\r\n", "\n", -1)))
 }
 
 func (patch *Patch) String() string {
 	var buffer bytes.Buffer
 
 	buffer.WriteString("v")
-	buffer.WriteString(fmt.Sprintf("%d", patch.BaseVersion))
+	buffer.WriteString(fmt.Sprintf("%d:%d", patch.BaseVersion, patch.ResultVersion))
 	buffer.WriteString(":\n")
 	if patch.Changes.Len() > 0 {
 		buffer.WriteString(patch.Changes[0].String())

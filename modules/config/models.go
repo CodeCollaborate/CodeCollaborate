@@ -11,15 +11,16 @@ type ConnCfgMap map[string]ConnCfg
 
 // Config contains all the different config items
 type Config struct {
-	ServerConfig     ServerCfg
+	ServerConfig     *ServerCfg
 	ConnectionConfig ConnCfgMap
+	DataStoreConfig  *DataStoreCfg
 }
 
 // ServerCfg contains various config items that pertain to the server
 type ServerCfg struct {
 	Name            string
 	Host            string
-	Port            uint16
+	Port            int
 	ProjectPath     string
 	DisableAuth     bool
 	UseTLS          bool
@@ -46,10 +47,22 @@ func (cfg ServerCfg) TokenValidityDuration() (time.Duration, error) {
 // ConnCfg represents the information required to make a connection
 type ConnCfg struct {
 	Host       string
-	Port       uint16
+	Port       int
 	Username   string
 	Password   string
-	Timeout    uint16
-	NumRetries uint16
+	Timeout    int
+	NumRetries int
 	Schema     string
+}
+
+// DataStoreCfg represents the information required to initialize the different datastores
+type DataStoreCfg struct {
+	BucketStoreName string
+	BucketStoreCfg  *ConnCfg
+
+	DocumentStoreName string
+	DocumentStoreCfg  *ConnCfg
+
+	RelationalStoreName string
+	RelationalStoreCfg  *ConnCfg
 }

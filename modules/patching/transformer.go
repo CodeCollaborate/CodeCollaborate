@@ -221,8 +221,13 @@ func TransformPatches(patchX *Patch, patchY *Patch) (*TransformResult, error) {
 		}
 	}
 
+	maxResultVersion := patchX.ResultVersion
+	if patchY.ResultVersion > maxResultVersion {
+		maxResultVersion = patchY.ResultVersion
+	}
+
 	return &TransformResult{
-		NewPatch(patchY.BaseVersion+1, patchXPrime, newDocXLen),
-		NewPatch(patchX.BaseVersion+1, patchYPrime, newDocYLen),
+		NewPatch(patchY.ResultVersion, maxResultVersion+1, patchXPrime, newDocXLen),
+		NewPatch(patchX.ResultVersion, maxResultVersion+1, patchYPrime, newDocYLen),
 	}, nil
 }
