@@ -23,7 +23,7 @@ type FileData struct {
 	LastModifiedDate    int64
 }
 
-// GetChanges aggregates the Changes, Temp and RemainingChanges
+// AggregatedChanges aggregates the Changes, Temp and RemainingChanges
 func (fileData *FileData) AggregatedChanges() []string {
 	changes := []string{}
 

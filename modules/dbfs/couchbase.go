@@ -1,12 +1,13 @@
 package dbfs
 
 import (
+	"time"
+
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/datastore"
+	"github.com/CodeCollaborate/Server/modules/datastore/documentstore"
 	"github.com/CodeCollaborate/Server/modules/patching"
 	"github.com/couchbase/gocb"
-	"github.com/CodeCollaborate/Server/modules/datastore/documentstore"
-	"github.com/CodeCollaborate/Server/modules/datastore"
-	"time"
 )
 
 type couchbaseConn struct {

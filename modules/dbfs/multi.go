@@ -252,7 +252,7 @@ func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
 	}
 
 	changes := fileData.AggregatedChanges()
-	if fileData.PullSwp{
+	if fileData.PullSwp {
 		bytes, err := di.swapRead(meta.RelativePath, meta.Filename, meta.ProjectID)
 		if err != nil {
 			return new([]byte), []string{}, err

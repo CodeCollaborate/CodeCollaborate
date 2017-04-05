@@ -17,14 +17,14 @@ import (
 
 // CouchbaseDocumentStore is the concrete implementation of the DocumentStore, using Couchbase as the backing document store of choice
 type CouchbaseDocumentStore struct {
-	cfg    *config.ConnCfg
-	bucket *gocb.Bucket
+	cfg         *config.ConnCfg
+	bucket      *gocb.Bucket
 	locksBucket *gocb.Bucket
 }
 
 // GetBuckets is a temporary way to retrieve the two buckets, for the purpose of a bridge between the old DBFS
 // TODO(wongb): Delete me.
-func (store *CouchbaseDocumentStore) GetBuckets() (*gocb.Bucket, *gocb.Bucket){
+func (store *CouchbaseDocumentStore) GetBuckets() (*gocb.Bucket, *gocb.Bucket) {
 	return store.bucket, store.locksBucket
 }
 
@@ -102,7 +102,7 @@ func (store *CouchbaseDocumentStore) Connect() {
 	}
 
 	for i := 0; i < store.cfg.NumRetries; i++ {
-		store.locksBucket, err = documentsCluster.OpenBucket(store.cfg.Schema + "_scrunching_locks", store.cfg.Password)
+		store.locksBucket, err = documentsCluster.OpenBucket(store.cfg.Schema+"_scrunching_locks", store.cfg.Password)
 
 		// If there was an error, try again after a few seconds
 		if err == nil {
