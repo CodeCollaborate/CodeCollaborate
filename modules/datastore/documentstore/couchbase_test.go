@@ -17,8 +17,8 @@ var fData = datastore.FileData{
 	LastModifiedDate:    time.Now().UnixNano(),
 	ScrunchedPatchCount: 0,
 	PullSwp:             false,
-	RemainingChanges:    []string{},
-	TempChanges:         []string{},
+	RemainingChanges:    []string{"Remaining1", "remaining2"},
+	TempChanges:         []string{"temp1"},
 	UseTemp:             false,
 }
 
@@ -57,6 +57,10 @@ func TestCouchbaseDocumentStore_Add(t *testing.T) {
 	require.Equal(t, fData.Changes, val.Changes, "Returned struct changes array did not match original struct's")
 	require.Equal(t, fData.LastModifiedDate, val.LastModifiedDate, "Returned struct lastModifiedDate did not match original struct's")
 	require.Equal(t, fData.ScrunchedPatchCount, val.ScrunchedPatchCount, "Returned struct scrunchedPatchCount did not match original struct's")
+	require.Equal(t, fData.TempChanges, val.TempChanges, "Returned struct TempChanges array did not match original struct's")
+	require.Equal(t, fData.RemainingChanges, val.RemainingChanges, "Returned struct RemainingChanges array did not match original struct's")
+	require.Equal(t, fData.PullSwp, val.PullSwp, "Returned struct PullSwp value did not match original struct's")
+	require.Equal(t, fData.UseTemp, val.UseTemp, "Returned struct UseTemp value did not match original struct's")
 }
 
 func TestCouchbaseDocumentStore_Set(t *testing.T) {
@@ -89,6 +93,10 @@ func TestCouchbaseDocumentStore_Set(t *testing.T) {
 	require.Equal(t, fData.Changes, val.Changes, "Returned struct changes array did not match original struct's")
 	require.Equal(t, fData.LastModifiedDate, val.LastModifiedDate, "Returned struct lastModifiedDate did not match original struct's")
 	require.Equal(t, fData.ScrunchedPatchCount, val.ScrunchedPatchCount, "Returned struct scrunchedPatchCount did not match original struct's")
+	require.Equal(t, fData.TempChanges, val.TempChanges, "Returned struct TempChanges array did not match original struct's")
+	require.Equal(t, fData.RemainingChanges, val.RemainingChanges, "Returned struct RemainingChanges array did not match original struct's")
+	require.Equal(t, fData.PullSwp, val.PullSwp, "Returned struct PullSwp value did not match original struct's")
+	require.Equal(t, fData.UseTemp, val.UseTemp, "Returned struct UseTemp value did not match original struct's")
 }
 
 func TestCouchbaseDocumentStore_Get(t *testing.T) {
@@ -116,6 +124,10 @@ func TestCouchbaseDocumentStore_Get(t *testing.T) {
 	require.Equal(t, fData.Changes, val.Changes, "Returned struct changes array did not match original struct's")
 	require.Equal(t, fData.LastModifiedDate, val.LastModifiedDate, "Returned struct lastModifiedDate did not match original struct's")
 	require.Equal(t, fData.ScrunchedPatchCount, val.ScrunchedPatchCount, "Returned struct scrunchedPatchCount did not match original struct's")
+	require.Equal(t, fData.TempChanges, val.TempChanges, "Returned struct TempChanges array did not match original struct's")
+	require.Equal(t, fData.RemainingChanges, val.RemainingChanges, "Returned struct RemainingChanges array did not match original struct's")
+	require.Equal(t, fData.PullSwp, val.PullSwp, "Returned struct PullSwp value did not match original struct's")
+	require.Equal(t, fData.UseTemp, val.UseTemp, "Returned struct UseTemp value did not match original struct's")
 }
 
 func TestCouchbaseDocumentStore_Delete(t *testing.T) {

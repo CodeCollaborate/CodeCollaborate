@@ -42,3 +42,6 @@ var ErrFileBaseVersionTooHigh = errors.New("Patch base version was higher than c
 // ErrFileBaseVersionTooLow is the error thrown when a client sends a patch that is too far behind, and thus cannot be transformed up
 // to the current version. This generally occurs when the version it depended on has been scrunched.
 var ErrFileBaseVersionTooLow = errors.New("Patch base version has been discarded or scrunched")
+
+// ErrInvalidFileID is the error thrown when an invalid fileID was provided. This could be due to the fileID being 0, overflowing, NaN or infinity
+var ErrInvalidFileID = errors.New("Invalid fileID provided")

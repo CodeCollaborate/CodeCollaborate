@@ -15,7 +15,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-// CouchbaseDocumentStore is the concrete implementation of the DocumentStore, using Couchbase as the backing document store of choice
+// CouchbaseDocumentStore is a concrete implementation of the DocumentStore, using Couchbase as the backing document store of choice
 type CouchbaseDocumentStore struct {
 	cfg         *config.ConnCfg
 	bucket      *gocb.Bucket

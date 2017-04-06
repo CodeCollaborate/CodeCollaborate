@@ -19,17 +19,32 @@ type BucketStore interface {
 	// Shutdown terminates this bucketStore's connection to the server
 	Shutdown()
 
-	// AddFileBytes saves the file to the bucket, keyed on the given fileID, without overwriting
-	AddFileBytes(fileID int64, fileBytes []byte) error
+	// AddFile saves the file to the bucket, keyed on the given fileID, without overwriting
+	AddFile(fileID int64, fileBytes []byte) error
 
-	// SetFileBytes saves the file to the bucket, keyed on the given fileID, overwriting if necessary
-	SetFileBytes(fileID int64, fileBytes []byte) error
+	// SetFile saves the file to the bucket, keyed on the given fileID, overwriting if necessary
+	SetFile(fileID int64, fileBytes []byte) error
 
-	// GetFileBytes retrieves the file from the bucket for a given fileID key
-	GetFileBytes(fileID int64) ([]byte, error)
+	// GetFile retrieves the file from the bucket for a given fileID key
+	GetFile(fileID int64) ([]byte, error)
 
-	// DeleteFileBytes deletes the file from the bucket for a given fileID key
-	DeleteFileBytes(fileID int64) error
+	// DeleteFile deletes the file from the bucket for a given fileID key
+	DeleteFile(fileID int64) error
+
+	// MakeSwapFile makes a copy of the current file, naming it according to -1 * fileID
+	MakeSwapFile(fileID int64) error
+
+	// SetSwapFile reads from the swap file for the given fileID
+	SetSwapFile(fileID int64, fileBytes []byte) error
+
+	// GetSwapFile reads from the swap file for the given fileID
+	GetSwapFile(fileID int64) ([]byte, error)
+
+	// DeleteSwapFile deletes the swap file for the given fileID
+	DeleteSwapFile(fileID int64) error
+
+	// RestoreSwapFile copies the swap file over to the actual file
+	RestoreSwapFile(fileID int64) error
 }
 
 // InitBucketStore Initializes the BucketStore, or throws a fatal error if unsuccessful.

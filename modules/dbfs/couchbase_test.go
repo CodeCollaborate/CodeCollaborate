@@ -153,19 +153,19 @@ func TestDatabaseImpl_CBGetFileChanges(t *testing.T) {
 	di.CBInsertNewFile(file.FileID, 2, []string{"hey there", "sup"})
 
 	// NOTE: this was added as a need by us changing to dbfs.PullFile
-	di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte{})
+	di.FileWrite(file.FileID, []byte{})
 
 	raw, changes, err := di.PullFile(file)
 	assert.NoError(t, err, "unexpected error getting changes")
 
-	assert.Empty(t, *raw, "we shouldn't have scrunched")
+	assert.Empty(t, raw, "we shouldn't have scrunched")
 
 	assert.Len(t, changes, 2, "resultant changes not the correct length")
 	assert.Equal(t, "hey there", changes[0], "first change was not correct")
 	assert.Equal(t, "sup", changes[1], "second change was not correct")
 
 	di.CBDeleteFile(1)
-	di.FileDelete(file.RelativePath, file.Filename, file.ProjectID)
+	di.FileDelete(file.FileID)
 }
 
 //func TestDatabaseImpl_CBAppendFileChange(t *testing.T) {

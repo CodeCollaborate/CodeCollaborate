@@ -27,14 +27,14 @@ func setupFile(t *testing.T, baseFile string, baseChanges []string) (*DatabaseIm
 		CreationDate: time.Now(),
 		RelativePath: "./",
 		Filename:     "_test_file_123",
-		ProjectID:    0,
-		FileID:       0,
+		ProjectID:    1,
+		FileID:       1,
 	}
 
 	err := di.CBInsertNewFile(file.FileID, 0, []string{})
 	assert.NoError(t, err, "error inserting file to couchbase")
 
-	_, err = di.FileWrite(file.RelativePath, file.Filename, file.ProjectID, []byte(baseFile))
+	err = di.FileWrite(file.FileID, []byte(baseFile))
 	assert.NoError(t, err, "error writing file to disk")
 
 	for _, change := range baseChanges {
@@ -98,7 +98,7 @@ func TestDatabaseImpl_ScrunchFile(t *testing.T) {
 	assert.Len(t, changes, MinBufferLength, "changes size was an unexpected length")
 	assert.Equal(t, resultPatches, changes, "changes didn't contain correct changes")
 
-	assert.EqualValues(t, expectedOutput.String(), string(*fileBytes), "Scrunched file differed from expected output")
+	assert.EqualValues(t, expectedOutput.String(), string(fileBytes), "Scrunched file differed from expected output")
 }
 
 func TestDatabaseImpl_GetForScrunching(t *testing.T) {
@@ -116,7 +116,7 @@ func TestDatabaseImpl_GetForScrunching(t *testing.T) {
 
 	assert.EqualValues(t, string(swp), string(defaultBaseFile), "swp file was not cloned properly")
 
-	err = di.deleteSwp(file.RelativePath, file.Filename, file.ProjectID)
+	err = di.deleteSwp(file.FileID)
 	assert.NoError(t, err, "error deleting swp file")
 }
 
@@ -129,7 +129,7 @@ func TestDatabaseImpl_DeleteForScrunching(t *testing.T) {
 	// note that this is totally different from what would normally be made from scrunching
 	newRawFile := []byte(string(fileText) + "it's a pretty cool file, not going to lie\n")
 
-	err := di.FileWriteToSwap(file, newRawFile)
+	err := di.FileWriteToSwap(file.FileID, newRawFile)
 	assert.NoError(t, err, "Error while writing to swap file")
 
 	di.deleteForScrunching(file, 1)
@@ -138,7 +138,7 @@ func TestDatabaseImpl_DeleteForScrunching(t *testing.T) {
 	assert.NoError(t, err, "Error while pulling file")
 	assert.Len(t, changesNew, 1, "incorrect number of changes returned from couchbase")
 	assert.Contains(t, changesNew, transformedChanges[1], "file did on contain expected change")
-	assert.EqualValues(t, newRawFile, string(*raw), "raw file did not match")
+	assert.EqualValues(t, newRawFile, string(raw), "raw file did not match")
 }
 
 func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
@@ -172,7 +172,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	assert.EqualValues(t, transformedChanges, changes1, "changes given for scrunching were not correct")
 
 	// update swap
-	err = di.FileWriteToSwap(file, newRawFile)
+	err = di.FileWriteToSwap(file.FileID, newRawFile)
 	assert.NoError(t, err, "Error while writing to swap file")
 
 	// check pull file (expecting old + new changes w/ old base)
@@ -234,7 +234,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	appendChangeToFile(t, di, newChanges[4])
 	checkPullFile(t, di, file, newChanges[:5], string(newRawFile))
 
-	err = di.swapSwp(file.RelativePath, file.Filename, file.ProjectID)
+	err = di.swapSwp(file.FileID)
 	assert.NoError(t, err, "Error swapping swap file, NOTE: the server WOULD normally be able to recover from here")
 
 	// add change
@@ -251,7 +251,7 @@ func TestDatabaseImpl_PullFile_MidDelete(t *testing.T) {
 	_, err = builder.Execute()
 	nativeErr(t, err)
 
-	err = di.deleteSwp(file.RelativePath, file.Filename, file.ProjectID)
+	err = di.deleteSwp(file.FileID)
 	assert.NoError(t, err, "Error deleting swap file, NOTE: the server WOULD normally be able to recover from here")
 
 	// add change
@@ -275,5 +275,5 @@ func checkPullFile(t *testing.T, di *DatabaseImpl, testFile FileMeta, expectedCh
 	assert.NoError(t, err, "Error while pulling file")
 	assert.Len(t, changesNew, len(expectedChanges), "incorrect number of changes returned from couchbase")
 	assert.EqualValues(t, expectedChanges, changesNew, "file did on contain expected changes")
-	assert.EqualValues(t, expectedRaw, string(*raw), "raw file did not match")
+	assert.EqualValues(t, expectedRaw, string(raw), "raw file did not match")
 }

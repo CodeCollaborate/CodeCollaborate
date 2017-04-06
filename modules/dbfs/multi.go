@@ -55,7 +55,7 @@ func (di *DatabaseImpl) ScrunchFile(meta FileMeta) error {
 		"NumChanges": len(changes),
 	})
 
-	if err := di.FileWriteToSwap(meta, []byte(result)); err != nil {
+	if err := di.FileWriteToSwap(meta.FileID, []byte(result)); err != nil {
 		return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
 	}
 
@@ -108,7 +108,7 @@ func (di *DatabaseImpl) getForScrunching(fileMeta FileMeta, remainder int) ([]st
 		return []string{}, []byte{}, nil
 	}
 
-	swp, err := di.makeSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	swp, err := di.makeSwp(fileMeta.FileID)
 
 	return changes[0 : len(changes)-remainder], swp, err
 }
@@ -170,7 +170,7 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 
 	tempChanges := fileData.TempChanges
 
-	err = di.swapSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	err = di.swapSwp(fileMeta.FileID)
 	if err != nil {
 		utils.LogError("error replacing file with scrunched swap file", err, utils.LogFields{
 			"Filename":    fileMeta.Filename,
@@ -184,7 +184,7 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 		builder = builder.Upsert("TempChanges", []string{}, false)
 		builder = builder.Upsert("PullSwp", false, false)
 		builder.Execute()
-		di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+		di.deleteSwp(fileMeta.FileID)
 		return err
 	}
 
@@ -196,7 +196,7 @@ func (di *DatabaseImpl) deleteForScrunching(fileMeta FileMeta, num int) error {
 	builder = builder.Upsert("PullSwp", false, false)
 	_, err = builder.Execute()
 
-	err = di.deleteSwp(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	err = di.deleteSwp(fileMeta.FileID)
 	if err != nil {
 		utils.LogError("error deleting swap file", err, utils.LogFields{
 			"Filename":    fileMeta.Filename,
@@ -240,29 +240,29 @@ func (di *DatabaseImpl) scrunchingRemoveLock(key string) error {
 }
 
 // PullFile pulls the changes and the file bytes from the databases
-func (di *DatabaseImpl) PullFile(meta FileMeta) (*[]byte, []string, error) {
+func (di *DatabaseImpl) PullFile(meta FileMeta) ([]byte, []string, error) {
 	cb, err := di.openCouchBase()
 	if err != nil {
-		return new([]byte), []string{}, err
+		return []byte{}, []string{}, err
 	}
 
 	fileData, err := cb.couchbaseDocumentStore.GetFileData(meta.FileID)
 	if err != nil {
-		return new([]byte), []string{}, err
+		return []byte{}, []string{}, err
 	}
 
 	changes := fileData.AggregatedChanges()
 	if fileData.PullSwp {
-		bytes, err := di.swapRead(meta.RelativePath, meta.Filename, meta.ProjectID)
+		bytes, err := di.swapRead(meta.FileID)
 		if err != nil {
-			return new([]byte), []string{}, err
+			return []byte{}, []string{}, err
 		}
 		return bytes, changes, nil
 	}
 
-	bytes, err := di.FileRead(meta.RelativePath, meta.Filename, meta.ProjectID)
+	bytes, err := di.FileRead(meta.FileID)
 	if err != nil {
-		return new([]byte), []string{}, err
+		return []byte{}, []string{}, err
 	}
 	return bytes, changes, err
 }
