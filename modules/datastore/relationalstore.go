@@ -3,13 +3,17 @@ package datastore
 import (
 	"time"
 
+	"strings"
+
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var relationalStoreFactoryMap = map[string]func(cfg *config.ConnCfg) RelationalStore{}
 
-func registerRelationalStore(name string, initFunc func(cfg *config.ConnCfg) RelationalStore) {
-	relationalStoreFactoryMap[name] = initFunc
+// RegisterRelationalStore is the registration point for any relational datastore modules
+func RegisterRelationalStore(name string, initFunc func(cfg *config.ConnCfg) RelationalStore) {
+	relationalStoreFactoryMap[strings.ToLower(name)] = initFunc
 }
 
 // FileMetadata represents the relational file information that doesn't often change
@@ -99,6 +103,14 @@ type RelationalStore interface {
 
 // InitRelationalStore Initializes the RelationalStore, or throws a fatal error if unsuccessful.
 func InitRelationalStore(name string, cfg *config.ConnCfg) RelationalStore {
+	name = strings.ToLower(name)
+
+	if relationalStoreFactoryMap[name] == nil {
+		utils.LogFatal("Configuration specified unknown RelationalStore", ErrFatalConfigurationErr, utils.LogFields{
+			"RelationalStoreName": name,
+		})
+	}
+
 	store := relationalStoreFactoryMap[name](cfg)
 	store.Connect()
 

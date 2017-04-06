@@ -13,6 +13,10 @@ import (
 	"github.com/CodeCollaborate/Server/utils"
 )
 
+func init() {
+	datastore.RegisterBucketStore("filesystem", NewFilesystemBucketStore)
+}
+
 // FilesystemBucketStore is a concrete implementation of the BucketStore, using the filesystem as the backing bucket store of choice
 type FilesystemBucketStore struct {
 	cfg               *config.ConnCfg
@@ -20,7 +24,7 @@ type FilesystemBucketStore struct {
 }
 
 // NewFilesystemBucketStore creates a new instance of the FilesystemBucketStore, setting the configuration
-func NewFilesystemBucketStore(cfg *config.ConnCfg) *FilesystemBucketStore {
+func NewFilesystemBucketStore(cfg *config.ConnCfg) datastore.BucketStore {
 	return &FilesystemBucketStore{
 		cfg:               cfg,
 		rootFileDirectory: filepath.Clean(cfg.Schema),

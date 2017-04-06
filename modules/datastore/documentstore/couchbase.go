@@ -15,6 +15,10 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
+func init() {
+	datastore.RegisterDocumentStore("couchbase", NewCouchbaseDocumentStore)
+}
+
 // CouchbaseDocumentStore is a concrete implementation of the DocumentStore, using Couchbase as the backing document store of choice
 type CouchbaseDocumentStore struct {
 	cfg         *config.ConnCfg
@@ -29,7 +33,7 @@ func (store *CouchbaseDocumentStore) GetBuckets() (*gocb.Bucket, *gocb.Bucket) {
 }
 
 // NewCouchbaseDocumentStore creates a new instance of the CouchbaseDocumentStore, setting the configuration
-func NewCouchbaseDocumentStore(cfg *config.ConnCfg) *CouchbaseDocumentStore {
+func NewCouchbaseDocumentStore(cfg *config.ConnCfg) datastore.DocumentStore {
 	return &CouchbaseDocumentStore{
 		cfg: cfg,
 	}

@@ -1,13 +1,17 @@
 package datastore
 
 import (
+	"strings"
+
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var bucketStoreFactoryMap = map[string]func(cfg *config.ConnCfg) BucketStore{}
 
-func registerBucketStore(name string, initFunc func(cfg *config.ConnCfg) BucketStore) {
-	bucketStoreFactoryMap[name] = initFunc
+// RegisterBucketStore is the registration point for any bucket datastore modules
+func RegisterBucketStore(name string, initFunc func(cfg *config.ConnCfg) BucketStore) {
+	bucketStoreFactoryMap[strings.ToLower(name)] = initFunc
 }
 
 // BucketStore defines the interface for all bucket storage class datastores (Google Cloud Storage, AWS S3, etc)
@@ -49,6 +53,14 @@ type BucketStore interface {
 
 // InitBucketStore Initializes the BucketStore, or throws a fatal error if unsuccessful.
 func InitBucketStore(name string, cfg *config.ConnCfg) BucketStore {
+	name = strings.ToLower(name)
+
+	if bucketStoreFactoryMap[name] == nil {
+		utils.LogFatal("Configuration specified unknown BucketStore", ErrFatalConfigurationErr, utils.LogFields{
+			"BucketStoreName": name,
+		})
+	}
+
 	store := bucketStoreFactoryMap[name](cfg)
 	store.Connect()
 

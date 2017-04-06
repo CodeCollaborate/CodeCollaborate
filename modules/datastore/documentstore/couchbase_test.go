@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"reflect"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datastore"
 	"github.com/CodeCollaborate/Server/modules/patching"
@@ -20,6 +22,13 @@ var fData = datastore.FileData{
 	RemainingChanges:    []string{"Remaining1", "remaining2"},
 	TempChanges:         []string{"temp1"},
 	UseTemp:             false,
+}
+
+func TestCouchbaseDocumentStore_RegisterSelf(t *testing.T) {
+	config.SetupTestingConfig(t, "../../../config")
+	documentStore := datastore.InitDocumentStore("couchbase", config.GetConfig().DataStoreConfig.DocumentStoreCfg)
+
+	require.True(t, reflect.TypeOf(documentStore).String() == reflect.TypeOf(&CouchbaseDocumentStore{}).String(), "documentStore initalized wrong type")
 }
 
 func TestCouchbaseDocumentStore_Connect(t *testing.T) {

@@ -1,13 +1,18 @@
 package datastore
 
 import (
+	"strings"
+
 	"github.com/CodeCollaborate/Server/modules/config"
+	"github.com/CodeCollaborate/Server/modules/patching"
+	"github.com/CodeCollaborate/Server/utils"
 )
 
 var documentStoreFactoryMap = map[string]func(cfg *config.ConnCfg) DocumentStore{}
 
-func registerDocumentStore(name string, initFunc func(cfg *config.ConnCfg) DocumentStore) {
-	documentStoreFactoryMap[name] = initFunc
+// RegisterDocumentStore is the registration point for any document datastore modules
+func RegisterDocumentStore(name string, initFunc func(cfg *config.ConnCfg) DocumentStore) {
+	documentStoreFactoryMap[strings.ToLower(name)] = initFunc
 }
 
 // FileData is the struct representing short-term changes in document state, and the versions therein
@@ -60,8 +65,8 @@ type DocumentStore interface {
 	// DeleteFileData deletes the FileData for the given fileID
 	DeleteFileData(fileID int64) error
 
-	// AppendPatch appends the patch to the document with the given fileID, and returns the resultant FileData if successful
-	AppendPatch(fileID int64, patchStr string) (*FileData, error)
+	// AppendPatch appends the patch to the document with the given fileID, and returns the resultant FileData and missing patches if successful
+	AppendPatch(fileID int64, patch *patching.Patch) (*FileData, []string, error)
 
 	// ScrunchChanges takes the set of untouched patches, and scrunches them into the base document.
 	ScrunchChanges(fileID int64) error
@@ -69,6 +74,14 @@ type DocumentStore interface {
 
 // InitDocumentStore Initializes the DocumentStore, or throws a fatal error if unsuccessful.
 func InitDocumentStore(name string, cfg *config.ConnCfg) DocumentStore {
+	name = strings.ToLower(name)
+
+	if documentStoreFactoryMap[name] == nil {
+		utils.LogFatal("Configuration specified unknown DocumentStore", ErrFatalConfigurationErr, utils.LogFields{
+			"DocumentStoreName": name,
+		})
+	}
+
 	store := documentStoreFactoryMap[name](cfg)
 	store.Connect()
 
