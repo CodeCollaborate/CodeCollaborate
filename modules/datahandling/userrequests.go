@@ -1,6 +1,8 @@
 package datahandling
 
 import (
+	"strings"
+
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
 	"github.com/CodeCollaborate/Server/modules/rabbitmq"
@@ -61,7 +63,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}
 
 	newUser := dbfs.UserMeta{
-		Username:  f.Username,
+		Username:  strings.ToLower(f.Username),
 		FirstName: f.FirstName,
 		LastName:  f.LastName,
 		Email:     f.Email,

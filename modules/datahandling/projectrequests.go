@@ -3,6 +3,8 @@ package datahandling
 import (
 	"time"
 
+	"strings"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datahandling/messages"
 	"github.com/CodeCollaborate/Server/modules/dbfs"
@@ -185,6 +187,8 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
+	p.SenderID = strings.ToLower(p.SenderID)
+
 	// Prevent users from changing their own permissions
 	if p.SenderID == p.GrantUsername {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
@@ -254,6 +258,9 @@ func (p projectRevokePermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, err
 		})
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, p.Tag)}}, nil
 	}
+
+	p.RevokeUsername = strings.ToLower(p.RevokeUsername)
+
 	// allow case where user is removing themselves from a project
 	if !hasPermission && p.SenderID != p.RevokeUsername {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
