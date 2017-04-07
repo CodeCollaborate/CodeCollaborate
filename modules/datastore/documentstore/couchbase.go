@@ -34,9 +34,9 @@ func (store *CouchbaseDocumentStore) GetBuckets() (*gocb.Bucket, *gocb.Bucket) {
 
 // NewCouchbaseDocumentStore creates a new instance of the CouchbaseDocumentStore, setting the configuration
 func NewCouchbaseDocumentStore(cfg *config.ConnCfg) datastore.DocumentStore {
-	return &CouchbaseDocumentStore{
+	return &datastore.DocumentStore(CouchbaseDocumentStore{
 		cfg: cfg,
-	}
+	})
 }
 
 // Connect starts this CouchbaseDocumentStore's connection to the server

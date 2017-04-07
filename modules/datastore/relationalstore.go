@@ -59,46 +59,56 @@ type RelationalStore interface {
 	// Shutdown terminates this relationalStore's connection to the server
 	Shutdown()
 
-	// AddUser stores the given UserData using the internal username, without overwriting
-	AddUser(data *UserData) error
+	// UserRegister registers a new user
+	UserRegister(data UserData) error
 
-	// SetUser stores the given UserData using the internal username, overwriting if necessary
-	SetUser(data *UserData) error
+	// UserLookup returns the user's information (except password)
+	UserLookup(username string) (*UserData, error)
 
-	// GetUser retrieves the UserData for the user with given username
-	GetUser(username string) (*UserData, error)
+	// UserGetProjects returns the Project Metadata for all projects the user has permissions for
+	UserGetProjects([]ProjectMetadata, error)
 
-	// DeleteUser deletes the UserData for the user with the given username
-	DeleteUser(username string) error
+	// UserGetProjectPermissions returns the permissions that a user has for a given project
+	UserGetProjectPermissions(int, error)
 
-	// AddProject stores the given ProjectMetadata using the internal projectID, without overwriting
-	AddProject(data *ProjectMetadata) error
+	// UserGetPassword retrieves the hash of the user's password
+	UserGetPassword(username string) (string, error)
 
-	// SetProject stores the given ProjectMetadata using the internal projectID, overwriting if necessary
-	SetProject(data *ProjectMetadata) error
+	// UserDelete deletes the given user
+	UserDelete(username string) error
 
-	// GetProject retrieves the ProjectMetadata for the project with the given projectID
-	GetProject(projectID int64) (*ProjectMetadata, error)
+	// ProjectCreate creates a new project, assigning it a projectID
+	ProjectCreate(username string, projectName string) (int64, error)
 
-	// DeleteProject deletes the ProjectMetadata for the project with the given projectID
-	DeleteProject(projectID int64) error
+	// ProjectLookup returns the project metadata, including permissions
+	ProjectLookup(projectID int64) (*ProjectMetadata, error)
 
-	// TODO(wongb): Create permission map by API version: -1 = blocked; 0 = <delete>; 1 = read; 2 = review; 3=write; 4=admin; 5=owner
-	// SetProjectPermission stores (overwriting, if necessary) the new permission entry for the project with given projectID
-	// If permissionLevel of the permission entry is 0, any existing entry for that user is deleted
-	SetProjectPermission(projectID int64, permission *ProjectPermission) error
+	// ProjectGetFiles returns the list of files that the project contains
+	ProjectGetFiles(projectID int64) ([]FileMetadata, error)
 
-	// AddFile stores the given FileMetadata using the internal fileID, without overwriting
-	AddFile(data *FileMetadata) error
+	// ProjectGrantPermissions grants the given permissions to the user with provided username
+	ProjectGrantPermissions(projectID int64, username string, grantUsername string, permissionLevel int) error // TODO(wongb): CHANGE TO ALLOW BULK UPDATES
 
-	// SetFile stores the given FileMetadata using the internal fileID, overwriting if necessary
-	SetFile(data *FileMetadata) error
+	// ProjectRevokePermissions revokes all permissions from the user with provided username
+	ProjectRevokePermissions(projectID int64, username string) error // TODO(wongb): CHANGE TO ALLOW BULK UPDATES
 
-	// GetFile retrieves the FileMetadata for the file with the given fileID
-	GetFile(fileID int64) (*FileMetadata, error)
+	// ProjectRename renames the project
+	ProjectRename(projectID int64, newName string) error
 
-	// DeleteFile deletes the FileMetadata for the file with the given fileID
-	DeleteFile(fileID int64) error
+	// ProjectDelete deletes a project from MySQL
+	ProjectDelete(projectID int64) error
+
+	// FileCreate creates a new file, assigning it a new fileID
+	FileCreate(username string, projectID int64, filename string, relativePath string) (int64, error)
+
+	// FileGet returns the metadata for the given fileID
+	FileGet(fileID int64) (*FileMetadata, error)
+
+	// FileMove updates the filepath and filename of for the given fileID
+	FileMove(fileID int64, newRelativePath string, newName string) error
+
+	// FileDelete deletes the stored metadata for the given fileID
+	FileDelete(fileID int64) error
 }
 
 // InitRelationalStore Initializes the RelationalStore, or throws a fatal error if unsuccessful.
