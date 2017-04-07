@@ -187,7 +187,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusUnauthorized, p.Tag)}}, nil
 	}
 
-	p.SenderID = strings.ToLower(p.SenderID)
+	p.GrantUsername = strings.ToLower(p.GrantUsername)
 
 	// Prevent users from changing their own permissions
 	if p.SenderID == p.GrantUsername {

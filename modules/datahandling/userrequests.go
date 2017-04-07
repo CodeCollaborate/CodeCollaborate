@@ -56,6 +56,7 @@ func (f *userRegisterRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	f.Username = strings.ToLower(f.Username)
 
 	hashed, err := bcrypt.GenerateFromPassword([]byte(f.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -63,7 +64,7 @@ func (f userRegisterRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}
 
 	newUser := dbfs.UserMeta{
-		Username:  strings.ToLower(f.Username),
+		Username:  f.Username,
 		FirstName: f.FirstName,
 		LastName:  f.LastName,
 		Email:     f.Email,
@@ -95,6 +96,8 @@ func (f *userLoginRequest) setAbstractRequest(req *abstractRequest) {
 }
 
 func (f userLoginRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
+	f.Username = strings.ToLower(f.Username)
+
 	hashed, err := db.MySQLUserGetPass(f.Username)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
@@ -183,7 +186,7 @@ func (f userLookupRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	index := 0
 	var erro error
 	for _, username := range f.Usernames {
-		usr, err := db.MySQLUserLookup(username)
+		usr, err := db.MySQLUserLookup(strings.ToLower(username))
 		if err != nil {
 			erro = err
 		} else {
