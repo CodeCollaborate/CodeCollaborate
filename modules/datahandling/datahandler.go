@@ -53,6 +53,8 @@ func (dh DataHandler) Handle(messageType int, message []byte, wg *sync.WaitGroup
 		return err
 	}
 
+	req.SenderID = strings.ToLower(req.SenderID)
+
 	// automatically determines if the request is authenticated or not
 	fullRequest, err := getFullRequest(req)
 
