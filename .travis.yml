@@ -36,8 +36,8 @@ install:
 - go get golang.org/x/tools/cmd/goimports
 - go get github.com/golang/lint/golint
 - "./get_dependencies.sh"
-- cat ./config/mysql_testing_setup.sql | mysql -uroot
-- cat ./config/mysql_testing_schema_setup.sql | mysql -uroot
+- cat ./config/mysql_setup.sql | mysql -uroot
+- cat ./config/mysql_schema_setup.sql | mysql -uroot
 
 script:
 # Run checks & tests
