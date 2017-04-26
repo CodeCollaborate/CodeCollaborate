@@ -3,7 +3,7 @@ dist: trusty
 group: deprecated
 language: go
 go:
-  - 1.7
+  - 1.8
 cache:
   directories:
   - $GOPATH
