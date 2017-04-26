@@ -30,7 +30,7 @@ type FileMetadata struct {
 type ProjectMetadata struct {
 	ProjectID          int64
 	Name               string
-	ProjectPermissions []*ProjectPermission
+	ProjectPermissions map[string]*ProjectPermission
 }
 
 // ProjectPermission represents the permissions the users have for the projects
@@ -60,16 +60,16 @@ type RelationalStore interface {
 	Shutdown()
 
 	// UserRegister registers a new user
-	UserRegister(data UserData) error
+	UserRegister(data *UserData) error
 
 	// UserLookup returns the user's information (except password)
 	UserLookup(username string) (*UserData, error)
 
 	// UserGetProjects returns the Project Metadata for all projects the user has permissions for
-	UserGetProjects([]ProjectMetadata, error)
+	UserGetProjects(username string) ([]ProjectMetadata, error)
 
 	// UserGetProjectPermissions returns the permissions that a user has for a given project
-	UserGetProjectPermissions(int, error)
+	UserGetProjectPermissions(username string, projectID int64) (int, error)
 
 	// UserGetPassword retrieves the hash of the user's password
 	UserGetPassword(username string) (string, error)
@@ -87,10 +87,10 @@ type RelationalStore interface {
 	ProjectGetFiles(projectID int64) ([]FileMetadata, error)
 
 	// ProjectGrantPermissions grants the given permissions to the user with provided username
-	ProjectGrantPermissions(projectID int64, username string, grantUsername string, permissionLevel int) error // TODO(wongb): CHANGE TO ALLOW BULK UPDATES
+	ProjectGrantPermissions(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error // TODO(wongb): CHANGE TO ALLOW BULK UPDATES
 
 	// ProjectRevokePermissions revokes all permissions from the user with provided username
-	ProjectRevokePermissions(projectID int64, username string) error // TODO(wongb): CHANGE TO ALLOW BULK UPDATES
+	ProjectRevokePermissions(projectID int64, revokeUsername string) error // TODO(wongb): CHANGE TO ALLOW BULK UPDATES
 
 	// ProjectRename renames the project
 	ProjectRename(projectID int64, newName string) error

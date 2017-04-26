@@ -1,9 +1,14 @@
 package datastore
 
 import (
+	"os"
+
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/utils"
 )
+
+// FilePathSeparator is the string character for the os's filepath separator
+var FilePathSeparator = string(os.PathSeparator)
 
 // DataStore is the struct containing all the different types of DataStores used by this server
 type DataStore struct {

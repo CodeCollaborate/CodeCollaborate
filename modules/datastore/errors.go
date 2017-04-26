@@ -45,3 +45,9 @@ var ErrFileBaseVersionTooLow = errors.New("Patch base version has been discarded
 
 // ErrInvalidFileID is the error thrown when an invalid fileID was provided. This could be due to the fileID being 0, overflowing, NaN or infinity
 var ErrInvalidFileID = errors.New("Invalid fileID provided")
+
+// ErrInvalidFileName is the error thrown when an invalid filename was provided. This could be due to protected characters in the filename (.., /, etc)
+var ErrInvalidFileName = errors.New("Invalid filename provided")
+
+// ErrInvalidFilePath is the error thrown when an invalid filepath was provided. This could be due to attempting to write above its root directory
+var ErrInvalidFilePath = errors.New("Invalid filepath provided")

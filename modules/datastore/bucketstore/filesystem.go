@@ -25,7 +25,7 @@ type FilesystemBucketStore struct {
 
 // NewFilesystemBucketStore creates a new instance of the FilesystemBucketStore, setting the configuration
 func NewFilesystemBucketStore(cfg *config.ConnCfg) datastore.BucketStore {
-	return &datastore.BucketStore(FilesystemBucketStore{
+	return datastore.BucketStore(&FilesystemBucketStore{
 		cfg:               cfg,
 		rootFileDirectory: filepath.Clean(cfg.Schema),
 	})
