@@ -12,7 +12,7 @@ import (
 
 type couchbaseConn struct {
 	config                 config.ConnCfg
-	couchbaseDocumentStore *documentstore.CouchbaseDocumentStore
+	couchbaseDocumentStore datastore.DocumentStore
 
 	bucket                *gocb.Bucket
 	scrunchingLocksBucket *gocb.Bucket
@@ -41,7 +41,9 @@ func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
 
 	di.couchbaseDB.couchbaseDocumentStore.Connect()
 
-	di.couchbaseDB.bucket, di.couchbaseDB.scrunchingLocksBucket = di.couchbaseDB.couchbaseDocumentStore.GetBuckets()
+	couchbaseDocumentStore := di.couchbaseDB.couchbaseDocumentStore.(*documentstore.CouchbaseDocumentStore)
+
+	di.couchbaseDB.bucket, di.couchbaseDB.scrunchingLocksBucket = couchbaseDocumentStore.GetBuckets()
 
 	return di.couchbaseDB, nil
 }

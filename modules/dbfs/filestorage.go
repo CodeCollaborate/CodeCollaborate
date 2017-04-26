@@ -11,13 +11,13 @@ import (
 var filePathSeparator = strconv.QuoteRune(os.PathSeparator)[1:2]
 
 func (di *DatabaseImpl) initFileSystemIfNeeded() {
-	if di.filesystemBucketStore == nil {
-		di.filesystemBucketStore = bucketstore.NewFilesystemBucketStore(&config.ConnCfg{
+	if di.bucketStore == nil {
+		di.bucketStore = bucketstore.NewFilesystemBucketStore(&config.ConnCfg{
 			Schema: config.GetConfig().ServerConfig.ProjectPath,
 		})
 	}
 
-	di.filesystemBucketStore.Connect()
+	di.bucketStore.Connect()
 }
 
 // FileWrite writes the file with the given bytes to a calculated path, and
@@ -25,7 +25,7 @@ func (di *DatabaseImpl) initFileSystemIfNeeded() {
 func (di *DatabaseImpl) FileWrite(fileID int64, raw []byte) error {
 	di.initFileSystemIfNeeded()
 
-	return di.filesystemBucketStore.SetFile(fileID, raw)
+	return di.bucketStore.SetFile(fileID, raw)
 }
 
 // FileDelete deletes the file with the given metadata from the file system
@@ -33,21 +33,21 @@ func (di *DatabaseImpl) FileWrite(fileID int64, raw []byte) error {
 func (di *DatabaseImpl) FileDelete(fileID int64) error {
 	di.initFileSystemIfNeeded()
 
-	return di.filesystemBucketStore.DeleteFile(fileID)
+	return di.bucketStore.DeleteFile(fileID)
 }
 
 // FileRead returns the project file from the calculated location on the disk
 func (di *DatabaseImpl) FileRead(fileID int64) ([]byte, error) {
 	di.initFileSystemIfNeeded()
 
-	return di.filesystemBucketStore.GetFile(fileID)
+	return di.bucketStore.GetFile(fileID)
 }
 
 // returns the swap file contents and any error
 func (di *DatabaseImpl) makeSwp(fileID int64) ([]byte, error) {
 	di.initFileSystemIfNeeded()
 
-	if err := di.filesystemBucketStore.MakeSwapFile(fileID); err != nil {
+	if err := di.bucketStore.MakeSwapFile(fileID); err != nil {
 		return nil, err
 	}
 
@@ -58,26 +58,26 @@ func (di *DatabaseImpl) makeSwp(fileID int64) ([]byte, error) {
 func (di *DatabaseImpl) swapRead(fileID int64) ([]byte, error) {
 	di.initFileSystemIfNeeded()
 
-	return di.filesystemBucketStore.ReadSwapFile(fileID)
+	return di.bucketStore.GetSwapFile(fileID)
 }
 
 // FileWriteToSwap writes the swapfile for the file with the given info
 func (di *DatabaseImpl) FileWriteToSwap(fileID int64, raw []byte) error {
 	di.initFileSystemIfNeeded()
 
-	return di.filesystemBucketStore.SetSwapFile(fileID, raw)
+	return di.bucketStore.SetSwapFile(fileID, raw)
 }
 
 // returns any error
 func (di *DatabaseImpl) deleteSwp(fileID int64) error {
 	di.initFileSystemIfNeeded()
 
-	return di.filesystemBucketStore.DeleteSwapFile(fileID)
+	return di.bucketStore.DeleteSwapFile(fileID)
 }
 
 // swaps the swapfile to the location of the real file
 func (di *DatabaseImpl) swapSwp(fileID int64) error {
 	di.initFileSystemIfNeeded()
 
-	return di.filesystemBucketStore.RestoreSwapFile(fileID)
+	return di.bucketStore.RestoreSwapFile(fileID)
 }

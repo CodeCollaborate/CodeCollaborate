@@ -20,11 +20,7 @@ type DBFS interface {
 	deleteForScrunching(fileMeta FileMeta, num int) error
 
 	// PullFile pulls the changes and the file bytes from the databases
-	PullFile(meta FileMeta) (*[]byte, []string, error)
-
-	// PullChanges pulls the changes from the databases and returns them along with the temporary lock value,
-	// the file version, and the useTemp flag
-	PullChanges(meta FileMeta) ([]string, uint64, int64, bool, error)
+	PullFile(meta FileMeta) ([]byte, []string, error)
 
 	// Couchbase
 
@@ -112,15 +108,12 @@ type DBFS interface {
 
 	// FileWrite writes the file with the given bytes to a calculated path, and
 	// returns that path so it can be put in MySQL
-	FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error)
+	FileWrite(fileID int64, raw []byte) error
 
 	// FileDelete deletes the file with the given metadata from the file system
 	// Couple this with dbfs.MySQLFileDelete and dbfs.CBDeleteFile
-	FileDelete(relpath string, filename string, projectID int64) error
-
-	// FileMove moves a file form the starting path to the end path
-	FileMove(startRelpath string, startFilename string, endRelpath string, endFilename string, projectID int64) error
+	FileDelete(fileID int64) error
 
 	// FileWriteToSwap writes the swapfile for the file with the given info
-	FileWriteToSwap(meta FileMeta, raw []byte) error
+	FileWriteToSwap(fileID int64, raw []byte) error
 }

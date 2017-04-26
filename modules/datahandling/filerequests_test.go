@@ -93,7 +93,7 @@ func TestFileRenameRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
+	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -150,7 +150,7 @@ func TestFileMoveRequest_Process(t *testing.T) {
 	}
 
 	// didn't call extra db functions
-	assert.Equal(t, 4, db.FunctionCallCount, "did not call correct number of db functions")
+	assert.Equal(t, 3, db.FunctionCallCount, "did not call correct number of db functions")
 
 	// are we notifying the right people
 	if len(closures) != 2 ||
@@ -337,7 +337,7 @@ func TestFilePullRequest_Process(t *testing.T) {
 	db.MySQLUserRegister(geneMeta)
 	projectID, err := db.MySQLProjectCreate("loganga", "hi")
 	fileid, err := db.MySQLFileCreate("loganga", "new file", "", projectID)
-	db.FileWrite("./", "new file", projectID, []byte{})
+	db.FileWrite(fileid, []byte{})
 
 	changes := "v0:1:\n0:+1:a:\n10"
 	db.CBAppendFileChange(dbfs.FileMeta{FileID: fileid}, changes)

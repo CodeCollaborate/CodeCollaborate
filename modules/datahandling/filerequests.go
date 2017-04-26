@@ -82,7 +82,7 @@ func (f fileCreateRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	_, err = db.FileWrite(f.RelativePath, f.Name, f.ProjectID, f.FileBytes)
+	err = db.FileWrite(fileID, f.FileBytes)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
@@ -153,11 +153,6 @@ func (f fileRenameRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, fileMeta.RelativePath, f.NewName, fileMeta.ProjectID)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
-	}
-
 	res := messages.NewEmptyResponse(messages.StatusSuccess, f.Tag)
 	not := messages.Notification{
 		Resource:   f.Resource,
@@ -202,11 +197,6 @@ func (f fileMoveRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 	}
 
 	err = db.MySQLFileMove(f.FileID, f.NewPath)
-	if err != nil {
-		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
-	}
-
-	err = db.FileMove(fileMeta.RelativePath, fileMeta.Filename, f.NewPath, fileMeta.Filename, fileMeta.ProjectID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
@@ -258,7 +248,7 @@ func (f fileDeleteRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
 
-	err = db.FileDelete(fileMeta.RelativePath, fileMeta.Filename, fileMeta.ProjectID)
+	err = db.FileDelete(f.FileID)
 	if err != nil {
 		return []dhClosure{toSenderClosure{msg: messages.NewEmptyResponse(messages.StatusFail, f.Tag)}}, err
 	}
@@ -398,7 +388,7 @@ func (f filePullRequest) process(db dbfs.DBFS) ([]dhClosure, error) {
 			FileBytes []byte
 			Changes   []string
 		}{
-			FileBytes: *rawFile,
+			FileBytes: rawFile,
 			Changes:   changes,
 		},
 	}.Wrap()

@@ -23,8 +23,8 @@ type DatabaseMock struct {
 	ProjectIDCounter int64
 	FileIDCounter    int64
 
-	File *[]byte
-	Swp  *[]byte
+	File []byte
+	Swp  []byte
 
 	// FunctionCallCount is the tracker of how many db functions are called
 	FunctionCallCount int
@@ -88,7 +88,7 @@ func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
 		if err != nil {
 			return fmt.Errorf("Scrunching - Failed to scrunch file: %v", err)
 		}
-		if err := dm.FileWriteToSwap(meta, []byte(result)); err != nil {
+		if err := dm.FileWriteToSwap(meta.FileID, []byte(result)); err != nil {
 			return fmt.Errorf("Scrunching - Failed to write to swap file: %v", err)
 		}
 		if err := dm.deleteForScrunching(meta, len(changes)); err != nil {
@@ -103,8 +103,8 @@ func (dm *DatabaseMock) ScrunchFile(meta FileMeta) error {
 func (dm *DatabaseMock) getForScrunching(fileMeta FileMeta, remainder int) ([]string, []byte, error) {
 	dm.FunctionCallCount++
 	changes := dm.FileChanges[fileMeta.FileID]
-	dm.Swp = new([]byte)
-	return changes[0 : len(changes)-remainder], *dm.Swp, nil
+	dm.Swp = []byte{}
+	return changes[0 : len(changes)-remainder], dm.Swp, nil
 }
 
 // DeleteForScrunching deletes `num` elements from the front of `changes` for file with `fileID` and deletes the
@@ -118,11 +118,11 @@ func (dm *DatabaseMock) deleteForScrunching(fileMeta FileMeta, num int) error {
 }
 
 // PullFile pulls the changes and the file bytes from the databases
-func (dm *DatabaseMock) PullFile(meta FileMeta) (*[]byte, []string, error) {
+func (dm *DatabaseMock) PullFile(meta FileMeta) ([]byte, []string, error) {
 	dm.FunctionCallCount++
 	changes := dm.FileChanges[meta.FileID]
 	if dm.File == nil {
-		return new([]byte), []string{}, ErrNoData
+		return []byte{}, []string{}, ErrNoData
 	}
 	return dm.File, changes, nil
 }
@@ -473,24 +473,24 @@ func (dm *DatabaseMock) MySQLFileGetInfo(fileID int64) (filey FileMeta, err erro
 }
 
 // FileWrite is a mock of the real implementation
-func (dm *DatabaseMock) FileWrite(relpath string, filename string, projectID int64, raw []byte) (string, error) {
+func (dm *DatabaseMock) FileWrite(fileID int64, raw []byte) error {
 	dm.FunctionCallCount++
-	dm.File = &raw
-	return "./this_path_shouldnt_be_used_anywhere", nil
+	dm.File = raw
+	return nil
 }
 
 // FileDelete is a mock of the real implementation
-func (dm *DatabaseMock) FileDelete(relpath string, filename string, projectID int64) error {
+func (dm *DatabaseMock) FileDelete(fileID int64) error {
 	dm.FunctionCallCount++
 	dm.File = nil
 	return nil
 }
 
 // FileRead is a mock of the real implementation
-func (dm *DatabaseMock) FileRead(relpath string, filename string, projectID int64) (*[]byte, error) {
+func (dm *DatabaseMock) FileRead(relpath string, filename string, projectID int64) ([]byte, error) {
 	dm.FunctionCallCount++
 	if dm.File == nil {
-		dm.File = &[]byte{}
+		dm.File = []byte{}
 	}
 	return dm.File, nil
 }
@@ -503,8 +503,8 @@ func (dm *DatabaseMock) FileMove(startRelpath string, startFilename string, endR
 }
 
 // FileWriteToSwap writes the swapfile for the file with the given info
-func (dm *DatabaseMock) FileWriteToSwap(meta FileMeta, raw []byte) error {
+func (dm *DatabaseMock) FileWriteToSwap(fileID int64, raw []byte) error {
 	dm.FunctionCallCount++
-	dm.Swp = &raw
+	dm.Swp = raw
 	return nil
 }
