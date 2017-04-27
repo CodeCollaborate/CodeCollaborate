@@ -139,7 +139,7 @@ func TestProjectGetPermissionConstantsRequest_Process(t *testing.T) {
 
 	assert.Equal(t, messages.StatusSuccess, resp.Status, "unexpected response status")
 
-	mappy := reflect.ValueOf(resp.Data).FieldByName("Constants").Interface().(map[string]int8)
+	mappy := reflect.ValueOf(resp.Data).FieldByName("Constants").Interface().(map[string]int)
 	assert.Equal(t, len(config.PermissionsByLabel), len(mappy), "incorrect number of entries in map result")
 	for key, val := range mappy {
 		perm, err := config.PermissionByLabel(key)
@@ -209,7 +209,6 @@ func TestProjectGrantPermissionsRequest_Process(t *testing.T) {
 	if len(db.Projects[req.GrantUsername]) != 1 || db.Projects[req.GrantUsername][0].PermissionLevel != req.PermissionLevel {
 		t.Fatal("Database was not properly modified")
 	}
-
 }
 
 func TestProjectRevokePermissionsRequest_Process(t *testing.T) {

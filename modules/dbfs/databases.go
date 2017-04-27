@@ -72,14 +72,14 @@ type DBFS interface {
 	MySQLProjectGetFiles(projectID int64) (files []FileMeta, err error)
 
 	// MySQLProjectGrantPermission gives the user `grantUsername` the permission `permissionLevel` on project `projectID`
-	MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int8, grantedByUsername string) error
+	MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error
 
 	// MySQLProjectRevokePermission removes revokeUsername's permissions from the project
 	// DOES NOT WORK FOR OWNER (which is kinda a good thing)
 	MySQLProjectRevokePermission(projectID int64, revokeUsername string, revokedByUsername string) error
 
 	// MySQLUserProjectPermissionLookup returns the permission level of `username` on the project with the given projectID
-	MySQLUserProjectPermissionLookup(projectID int64, username string) (int8, error)
+	MySQLUserProjectPermissionLookup(projectID int64, username string) (int, error)
 
 	// MySQLProjectRename allows for you to rename projects
 	MySQLProjectRename(projectID int64, newName string) error

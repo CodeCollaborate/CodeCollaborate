@@ -9,9 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql" // required to load into local namespace to
+	// initialize sql driver mapping in sql.Open("mysql", ...)
 	"github.com/CodeCollaborate/Server/modules/config"
 	"github.com/CodeCollaborate/Server/modules/datastore"
 	"github.com/CodeCollaborate/Server/utils"
+	"github.com/go-sql-driver/mysql"
 )
 
 func init() {
@@ -186,46 +189,48 @@ func (store *MySQLRelationalStore) UserGetProjects(username string) ([]datastore
 		var projID int64
 		var projName string
 		var projOwner string
-		var permUsername string
-		var permLevel int
-		var permGrantedBy string
-		var permGrantedDate time.Time
+		var permUsername sql.NullString
+		var permLevel sql.NullInt64
+		var permGrantedBy sql.NullString
+		var permGrantedDate mysql.NullTime
 
 		err = rows.Scan(&projID, &projName, &projOwner, &permUsername, &permLevel, &permGrantedBy, &permGrantedDate)
 		if err != nil {
 			return nil, err
 		}
 
-		if projOwner != "" {
-			permUsername = projOwner
-			permLevel = 10
-			permGrantedBy = projOwner
-			permGrantedDate = time.Unix(0, 0)
-		}
-
 		if projectsMap[projID] != nil {
 			project := projectsMap[projID]
 
 			perm := &datastore.ProjectPermission{
-				Username:        permUsername,
-				PermissionLevel: permLevel,
-				GrantedBy:       permGrantedBy,
-				GrantedDate:     permGrantedDate,
+				Username:        permUsername.String,
+				PermissionLevel: int(permLevel.Int64),
+				GrantedBy:       permGrantedBy.String,
+				GrantedDate:     permGrantedDate.Time,
 			}
 
-			project.ProjectPermissions[permUsername] = perm
+			project.ProjectPermissions[permUsername.String] = perm
 		} else {
 			project := &datastore.ProjectMetadata{
 				ProjectID: projID,
 				Name:      projName,
 				ProjectPermissions: map[string]*datastore.ProjectPermission{
-					permUsername: {
-						Username:        permUsername,
-						PermissionLevel: permLevel,
-						GrantedBy:       permGrantedBy,
-						GrantedDate:     permGrantedDate,
+					projOwner: {
+						Username:        projOwner,
+						PermissionLevel: 10,
+						GrantedBy:       projOwner,
+						GrantedDate:     time.Unix(0, 0),
 					},
 				},
+			}
+
+			if permUsername.Valid && permLevel.Valid && permGrantedBy.Valid && permGrantedDate.Valid {
+				project.ProjectPermissions[permUsername.String] = &datastore.ProjectPermission{
+					Username:        permUsername.String,
+					PermissionLevel: int(permLevel.Int64),
+					GrantedBy:       permGrantedBy.String,
+					GrantedDate:     permGrantedDate.Time,
+				}
 			}
 
 			projectsMap[projID] = project
@@ -366,6 +371,7 @@ func (store *MySQLRelationalStore) ProjectLookup(projectID int64) (*datastore.Pr
 	}
 
 	projMeta := &datastore.ProjectMetadata{}
+	projMeta.ProjectID = projectID
 	for rows.Next() {
 		perm := &datastore.ProjectPermission{}
 		err = rows.Scan(&projMeta.Name, &perm.Username, &perm.PermissionLevel, &perm.GrantedBy, &perm.GrantedDate)
@@ -373,6 +379,9 @@ func (store *MySQLRelationalStore) ProjectLookup(projectID int64) (*datastore.Pr
 			return nil, err
 		}
 
+		if projMeta.ProjectPermissions == nil {
+			projMeta.ProjectPermissions = map[string]*datastore.ProjectPermission{}
+		}
 		projMeta.ProjectPermissions[perm.Username] = perm
 	}
 

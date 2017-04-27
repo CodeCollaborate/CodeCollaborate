@@ -56,7 +56,7 @@ package dbfs
 //	}
 //	err = di.CloseMySQL()
 //	if err != ErrDbNotInitialized {
-//		t.Fatal("Wrong error recieved")
+//		t.Fatal("Wrong error received")
 //	}
 //}
 //

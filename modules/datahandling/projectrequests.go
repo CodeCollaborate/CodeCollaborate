@@ -156,7 +156,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure
 		Status: messages.StatusSuccess,
 		Tag:    p.Tag,
 		Data: struct {
-			Constants map[string]int8
+			Constants map[string]int
 		}{
 			Constants: config.PermissionsByLabel,
 		},
@@ -169,7 +169,7 @@ func (p projectGetPermissionConstantsRequest) process(db dbfs.DBFS) ([]dhClosure
 type projectGrantPermissionsRequest struct {
 	ProjectID       int64
 	GrantUsername   string
-	PermissionLevel int8
+	PermissionLevel int
 	abstractRequest
 }
 
@@ -219,7 +219,7 @@ func (p projectGrantPermissionsRequest) process(db dbfs.DBFS) ([]dhClosure, erro
 		ResourceID: p.ProjectID,
 		Data: struct {
 			GrantUsername   string
-			PermissionLevel int8
+			PermissionLevel int
 		}{
 			GrantUsername:   p.GrantUsername,
 			PermissionLevel: p.PermissionLevel,

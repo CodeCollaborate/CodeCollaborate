@@ -281,7 +281,7 @@ func (di *DatabaseImpl) MySQLProjectGetFiles(projectID int64) (files []FileMeta,
 }
 
 // MySQLProjectGrantPermission gives the user `grantUsername` the permission `permissionLevel` on project `projectID`
-func (di *DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int8, grantedByUsername string) error {
+func (di *DatabaseImpl) MySQLProjectGrantPermission(projectID int64, grantUsername string, permissionLevel int, grantedByUsername string) error {
 	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return err
@@ -320,7 +320,7 @@ func (di *DatabaseImpl) MySQLProjectRevokePermission(projectID int64, revokeUser
 }
 
 // MySQLUserProjectPermissionLookup returns the permission level of `username` on the project with the given projectID
-func (di *DatabaseImpl) MySQLUserProjectPermissionLookup(projectID int64, username string) (int8, error) {
+func (di *DatabaseImpl) MySQLUserProjectPermissionLookup(projectID int64, username string) (int, error) {
 	mysqlConn, err := di.getMySQLConn()
 	if err != nil {
 		return 0, err
@@ -330,7 +330,7 @@ func (di *DatabaseImpl) MySQLUserProjectPermissionLookup(projectID int64, userna
 	if err != nil {
 		return 0, err
 	}
-	var permission int8
+	var permission int
 
 	result := false
 	for rows.Next() {
