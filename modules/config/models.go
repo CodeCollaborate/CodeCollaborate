@@ -6,14 +6,10 @@ import "time"
  * Models for the configuration CodeCollaborate Server.
  */
 
-// ConnCfgMap is a map of ConnCfgs, keyed on the connection name.
-type ConnCfgMap map[string]ConnCfg
-
 // Config contains all the different config items
 type Config struct {
-	ServerConfig     *ServerCfg
-	ConnectionConfig ConnCfgMap
-	DataStoreConfig  *DataStoreCfg
+	ServerConfig    *ServerCfg
+	DataStoreConfig *DataStoreCfg
 }
 
 // ServerCfg contains various config items that pertain to the server
@@ -65,4 +61,7 @@ type DataStoreCfg struct {
 
 	RelationalStoreName string
 	RelationalStoreCfg  *ConnCfg
+
+	MessageBrokerName string
+	MessageBrokerCfg  *ConnCfg
 }

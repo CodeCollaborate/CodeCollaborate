@@ -17,7 +17,7 @@ func (di *DatabaseImpl) openMySQL() {
 	if di.mysqldb == nil || di.mysqldb.config == (config.ConnCfg{}) {
 		di.mysqldb = new(mysqlConn)
 		configMap := config.GetConfig()
-		di.mysqldb.config = configMap.ConnectionConfig["MySQL"]
+		di.mysqldb.config = *configMap.DataStoreConfig.RelationalStoreCfg
 	}
 
 	if di.mysqldb.mysqlRelationalStore == nil {

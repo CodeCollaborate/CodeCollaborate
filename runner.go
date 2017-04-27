@@ -46,7 +46,7 @@ func main() {
 	// RabbitMQ uses "Exchanges" as containers for Queues, and ours is initialized here.
 	rabbitmq.SetupRabbitExchange(
 		&rabbitmq.AMQPConnCfg{
-			ConnCfg: cfg.ConnectionConfig["RabbitMQ"],
+			ConnCfg: *cfg.DataStoreConfig.MessageBrokerCfg,
 			Exchanges: []rabbitmq.AMQPExchCfg{
 				{
 					ExchangeName: cfg.ServerConfig.Name,

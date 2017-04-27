@@ -55,20 +55,6 @@ func TestGetConfig(t *testing.T) {
 			Name: "CodeCollaborate",
 			Port: 80,
 		},
-		ConnectionConfig: ConnCfgMap{
-			"MySQL": ConnCfg{
-				Host:     "mysqlHost",
-				Port:     3306,
-				Username: "user1",
-				Password: "pw1",
-			},
-			"Couchbase": ConnCfg{
-				Host:     "couchbaseHost",
-				Port:     8092,
-				Username: "user2",
-				Password: "pw2",
-			},
-		},
 		DataStoreConfig: &DataStoreCfg{
 			RelationalStoreName: "MySQL",
 			RelationalStoreCfg: &ConnCfg{

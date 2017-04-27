@@ -16,19 +16,14 @@ func parseConfig(filepath string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	connectionConfig, err := parseConnectionConfig(filepath)
-	if err != nil {
-		return nil, err
-	}
 	dataStoreConfig, err := parseDataStoreConfig(filepath)
 	if err != nil {
 		return nil, err
 	}
 
 	config := &Config{
-		ServerConfig:     serverConfig,
-		ConnectionConfig: *connectionConfig,
-		DataStoreConfig:  dataStoreConfig,
+		ServerConfig:    serverConfig,
+		DataStoreConfig: dataStoreConfig,
 	}
 
 	return config, nil
@@ -42,23 +37,6 @@ func parseServerConfig(configDir string) (*ServerCfg, error) {
 	defer file.Close()
 
 	config := &ServerCfg{}
-
-	jsonParser := json.NewDecoder(file)
-	if err := jsonParser.Decode(config); err != nil {
-		return nil, err
-	}
-
-	return config, nil
-}
-
-func parseConnectionConfig(configDir string) (*ConnCfgMap, error) {
-	file, err := os.Open(filepath.Join(configDir, "conn.cfg"))
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	config := &ConnCfgMap{}
 
 	jsonParser := json.NewDecoder(file)
 	if err := jsonParser.Decode(config); err != nil {

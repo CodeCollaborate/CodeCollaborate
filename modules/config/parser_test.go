@@ -9,64 +9,6 @@ import (
 	"testing"
 )
 
-func TestParseConnectionConfig(t *testing.T) {
-	tmpDir := createTmpDir(t, ".", "test-config-files")
-	defer os.RemoveAll(tmpDir)
-
-	data, err := parseConnectionConfig(tmpDir)
-	if err == nil {
-		t.Fatal("Empty config dir, should have failed.")
-	}
-
-	tmpConfigFileName := filepath.Join(tmpDir, "conn.cfg")
-	content := fmt.Sprint("{\"MySQL\": {\"Host\": \"mysqlHost\",\"Port\": 3306,\"Username\": \"user1\",\"Password\": \"pw1\"},\"Couchbase\": {\"Host\": \"couchbaseHost\",\"Port\": 8092,\"Username\": \"user2\",\"Password\": \"pw2\"}}")
-	err = ioutil.WriteFile(tmpConfigFileName, []byte(content), 0777)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err = parseConnectionConfig(tmpDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := &ConnCfgMap{
-		"MySQL": ConnCfg{
-			Host:     "mysqlHost",
-			Port:     3306,
-			Username: "user1",
-			Password: "pw1",
-		},
-		"Couchbase": ConnCfg{
-			Host:     "couchbaseHost",
-			Port:     8092,
-			Username: "user2",
-			Password: "pw2",
-		},
-	}
-
-	if !reflect.DeepEqual(data, expected) {
-		t.Fatalf("Parsed data incorrect. Expected: \n%v\n Actual: \n%v\n", data, expected)
-	}
-}
-
-func TestParseConnectionConfigInvalidJSON(t *testing.T) {
-	tmpDir := createTmpDir(t, ".", "test-config-files")
-	defer os.RemoveAll(tmpDir)
-
-	tmpConfigFileName := filepath.Join(tmpDir, "conn.cfg")
-	content := fmt.Sprint("{\"InvalidJson\"}")
-	err := ioutil.WriteFile(tmpConfigFileName, []byte(content), 0777)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = parseConnectionConfig(tmpDir)
-	if err == nil {
-		t.Fatal("Invalid JSON input. Should have failed.")
-	}
-}
-
 func TestParseServerConfig(t *testing.T) {
 	tmpDir := createTmpDir(t, ".", "test-config-files")
 	defer os.RemoveAll(tmpDir)
@@ -159,20 +101,6 @@ func TestParseConfig(t *testing.T) {
 		ServerConfig: &ServerCfg{
 			Name: "CodeCollaborate",
 			Port: 80,
-		},
-		ConnectionConfig: ConnCfgMap{
-			"MySQL": ConnCfg{
-				Host:     "mysqlHost",
-				Port:     3306,
-				Username: "user1",
-				Password: "pw1",
-			},
-			"Couchbase": ConnCfg{
-				Host:     "couchbaseHost",
-				Port:     8092,
-				Username: "user2",
-				Password: "pw2",
-			},
 		},
 		DataStoreConfig: &DataStoreCfg{
 			RelationalStoreName: "MySQL",

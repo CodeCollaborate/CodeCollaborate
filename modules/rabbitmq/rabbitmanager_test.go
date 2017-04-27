@@ -25,7 +25,7 @@ func getRabbitMQConfig(t *testing.T) config.ConnCfg {
 	if err != nil {
 		t.Fatal("Could not get connection config")
 	}
-	return config.GetConfig().ConnectionConfig["RabbitMQ"]
+	return *config.GetConfig().DataStoreConfig.MessageBrokerCfg
 }
 
 func TestGetChannel(t *testing.T) {

@@ -32,7 +32,7 @@ func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
 	if di.couchbaseDB == nil || di.couchbaseDB.config == (config.ConnCfg{}) {
 		di.couchbaseDB = new(couchbaseConn)
 		configMap := config.GetConfig()
-		di.couchbaseDB.config = configMap.ConnectionConfig["Couchbase"]
+		di.couchbaseDB.config = *configMap.DataStoreConfig.DocumentStoreCfg
 	}
 
 	if di.couchbaseDB.couchbaseDocumentStore == nil {
