@@ -28,14 +28,14 @@ var userTwo = &datastore.UserData{
 	LastName:  "_two",
 }
 
-func TestMySQLBucketStore_RegisterSelf(t *testing.T) {
+func TestMySQLRelationalStore_RegisterSelf(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	documentStore := datastore.InitRelationalStore("mysql", config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
 	require.True(t, reflect.TypeOf(documentStore).String() == reflect.TypeOf(&MySQLRelationalStore{}).String(), "relationalStore initalized wrong type")
 }
 
-func TestMySQLBucketStore_Connect(t *testing.T) {
+func TestMySQLRelationalStore_Connect(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -48,11 +48,11 @@ func TestMySQLBucketStore_Connect(t *testing.T) {
 	cb.UserDelete(userTwo.Username)
 }
 
-func TestFilesystemBucketStore_Shutdown(t *testing.T) {
+func TestMySQLRelationalStore_Shutdown(t *testing.T) {
 	// Nothing to test
 }
 
-func TestFilesystemBucketStore_UserRegister(t *testing.T) {
+func TestMySQLRelationalStore_UserRegister(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -69,7 +69,7 @@ func TestFilesystemBucketStore_UserRegister(t *testing.T) {
 	require.NotNil(t, err, "Failed to throw error registering duplicate user")
 }
 
-func TestFilesystemBucketStore_UserLookup(t *testing.T) {
+func TestMySQLRelationalStore_UserLookup(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -93,7 +93,7 @@ func TestFilesystemBucketStore_UserLookup(t *testing.T) {
 	require.EqualError(t, err, "No such username found", "MySQL did not throw expected error for unknown username")
 }
 
-func TestFilesystemBucketStore_UserGetProjects(t *testing.T) {
+func TestMySQLRelationalStore_UserGetProjects(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -117,7 +117,7 @@ func TestFilesystemBucketStore_UserGetProjects(t *testing.T) {
 	require.Equal(t, projectOneName, projects[0].Name, "MySQL returned project with incorrect name")
 }
 
-func TestFilesystemBucketStore_UserGetProjectPermissions(t *testing.T) {
+func TestMySQLRelationalStore_UserGetProjectPermissions(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -157,7 +157,7 @@ func TestFilesystemBucketStore_UserGetProjectPermissions(t *testing.T) {
 	assert.Equal(t, readPerm.Level, permLevel, "UserTwo did not have expected permissions")
 }
 
-func TestFilesystemBucketStore_UserGetPassword(t *testing.T) {
+func TestMySQLRelationalStore_UserGetPassword(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -176,7 +176,7 @@ func TestFilesystemBucketStore_UserGetPassword(t *testing.T) {
 	require.Equal(t, pass, userOne.Password, "Wrong password returned")
 }
 
-func TestFilesystemBucketStore_UserDelete(t *testing.T) {
+func TestMySQLRelationalStore_UserDelete(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -230,7 +230,7 @@ func TestFilesystemBucketStore_UserDelete(t *testing.T) {
 	assert.EqualError(t, err, "No such projectID found", "expected project2 to not exist")
 }
 
-func TestFilesystemBucketStore_ProjectCreate(t *testing.T) {
+func TestMySQLRelationalStore_ProjectCreate(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -251,7 +251,7 @@ func TestFilesystemBucketStore_ProjectCreate(t *testing.T) {
 	require.EqualError(t, err, "Owner already has a project with the given name", "MySQL threw incorrect error on duplicate owner/project")
 }
 
-func TestFilesystemBucketStore_ProjectLookup(t *testing.T) {
+func TestMySQLRelationalStore_ProjectLookup(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -295,7 +295,7 @@ func TestFilesystemBucketStore_ProjectLookup(t *testing.T) {
 	require.Equal(t, userOne.Username, projMeta.ProjectPermissions[userTwo.Username].GrantedBy, "MySQL returned permission entry with incorrect username for userTwo")
 }
 
-func TestFilesystemBucketStore_ProjectGetFiles(t *testing.T) {
+func TestMySQLRelationalStore_ProjectGetFiles(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -326,7 +326,7 @@ func TestFilesystemBucketStore_ProjectGetFiles(t *testing.T) {
 	require.Equal(t, userOne.Username, files[0].Creator, "MySQL returned file[0] with incorrect Creator")
 }
 
-func TestFilesystemBucketStore_ProjectGrantPermissions(t *testing.T) {
+func TestMySQLRelationalStore_ProjectGrantPermissions(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -366,7 +366,7 @@ func TestFilesystemBucketStore_ProjectGrantPermissions(t *testing.T) {
 	require.Equal(t, userOne.Username, projects[0].ProjectPermissions[userTwo.Username].GrantedBy, "MySQL returned permission entry with incorrect username for userTwo")
 }
 
-func TestFilesystemBucketStore_ProjectRevokePermissions(t *testing.T) {
+func TestMySQLRelationalStore_ProjectRevokePermissions(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -401,7 +401,7 @@ func TestFilesystemBucketStore_ProjectRevokePermissions(t *testing.T) {
 	require.Len(t, projects, 0, "MySQL failed to revoke permissions, returned incorrect number of projects for user two")
 }
 
-func TestFilesystemBucketStore_ProjectRename(t *testing.T) {
+func TestMySQLRelationalStore_ProjectRename(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -429,7 +429,7 @@ func TestFilesystemBucketStore_ProjectRename(t *testing.T) {
 	require.Len(t, projects[0].ProjectPermissions, 1, "MySQL returned a project with incorrect permissions map")
 }
 
-func TestFilesystemBucketStore_ProjectDelete(t *testing.T) {
+func TestMySQLRelationalStore_ProjectDelete(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -457,7 +457,7 @@ func TestFilesystemBucketStore_ProjectDelete(t *testing.T) {
 	require.NotNil(t, err, "No such projectID found", "MySQL threw an incorrect error when deleting a nonexistent project")
 }
 
-func TestFilesystemBucketStore_FileCreate(t *testing.T) {
+func TestMySQLRelationalStore_FileCreate(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -491,7 +491,7 @@ func TestFilesystemBucketStore_FileCreate(t *testing.T) {
 	require.EqualError(t, err, "Project already contains file at the given location", "MySQL threw incorrect error for duplicate file")
 }
 
-func TestFilesystemBucketStore_FileGet(t *testing.T) {
+func TestMySQLRelationalStore_FileGet(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -532,7 +532,7 @@ func TestFilesystemBucketStore_FileGet(t *testing.T) {
 	assert.Equal(t, projectID, fileMeta.ProjectID, "MySQL returned file with incorrect ProjectID")
 }
 
-func TestFilesystemBucketStore_FileMove(t *testing.T) {
+func TestMySQLRelationalStore_FileMove(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
@@ -571,7 +571,7 @@ func TestFilesystemBucketStore_FileMove(t *testing.T) {
 	assert.Equal(t, fileOneName+"_renamed", files[0].Filename, "MySQL returned file with incorrect Filename")
 }
 
-func TestFilesystemBucketStore_FileDelete(t *testing.T) {
+func TestMySQLRelationalStore_FileDelete(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
 
