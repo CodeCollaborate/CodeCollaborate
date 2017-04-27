@@ -37,7 +37,7 @@ CREATE TABLE `File` (
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
   CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=152 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=277 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,7 +77,7 @@ CREATE TABLE `Project` (
   UNIQUE KEY `NameOwner_UNIQUE` (`Name`,`Owner`),
   KEY `fk_Project_Username` (`Owner`),
   CONSTRAINT `fk_Project_Username` FOREIGN KEY (`Owner`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=396 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=690 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -225,7 +225,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `file_move`(IN fileID bigint(20), IN newPath varchar(2083), IN newName varchar(50))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `file_move`(IN fileID bigint(20), IN newPath varchar(2083))
   BEGIN
     IF (SELECT count(*) FROM File WHERE File.FileID = fileID)<=0 THEN
       BEGIN
@@ -238,7 +238,41 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `file_move`(IN fileID bigint(20), IN
     ELSE
       BEGIN
         UPDATE `File`
-        SET `File`.RelativePath = newPath, `File`.Filename = newName
+        SET `File`.RelativePath = newPath
+        WHERE `File`.FileID = fileID;
+        SELECT 0 AS 'ERROR_CODE', '' AS 'ERROR_MSG';
+      END;
+    END IF;
+  END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `file_rename` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `file_rename`(IN fileID bigint(20), IN newName varchar(50))
+  BEGIN
+    IF (SELECT count(*) FROM File WHERE File.FileID = fileID)<=0 THEN
+      BEGIN
+        SELECT 1 as 'ERROR_CODE', "No such fileID found" AS 'ERROR_MSG';
+      END;
+    ELSEIF (SELECT count(*) FROM File WHERE File.ProjectID = (SELECT ProjectID FROM File WHERE File.FileID = fileID) && File.RelativePath = (SELECT RelativePath FROM File WHERE File.FileID = fileID) && File.Filename = newName)>0 THEN
+      BEGIN
+        SELECT 2 as 'ERROR_CODE', "Project already contains file at the given location" AS 'ERROR_MSG';
+      END;
+    ELSE
+      BEGIN
+        UPDATE `File`
+        SET `File`.Filename = newName
         WHERE `File`.FileID = fileID;
         SELECT 0 AS 'ERROR_CODE', '' AS 'ERROR_MSG';
       END;
@@ -724,4 +758,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-04-27  8:20:21
+-- Dump completed on 2017-04-27 13:27:28

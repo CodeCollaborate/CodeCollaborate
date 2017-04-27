@@ -37,13 +37,11 @@ func (di *DatabaseImpl) openCouchBase() (*couchbaseConn, error) {
 
 	if di.couchbaseDB.couchbaseDocumentStore == nil {
 		di.couchbaseDB.couchbaseDocumentStore = documentstore.NewCouchbaseDocumentStore(&di.couchbaseDB.config)
+		di.couchbaseDB.couchbaseDocumentStore.Connect()
+
+		couchbaseDocumentStore := di.couchbaseDB.couchbaseDocumentStore.(*documentstore.CouchbaseDocumentStore)
+		di.couchbaseDB.bucket, di.couchbaseDB.scrunchingLocksBucket = couchbaseDocumentStore.GetBuckets()
 	}
-
-	di.couchbaseDB.couchbaseDocumentStore.Connect()
-
-	couchbaseDocumentStore := di.couchbaseDB.couchbaseDocumentStore.(*documentstore.CouchbaseDocumentStore)
-
-	di.couchbaseDB.bucket, di.couchbaseDB.scrunchingLocksBucket = couchbaseDocumentStore.GetBuckets()
 
 	return di.couchbaseDB, nil
 }

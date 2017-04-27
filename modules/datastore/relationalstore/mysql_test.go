@@ -117,6 +117,29 @@ func TestMySQLRelationalStore_UserGetProjects(t *testing.T) {
 	require.Equal(t, projectOneName, projects[0].Name, "MySQL returned project with incorrect name")
 }
 
+func TestMySQLRelationalStore_UserGetOwnedProjectIDs(t *testing.T) {
+	config.SetupTestingConfig(t, "../../../config")
+	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
+
+	defer func() {
+		require.Nil(t, recover(), "MySQL connect threw a fatal error")
+	}()
+	cb.Connect()
+
+	err := cb.UserRegister(userOne)
+	require.Nil(t, err, "MySQL threw an error when registering user")
+	defer cb.UserDelete(userOne.Username)
+
+	projectID, err := cb.ProjectCreate(userOne.Username, projectOneName)
+	require.Nil(t, err, "MySQL threw an error when creating a new project")
+	require.True(t, projectID >= 0, "MySQL returned an invalid ProjectID")
+
+	projectIDs, err := cb.UserGetOwnedProjectIDs(userOne.Username)
+	require.Nil(t, err, "MySQL threw an error when retrieving user projects")
+	require.Len(t, projectIDs, 1, "MySQL returned an incorrect number of projects")
+	require.Equal(t, projectID, projectIDs[0], "MySQL returned project with incorrect projectID")
+}
+
 func TestMySQLRelationalStore_UserGetProjectPermissions(t *testing.T) {
 	config.SetupTestingConfig(t, "../../../config")
 	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
@@ -520,7 +543,7 @@ func TestMySQLRelationalStore_FileGet(t *testing.T) {
 	assert.Equal(t, fileOneName, fileMeta.Filename, "MySQL returned file with incorrect Filename")
 	assert.Equal(t, projectID, fileMeta.ProjectID, "MySQL returned file with incorrect ProjectID")
 
-	err = cb.FileMove(fileID, "cc", fileOneName+"_renamed")
+	err = cb.FileMove(fileID, "cc")
 	require.Nil(t, err, "MySQL threw an error when renaming file")
 
 	fileMeta, err = cb.FileGet(fileID)
@@ -528,7 +551,7 @@ func TestMySQLRelationalStore_FileGet(t *testing.T) {
 	assert.Equal(t, fileID, fileMeta.FileID, "MySQL returned file with incorrect FileID")
 	assert.Equal(t, userOne.Username, fileMeta.Creator, "MySQL returned file with incorrect Creator")
 	assert.Equal(t, "cc", fileMeta.RelativePath, "MySQL returned file with incorrect RelativePath")
-	assert.Equal(t, fileOneName+"_renamed", fileMeta.Filename, "MySQL returned file with incorrect Filename")
+	assert.Equal(t, fileOneName, fileMeta.Filename, "MySQL returned file with incorrect Filename")
 	assert.Equal(t, projectID, fileMeta.ProjectID, "MySQL returned file with incorrect ProjectID")
 }
 
@@ -560,7 +583,7 @@ func TestMySQLRelationalStore_FileMove(t *testing.T) {
 	assert.Equal(t, ".", files[0].RelativePath, "MySQL returned file with incorrect RelativePath")
 	assert.Equal(t, fileOneName, files[0].Filename, "MySQL returned file with incorrect Filename")
 
-	err = cb.FileMove(fileID, "cc", fileOneName+"_renamed")
+	err = cb.FileMove(fileID, "cc")
 	require.Nil(t, err, "MySQL threw an error when renaming file")
 
 	files, err = cb.ProjectGetFiles(projectID)
@@ -568,6 +591,45 @@ func TestMySQLRelationalStore_FileMove(t *testing.T) {
 	require.Len(t, files, 1, "MySQL returned incorrect number of files for given project")
 	assert.Equal(t, fileID, files[0].FileID, "MySQL returned file with incorrect FileID")
 	assert.Equal(t, "cc", files[0].RelativePath, "MySQL returned file with incorrect RelativePath")
+	assert.Equal(t, fileOneName, files[0].Filename, "MySQL returned file with incorrect Filename")
+}
+
+func TestMySQLRelationalStore_FileRename(t *testing.T) {
+	config.SetupTestingConfig(t, "../../../config")
+	cb := NewMySQLRelationalStore(config.GetConfig().DataStoreConfig.RelationalStoreCfg)
+
+	defer func() {
+		require.Nil(t, recover(), "MySQL connect threw a fatal error")
+	}()
+	cb.Connect()
+
+	err := cb.UserRegister(userOne)
+	require.Nil(t, err, "MySQL threw an error when registering user")
+	defer cb.UserDelete(userOne.Username)
+
+	projectID, err := cb.ProjectCreate(userOne.Username, projectOneName)
+	require.Nil(t, err, "MySQL threw an error when creating a new project")
+	require.True(t, projectID >= 0, "MySQL returned an invalid ProjectID")
+
+	fileID, err := cb.FileCreate(userOne.Username, projectID, fileOneName, ".")
+	require.Nil(t, err, "MySQL threw an error when creating a new file")
+	require.True(t, fileID >= 0, "MySQL returned an invalid FileID")
+
+	files, err := cb.ProjectGetFiles(projectID)
+	require.Nil(t, err, "MySQL threw an error when getting files for given project")
+	require.Len(t, files, 1, "MySQL returned incorrect number of files for given project")
+	assert.Equal(t, fileID, files[0].FileID, "MySQL returned file with incorrect FileID")
+	assert.Equal(t, ".", files[0].RelativePath, "MySQL returned file with incorrect RelativePath")
+	assert.Equal(t, fileOneName, files[0].Filename, "MySQL returned file with incorrect Filename")
+
+	err = cb.FileRename(fileID, fileOneName+"_renamed")
+	require.Nil(t, err, "MySQL threw an error when renaming file")
+
+	files, err = cb.ProjectGetFiles(projectID)
+	require.Nil(t, err, "MySQL threw an error when getting files for given project")
+	require.Len(t, files, 1, "MySQL returned incorrect number of files for given project")
+	assert.Equal(t, fileID, files[0].FileID, "MySQL returned file with incorrect FileID")
+	assert.Equal(t, ".", files[0].RelativePath, "MySQL returned file with incorrect RelativePath")
 	assert.Equal(t, fileOneName+"_renamed", files[0].Filename, "MySQL returned file with incorrect Filename")
 }
 

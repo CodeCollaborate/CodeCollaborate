@@ -65,6 +65,9 @@ type RelationalStore interface {
 	// UserLookup returns the user's information (except password)
 	UserLookup(username string) (*UserData, error)
 
+	// UserGetOwnedProjectIDs returns the ProjectIDs for all project the given user owns
+	UserGetOwnedProjectIDs(username string) ([]int64, error)
+
 	// UserGetProjects returns the Project Metadata for all projects the user has permissions for
 	UserGetProjects(username string) ([]ProjectMetadata, error)
 
@@ -104,8 +107,11 @@ type RelationalStore interface {
 	// FileGet returns the metadata for the given fileID
 	FileGet(fileID int64) (*FileMetadata, error)
 
-	// FileMove updates the filepath and filename of for the given fileID
-	FileMove(fileID int64, newRelativePath string, newName string) error
+	// FileMove updates the filepath for the given fileID
+	FileMove(fileID int64, newRelativePath string) error
+
+	// FileRename updates the filename for the given fileID
+	FileRename(fileID int64, newName string) error
 
 	// FileDelete deletes the stored metadata for the given fileID
 	FileDelete(fileID int64) error

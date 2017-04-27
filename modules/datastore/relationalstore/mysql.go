@@ -41,6 +41,8 @@ func (store *MySQLRelationalStore) Connect() {
 		err := store.db.Ping()
 		if err != nil {
 			store.db = nil
+		} else {
+			return
 		}
 	}
 
@@ -167,6 +169,34 @@ func (store *MySQLRelationalStore) UserLookup(username string) (*datastore.UserD
 	}
 
 	return userData, nil
+}
+
+// UserGetOwnedProjectIDs returns the ProjectIDs for all project the given user owns
+func (store *MySQLRelationalStore) UserGetOwnedProjectIDs(username string) ([]int64, error) {
+	store.Connect()
+
+	rows, err := store.db.Query("CALL user_get_projectids(?)", username)
+	if err != nil {
+		return nil, err
+	}
+
+	err = checkResult(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	projectIDs := []int64{}
+	for rows.Next() {
+		var projectID int64
+		err = rows.Scan(&projectID)
+		if err != nil {
+			return nil, err
+		}
+
+		projectIDs = append(projectIDs, projectID)
+	}
+
+	return projectIDs, nil
 }
 
 // UserGetProjects returns the Project Metadata for all projects the user has permissions for
@@ -550,8 +580,30 @@ func (store *MySQLRelationalStore) FileGet(fileID int64) (*datastore.FileMetadat
 	return fileMeta, nil
 }
 
-// FileMove updates the filepath and filename of for the given fileID
-func (store *MySQLRelationalStore) FileMove(fileID int64, newRelativePath string, newName string) error {
+// FileMove updates the filepath for the given fileID
+func (store *MySQLRelationalStore) FileMove(fileID int64, newRelativePath string) error {
+	store.Connect()
+
+	newPathClean := filepath.Clean(newRelativePath)
+	if strings.HasPrefix(newPathClean, "..") {
+		return datastore.ErrInvalidFilePath
+	}
+
+	rows, err := store.db.Query("CALL file_move(?, ?)", fileID, newPathClean)
+	if err != nil {
+		return err
+	}
+
+	err = checkResult(rows)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// FileRename updates the filename for the given fileID
+func (store *MySQLRelationalStore) FileRename(fileID int64, newName string) error {
 	store.Connect()
 
 	newNameClean := filepath.Clean(newName)
@@ -559,12 +611,7 @@ func (store *MySQLRelationalStore) FileMove(fileID int64, newRelativePath string
 		return datastore.ErrInvalidFileName
 	}
 
-	newPathClean := filepath.Clean(newRelativePath)
-	if strings.HasPrefix(newPathClean, "..") {
-		return datastore.ErrInvalidFilePath
-	}
-
-	rows, err := store.db.Query("CALL file_move(?, ?, ?)", fileID, newPathClean, newNameClean)
+	rows, err := store.db.Query("CALL file_rename(?, ?)", fileID, newNameClean)
 	if err != nil {
 		return err
 	}
