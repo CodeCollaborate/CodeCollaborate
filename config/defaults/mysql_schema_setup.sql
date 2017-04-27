@@ -37,17 +37,8 @@ CREATE TABLE `File` (
   KEY `fk_File_ProjectID_idx` (`ProjectID`),
   CONSTRAINT `fk_File_ProjectID` FOREIGN KEY (`ProjectID`) REFERENCES `Project` (`ProjectID`) ON DELETE NO ACTION ON UPDATE CASCADE,
   CONSTRAINT `fk_File_Username` FOREIGN KEY (`Creator`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=152 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `File`
---
-
-LOCK TABLES `File` WRITE;
-/*!40000 ALTER TABLE `File` DISABLE KEYS */;
-/*!40000 ALTER TABLE `File` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `Permissions`
@@ -71,15 +62,6 @@ CREATE TABLE `Permissions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `Permissions`
---
-
-LOCK TABLES `Permissions` WRITE;
-/*!40000 ALTER TABLE `Permissions` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Permissions` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `Project`
 --
 
@@ -95,17 +77,8 @@ CREATE TABLE `Project` (
   UNIQUE KEY `NameOwner_UNIQUE` (`Name`,`Owner`),
   KEY `fk_Project_Username` (`Owner`),
   CONSTRAINT `fk_Project_Username` FOREIGN KEY (`Owner`) REFERENCES `User` (`Username`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=396 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `Project`
---
-
-LOCK TABLES `Project` WRITE;
-/*!40000 ALTER TABLE `Project` DISABLE KEYS */;
-/*!40000 ALTER TABLE `Project` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -148,14 +121,8 @@ CREATE TABLE `User` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `User`
+-- Dumping events for database 'cc'
 --
-
-LOCK TABLES `User` WRITE;
-/*!40000 ALTER TABLE `User` DISABLE KEYS */;
-INSERT INTO `User` VALUES ('test','test','test','test','test');
-/*!40000 ALTER TABLE `User` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Dumping routines for database 'cc'
@@ -294,7 +261,7 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`localhost` PROCEDURE `project_create`(IN projectName varchar(50), IN username varchar(25))
   BEGIN
-    IF (SELECT COUNT(*) FROM Project WHERE Project.Name = projectName AND Project.Owner = username)<=0 THEN
+    IF (SELECT COUNT(*) FROM Project WHERE Project.Name = projectName AND Project.Owner = username)>0 THEN
       BEGIN
         SELECT 2 as 'ERROR_CODE', "Owner already has a project with the given name" AS 'ERROR_MSG';
       END;
@@ -432,11 +399,11 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `project_lookup`(IN projectID bigint
     ELSE
       BEGIN
         SELECT `Project`.`Name`, `Permissions`.`Username`, `Permissions`.`PermissionLevel`, `Permissions`.`GrantedBy`, `Permissions`.`GrantedDate`
-        FROM Project LEFT JOIN Permissions
+        FROM Project JOIN Permissions
             ON Project.ProjectID = Permissions.ProjectID
         WHERE Project.ProjectID = projectID
         UNION
-        SELECT `Project`.`Name`, `Project`.`Owner`, 10, `Project`.`Owner`, 0
+        SELECT `Project`.`Name`, `Project`.`Owner`, 10, `Project`.`Owner`, FROM_UNIXTIME(0)
         FROM `Project`
         WHERE `Project`.`ProjectID` = projectID;
       END;
@@ -457,7 +424,7 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`root`@`localhost` PROCEDURE `project_rename`(IN username VARCHAR(25), IN projectID bigint(20), IN newName varchar(50))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `project_rename`(IN projectID bigint(20), IN newName varchar(50))
   BEGIN
     IF (SELECT count(*) FROM Project WHERE Project.ProjectID = projectID)<=0 THEN
       BEGIN
@@ -646,13 +613,26 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `user_projects`(IN username varchar(
       END;
     ELSE
       BEGIN
-        SELECT `Project`.`ProjectID`, `Project`.`Name`, `Permissions`.`PermissionLevel`
-        FROM (Permissions LEFT JOIN Project ON Permissions.ProjectID = Project.ProjectID)
-        WHERE Permissions.Username = username
-        UNION
-        SELECT `Project`.`ProjectID`, `Project`.`Name`, 10
-        FROM `Project`
-        WHERE `Project`.`Owner` = username;
+        #SELECT `Project`.`ProjectID`, `Project`.`Name`, `Permissions`.`PermissionLevel`
+        #FROM (Permissions LEFT JOIN Project ON Permissions.ProjectID = Project.ProjectID)
+        #WHERE Permissions.Username = username
+        #UNION
+        #  SELECT `Project`.`ProjectID`, `Project`.`Name`, 10
+        #  FROM `Project`
+        #  WHERE `Project`.`Owner` = username;
+        SELECT `Project`.`ProjectID`, `Project`.`Name`, `Project`.`Owner`, `Permissions`.`Username`, `Permissions`.`PermissionLevel`, `Permissions`.`GrantedBy`, `Permissions`.`GrantedDate`
+        FROM (Project LEFT JOIN Permissions ON Permissions.ProjectID = Project.ProjectID)
+        WHERE
+          Project.ProjectID IN (
+            SELECT `Project`.`ProjectID`
+            FROM (Permissions LEFT JOIN Project ON Permissions.ProjectID = Project.ProjectID)
+            WHERE Permissions.Username = username
+          ) OR
+          Project.ProjectID IN (
+            SELECT `Project`.`ProjectID`
+            FROM `Project`
+            WHERE `Project`.`Owner` = username
+          );
       END;
     END IF;
   END ;;
@@ -744,4 +724,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-04-26 13:35:55
+-- Dump completed on 2017-04-27  8:20:21
