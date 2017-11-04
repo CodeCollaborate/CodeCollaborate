@@ -244,7 +244,7 @@ func RunSubscriber(cfg *AMQPPubSubCfg) error {
 	msgs, err := ch.Consume(
 		cfg.SubCfg.QueueName, // queue
 		"",                   // consumer
-		false,                // auto-ack
+		false,                // auto-ack FIXME: is this right?
 		false,                // exclusive
 		false,                // no local
 		false,                // no wait
